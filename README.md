@@ -1,3 +1,5 @@
+![Keysoft secure private offline password manager banner](docs/assets/keysoft-banner.png)
+
 # Keysoft
 
 [![CI](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg)](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml)
