@@ -1,0 +1,17 @@
+node_modules/
+android/
+ios/
+.expo/
+dist/
+web-build/
+coverage/
+tmp/
+*.aab
+*.apk
+*.ipa
+bun.lock
+package-lock.json
+yarn.lock
+keystore/
+*.lock
+build/

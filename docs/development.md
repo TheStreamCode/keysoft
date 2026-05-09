@@ -1,0 +1,183 @@
+# Development Guide
+
+## Environment
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Start Expo for Expo Go:
+
+```bash
+bun run start
+```
+
+Open on Android with Expo Go:
+
+```bash
+bun run android
+```
+
+Use a tunnel when LAN discovery is not reliable:
+
+```bash
+bun run start:tunnel
+```
+
+Run web:
+
+```bash
+bun run web
+```
+
+## Verification Commands
+
+Run all checks:
+
+```bash
+bun run typecheck
+bun run lint
+bun run test
+bunx expo-doctor
+```
+
+Before requesting an EAS preview build, also validate the Android bundle export:
+
+```bash
+bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
+```
+
+Run only tests:
+
+```bash
+bun run test
+```
+
+Run a focused test file:
+
+```bash
+bun run test -- src/__tests__/services/CryptoService.test.ts
+```
+
+## Coding Standards
+
+- Use TypeScript strict mode.
+- Prefer interfaces for structured data.
+- Use functional components and hooks.
+- Prefer named exports for services and helpers.
+- Keep user-visible strings in the localization dictionaries.
+- Do not add fallback UI strings such as `t('key') || 'Fallback'`.
+- Keep business logic in `src/services`.
+- Keep complex screen orchestration in `src/hooks`.
+- Keep feature-specific hooks in lowercase subdirectories, such as `src/hooks/settings`.
+- Keep UI in `src/screens` and `src/components`.
+
+## Internationalization
+
+All user-visible strings must use `t('key')`.
+
+When adding a new key:
+
+1. Add it to the Italian dictionary.
+2. Add it to the English dictionary.
+3. Use named parameters for dynamic values.
+
+Example:
+
+```ts
+t('notification_backup_reminder_body', { daysAgo });
+```
+
+The i18n regression test in `src/__tests__/i18n` verifies:
+
+- Italian and English dictionaries contain the same keys.
+- Translation keys are not duplicated.
+- Statically referenced `t('key')` and `this.t('key')` calls exist in both dictionaries.
+- Interpolation placeholders such as `{count}` and `{daysAgo}` match across languages.
+- Known user-facing fallback strings do not return as hardcoded UI text.
+
+Names that are not localization content, such as route names, icon names, brand names, email addresses, URLs, and technical labels like `AES-256`, can remain literal.
+
+## Security-Sensitive Development
+
+Use `src/utils/cryptoRandom.ts` for randomness.
+
+Do not:
+
+- Persist the encryption key.
+- Store plaintext password or note data.
+- Log secrets.
+- Use `Math.random`.
+- Accept imported backup objects without validation.
+
+## Test Placement
+
+| Test type                  | Location                      |
+| -------------------------- | ----------------------------- |
+| Service unit tests         | `src/__tests__/services`      |
+| Context tests              | `src/__tests__/contexts`      |
+| Hook tests                 | `src/__tests__/hooks`         |
+| Integration tests          | `src/__tests__/integration`   |
+| Architecture tests         | `src/__tests__/architecture`  |
+| Internationalization tests | `src/__tests__/i18n`          |
+| Performance tests          | `src/__tests__/performance`   |
+| Compatibility tests        | `src/__tests__/compatibility` |
+
+## Dependency Updates
+
+Use Expo tooling for SDK-aligned native dependencies:
+
+```bash
+bunx expo install --fix
+```
+
+Then verify:
+
+```bash
+bun install
+bunx expo-doctor
+```
+
+If `expo-doctor` reports duplicate native modules after a valid dependency update, regenerate `node_modules` and reinstall from the lockfile.
+
+## Expo Go And Cloud Builds
+
+Day-to-day development uses Expo Go. Do not use local Gradle builds as the default workflow.
+
+Build artifacts are produced on expo.dev through EAS:
+
+```bash
+bun run build:android:preview
+bun run build:android:production
+```
+
+Expo Go cannot load custom native modules. Keysoft therefore uses the PBKDF2 KDF fallback in Expo Go and keeps Argon2 for EAS/native builds where `react-native-argon2` is available.
+
+Use Expo Go for development and smoke testing only. Create release-test vaults in an EAS/native build when validating Argon2 behavior. Vault metadata that requires Argon2 (`memory > 0`) must fail with the native-KDF diagnostic if the native module is unavailable; do not reintroduce PBKDF2 fallback for that path.
+
+The `withArgon2ProGuard` config plugin patches the native Argon2 dependency during prebuild and appends ProGuard keep rules for release builds, including `com.poowf.argon2` for `react-native-argon2` v4. When changing the Argon2 dependency or EAS prebuild behavior, verify that the generated Android project still contains those keep rules.
+
+When changing authentication, biometric unlock, KDF behavior, or PIN-change flows, run the focused regression suite before the full checks:
+
+```bash
+bun run test -- src/__tests__/services/AuthService.test.ts src/__tests__/services/StorageService.test.ts src/__tests__/services/CryptoService.test.ts src/__tests__/integration/Authentication.test.tsx src/__tests__/hooks/usePinManagement.test.tsx src/__tests__/contexts/AuthContext.test.tsx src/__tests__/config/Argon2ProGuard.test.ts --runInBand
+```
+
+EAS build commands upload the project to expo.dev. Run them only after the release checks pass and the upload has been explicitly approved.
+
+## UI And Accessibility Standards
+
+- Icon-only controls must have `accessibilityRole`, `accessibilityLabel`, and a stable hit area.
+- Interactive targets should be at least 44x44 points.
+- Custom modals and bottom sheets must expose modal semantics and keep decorative backdrops inaccessible.
+- Category filters and segmented choices should expose selected state.
+- User-visible notification content must use localization keys in both Italian and English.
+
+## Git Hygiene
+
+- Do not commit local secrets.
+- Do not commit generated temporary extraction folders.
+- Keep unrelated worktree changes separate.
+- Run `git diff --check` before handing off changes.

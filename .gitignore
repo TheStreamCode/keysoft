@@ -1,0 +1,74 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+android/
+ios/
+*.orig.*
+keystore/
+*.jks
+*.keystore
+*.jksp8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+KEYSTORE-PASSWORD.md
+google-services.json
+GoogleService-Info.plist
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+*-log*.txt
+log-console.md
+test-passwords.json
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env.*
+.env*.local
+!.env.example
+
+# typescript
+*.tsbuildinfo
+
+# Memory cache
+.memory/
+.backups/
+.secrets/
+
+# Local AI/editor agent state
+.claude/
+.opencode/
+.agents/
+
+# Testing
+coverage/
+
+# Build artifacts
+tmp/
+build/
+*.apk
+*.aab
+*.ipa
+
+# Claude Code local settings
+.claude/settings.local.json
