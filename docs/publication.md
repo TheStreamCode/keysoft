@@ -48,3 +48,21 @@ Recommended settings:
 - Disable force pushes on protected branches after any required history cleanup.
 - Keep GitHub Actions permissions at read-only by default unless a workflow
   requires write access.
+
+## Current Public Configuration
+
+The public repository is `TheStreamCode/keysoft` and uses `main` as the default
+branch. The current branch protection policy requires:
+
+- the `Validate` CI status check to pass;
+- one approving pull request review;
+- stale reviews to be dismissed after new commits;
+- conversation resolution before merge;
+- linear history;
+- force pushes and branch deletion to remain disabled.
+
+GitHub personal repositories do not support user/team push restrictions in the
+classic branch protection API. The repository is therefore configured with
+administrator bypass disabled for non-admin collaborators by permission model:
+`TheStreamCode` is the only collaborator with push/admin access, and all other
+contributors must use pull requests.

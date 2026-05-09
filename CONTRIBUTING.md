@@ -33,6 +33,13 @@ For Android release-related changes, also run:
 bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
 ```
 
+## Repository Access
+
+The `main` branch is protected. External contributors should submit changes
+through pull requests; direct pushes are reserved for the repository owner.
+Pull requests require the `Validate` CI check and one approving review before
+merge.
+
 ## Security Rules
 
 - Do not commit keystores, certificates, passwords, tokens, `.env` files, or
