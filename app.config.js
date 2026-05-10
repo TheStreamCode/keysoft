@@ -1,8 +1,8 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '1.8',
-  orientation: 'default', // Supporta sia portrait che landscape
+  version: '1.9',
+  orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
   updates: {
     url: 'https://u.expo.dev/9d2d2679-63b2-47d7-bd9d-e620a2231f60',
@@ -10,14 +10,14 @@ module.exports = {
   runtimeVersion: {
     policy: 'appVersion',
   },
-  icon: './assets/icon.png', // Icona standard con sfondo bianco
+  icon: './assets/icon.png', // Standard icon with a white background
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#FFFFFF', // Sfondo bianco per splash screen
+    backgroundColor: '#FFFFFF', // White splash-screen background
     dark: {
       image: './assets/splash-icon.png',
-      backgroundColor: '#FFFFFF', // Sfondo bianco anche in dark mode
+      backgroundColor: '#FFFFFF', // White background in dark mode as well
     },
   },
   assetBundlePatterns: ['**/*'],
@@ -30,22 +30,21 @@ module.exports = {
   //   },
   // },
   ios: {
-    supportsTablet: true, // Supporto esplicito per iPad
+    supportsTablet: true, // Explicit iPad support
     bundleIdentifier: 'it.mikesoft.keysoft',
     buildNumber: '1',
     infoPlist: {
-      NSFaceIDUsageDescription:
-        "Questa app utilizza Face ID per proteggere l'accesso alle tue password",
-      UIRequiresFullScreen: false, // Permette Split View e Slide Over su iPad
+      NSFaceIDUsageDescription: 'This app uses Face ID to protect access to your passwords',
+      UIRequiresFullScreen: false, // Allows Split View and Slide Over on iPad
     },
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/icon.png', // Icona standard
-      backgroundColor: '#FFFFFF', // Sfondo bianco neutro
+      foregroundImage: './assets/icon.png', // Standard icon
+      backgroundColor: '#FFFFFF', // Neutral white background
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 80,
+    versionCode: 90,
     // Target Android 16 (API 36) stable
     targetSdkVersion: 36,
     compileSdkVersion: 36,

@@ -2,12 +2,21 @@
 
 All notable project changes are documented here.
 
-## Unreleased
+## 1.9 (versionCode 90)
 
 ### Performance
 
 - PIN login now starts immediately after tapping the login button, without the previous artificial 100 ms delay.
 - Non-critical post-login work, including category migration, notification sync, and password-limit checks, now runs after authentication succeeds instead of blocking the PIN login result.
+
+### Release
+
+- Updated application version to 1.9 and Android versionCode to 90.
+- Updated GitHub Actions runtime versions to remove the Node.js 20 action-runtime deprecation warning while keeping the project Node.js version unchanged.
+
+### Documentation
+
+- Updated README status, release guide, and pre-build review references for Keysoft 1.9 / Android versionCode 90.
 
 ### Tests
 

@@ -3,34 +3,34 @@ import { Platform } from 'react-native';
 import Logger from '../../utils/logger';
 
 /**
- * Servizio per la gestione della protezione degli screenshot.
+ * Service for managing screenshot protection.
  */
 export class ScreenCaptureService {
   private static screenshotListeners: { [key: string]: { remove: () => void } } = {};
 
   /**
-   * Previene la cattura di screenshot.
+   * Prevents screenshot capture.
    * @returns A Promise that resolves when protection has been enabled.
    */
   static async preventScreenCapture(): Promise<void> {
     try {
-      if (Platform.OS === 'web') return; // no-op su Web
+      if (Platform.OS === 'web') return; // No-op on web
       await ScreenCapture.preventScreenCaptureAsync();
     } catch (error) {
-      Logger.error("Errore durante l'attivazione della protezione degli screenshot:", error);
+      Logger.error('Failed to enable screenshot protection:', error);
     }
   }
 
   /**
-   * Permette la cattura di screenshot.
+   * Allows screenshot capture.
    * @returns A Promise that resolves when protection has been disabled.
    */
   static async allowScreenCapture(): Promise<void> {
     try {
-      if (Platform.OS === 'web') return; // no-op su Web
+      if (Platform.OS === 'web') return; // No-op on web
       await ScreenCapture.allowScreenCaptureAsync();
     } catch (error) {
-      Logger.error('Errore durante la disattivazione della protezione degli screenshot:', error);
+      Logger.error('Failed to disable screenshot protection:', error);
     }
   }
 
@@ -41,14 +41,14 @@ export class ScreenCaptureService {
    */
   static addScreenshotListener(identifier: string, callback: () => void): void {
     try {
-      if (Platform.OS === 'web') return; // no-op su Web
+      if (Platform.OS === 'web') return; // No-op on web
       // Remove any existing listener with the same identifier
       this.removeScreenshotListener(identifier);
 
       // Add the new listener
       this.screenshotListeners[identifier] = ScreenCapture.addScreenshotListener(callback);
     } catch (error) {
-      Logger.error("Errore durante l'aggiunta del listener per gli screenshot:", error);
+      Logger.error('Failed to add screenshot listener:', error);
     }
   }
 
@@ -58,13 +58,13 @@ export class ScreenCaptureService {
    */
   static removeScreenshotListener(identifier: string): void {
     try {
-      if (Platform.OS === 'web') return; // no-op su Web
+      if (Platform.OS === 'web') return; // No-op on web
       if (this.screenshotListeners[identifier]) {
         this.screenshotListeners[identifier].remove();
         delete this.screenshotListeners[identifier];
       }
     } catch (error) {
-      Logger.error('Errore durante la rimozione del listener per gli screenshot:', error);
+      Logger.error('Failed to remove screenshot listener:', error);
     }
   }
 
@@ -73,12 +73,12 @@ export class ScreenCaptureService {
    */
   static removeAllScreenshotListeners(): void {
     try {
-      if (Platform.OS === 'web') return; // no-op su Web
+      if (Platform.OS === 'web') return; // No-op on web
       Object.keys(this.screenshotListeners).forEach((identifier) => {
         this.removeScreenshotListener(identifier);
       });
     } catch (error) {
-      Logger.error('Errore durante la rimozione di tutti i listener per gli screenshot:', error);
+      Logger.error('Failed to remove all screenshot listeners:', error);
     }
   }
 }

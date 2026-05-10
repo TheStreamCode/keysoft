@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 1.8, Android versionCode 80.
+Current release target: Keysoft 1.9, Android versionCode 90.
 
 Before preparing a release:
 
@@ -28,7 +28,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 1.8 Android production release, `app.config.js` uses `version: "1.8"` and `android.versionCode: 80`.
+For the 1.9 Android production release, `app.config.js` uses `version: "1.9"` and `android.versionCode: 90`.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 

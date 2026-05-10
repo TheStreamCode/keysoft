@@ -1,8 +1,8 @@
 # Pre-Build Security And UI Review
 
-Date: 2026-05-09
+Date: 2026-05-10
 
-Release target: Keysoft 1.8, Android versionCode 80.
+Release target: Keysoft 1.9, Android versionCode 90.
 
 ## Executive Summary
 
@@ -72,7 +72,7 @@ The release-blocking privacy/config mismatch and the main accessibility issues w
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 22 suites, 147 tests
+- `bun run test`: 22 suites, 149 tests
 - `bunx expo-doctor`: 18/18 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 
