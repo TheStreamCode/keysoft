@@ -217,13 +217,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  const schedulePostLoginTasks = useCallback((): void => {
+    void (async () => {
+      try {
+        await runPostAuthMigration();
+        if (!isMountedRef.current) return;
+
+        await loadUserPreferencesAndSyncServices({
+          syncNotifications: true,
+          runPeriodicChecks: true,
+        });
+      } catch (error) {
+        Logger.error('AuthContext: Deferred post-login tasks failed', error);
+      }
+    })();
+  }, [loadUserPreferencesAndSyncServices, runPostAuthMigration]);
+
   const completeSuccessfulLogin = useCallback(async (): Promise<void> => {
     setIsAuthenticated(true);
     setMasterKeyInfo(Auth.getMasterKeyInfo());
     NotificationService.sendLoginSuccess();
-    await runPostAuthMigration();
-    await loadUserPreferencesAndSyncServices({ syncNotifications: true, runPeriodicChecks: true });
-  }, [loadUserPreferencesAndSyncServices, runPostAuthMigration]);
+    schedulePostLoginTasks();
+  }, [schedulePostLoginTasks]);
 
   const login = async (password: string): Promise<boolean> => {
     try {

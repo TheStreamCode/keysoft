@@ -67,6 +67,19 @@ function BiometricLoginButton(): React.ReactElement {
   );
 }
 
+function PinLoginButton({
+  onResolved,
+}: {
+  onResolved: (success: boolean) => void;
+}): React.ReactElement {
+  const { login } = useAuth();
+  return (
+    <TouchableOpacity testID="pin-login" onPress={() => void login('123456').then(onResolved)}>
+      <Text>Login</Text>
+    </TouchableOpacity>
+  );
+}
+
 describe('AuthContext', () => {
   const notificationSettings = { login_success: true };
 
@@ -98,5 +111,33 @@ describe('AuthContext', () => {
       expect(ClipboardService.updateDefaultTimeout).toHaveBeenCalledWith(120);
       expect(AutoLockService.updateTimeout).toHaveBeenCalledWith(300);
     });
+  });
+
+  it('resolves PIN login before deferred post-auth work completes', async () => {
+    let resolvePasswordLoad: (passwords: unknown[]) => void = () => {};
+    const pendingPasswordLoad = new Promise<unknown[]>((resolve) => {
+      resolvePasswordLoad = resolve;
+    });
+    const onResolved = jest.fn();
+
+    (Auth.authenticateWithMasterPassword as jest.Mock).mockResolvedValue(true);
+    (Storage.getAllPasswords as jest.Mock).mockReturnValueOnce(pendingPasswordLoad);
+
+    const { getByTestId } = render(
+      <AuthProvider>
+        <PinLoginButton onResolved={onResolved} />
+      </AuthProvider>,
+    );
+
+    fireEvent.press(getByTestId('pin-login'));
+
+    await waitFor(() => {
+      expect(Auth.authenticateWithMasterPassword).toHaveBeenCalledWith('123456');
+    });
+    await Promise.resolve();
+
+    expect(onResolved).toHaveBeenCalledWith(true);
+
+    resolvePasswordLoad([]);
   });
 });

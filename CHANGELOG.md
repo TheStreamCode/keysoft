@@ -2,6 +2,18 @@
 
 All notable project changes are documented here.
 
+## Unreleased
+
+### Performance
+
+- PIN login now starts immediately after tapping the login button, without the previous artificial 100 ms delay.
+- Non-critical post-login work, including category migration, notification sync, and password-limit checks, now runs after authentication succeeds instead of blocking the PIN login result.
+
+### Tests
+
+- Added regression coverage for immediate PIN login dispatch and for resolving PIN login before deferred post-auth work completes.
+- Suite: 22 suites, 149 tests.
+
 ## 1.8 (versionCode 80)
 
 ### Performance

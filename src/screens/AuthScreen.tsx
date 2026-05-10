@@ -194,6 +194,34 @@ const AuthScreen: React.FC = () => {
     }
   };
 
+  const runSuccessfulLoginFollowUp = async (): Promise<void> => {
+    try {
+      const preferences = await Storage.getUserPreferences();
+      const biometricsConfigured = preferences?.biometricsEnabled === true;
+
+      Logger.info('AuthScreen: Login succeeded, biometrics configured:', biometricsConfigured);
+
+      const passwordCount = await Storage.getPasswordCount();
+
+      if (preferences) {
+        await Storage.saveUserPreferences({
+          ...preferences,
+          hasShownPasswordLimitAlert: false,
+        });
+      }
+
+      if (passwordCount >= MAX_PASSWORDS_LIMIT) {
+        setTimeout(() => {
+          alert(t('limit_reached'), t('limit_reached_message'), [
+            { text: t('ok'), onPress: () => {} },
+          ]);
+        }, 1000);
+      }
+    } catch (error) {
+      Logger.error('AuthScreen: Error checking password limit after login', error);
+    }
+  };
+
   const handleLogin = async () => {
     if (!password) {
       setError(t('enter_pin'));
@@ -204,40 +232,9 @@ const AuthScreen: React.FC = () => {
     setError('');
 
     try {
-      // Add a short delay so the modal is visible
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       const success = await login(password);
       if (success) {
-        // Check whether this is the first login by checking biometric configuration
-        const preferences = await Storage.getUserPreferences();
-        const biometricsConfigured = preferences?.biometricsEnabled === true;
-
-        Logger.info('Login riuscito, biometria configurata:', biometricsConfigured);
-
-        // Check whether the user reached the password limit and show the warning
-        try {
-          const passwordCount = await Storage.getPasswordCount();
-
-          // Reset the flag tracking whether the limit warning was already shown
-          if (preferences) {
-            await Storage.saveUserPreferences({
-              ...preferences,
-              hasShownPasswordLimitAlert: false, // Reset del flag al login
-            });
-          }
-
-          if (passwordCount >= MAX_PASSWORDS_LIMIT) {
-            // Show the warning only once after login
-            setTimeout(() => {
-              alert(t('limit_reached'), t('limit_reached_message'), [
-                { text: t('ok'), onPress: () => {} },
-              ]);
-            }, 1000); // Delay the warning until after navigation
-          }
-        } catch (error) {
-          Logger.error('Errore durante il controllo del limite password:', error);
-        }
+        void runSuccessfulLoginFollowUp();
 
         // Manual navigation removed because it caused an error
         // navigation.navigate('Main', { refresh: Date.now() });
@@ -246,7 +243,7 @@ const AuthScreen: React.FC = () => {
       }
     } catch (err) {
       setError(t('auth_error'));
-      Logger.error('Errore di autenticazione:', err);
+      Logger.error('AuthScreen: Authentication error', err);
     } finally {
       setIsLoading(false);
     }

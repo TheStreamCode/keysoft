@@ -144,6 +144,18 @@ describe('Authentication Flow', () => {
     });
   });
 
+  it('starts PIN login without waiting for an artificial timeout', async () => {
+    mockAuthContext.login.mockResolvedValue(false);
+
+    const { getByTestId } = render(<AuthScreen />);
+
+    fireEvent.changeText(getByTestId('auth-pin-input'), '000000');
+    fireEvent.press(getByTestId('auth-login-button'));
+    await Promise.resolve();
+
+    expect(mockAuthContext.login).toHaveBeenCalledWith('000000');
+  });
+
   it('shows a dedicated message when native KDF is unavailable', async () => {
     mockAuthContext.login.mockResolvedValue(false);
     (AuthService.getLastAuthFailure as jest.Mock).mockReturnValue({
