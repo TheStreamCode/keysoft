@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import { render } from '../../test-utils';
 import AuthScreen from '../../screens/AuthScreen';
 import * as AuthService from '../../services/auth/authService';
@@ -109,6 +109,8 @@ jest.mock('@react-navigation/native', () => {
 });
 
 describe('Authentication Flow', () => {
+  const originalRequestAnimationFrame = global.requestAnimationFrame;
+
   beforeEach(() => {
     jest.clearAllMocks();
     (AuthService.isMasterPasswordConfigured as jest.Mock).mockResolvedValue(true);
@@ -116,6 +118,11 @@ describe('Authentication Flow', () => {
     (AuthService.getLastAuthFailure as jest.Mock).mockReturnValue(null);
     (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({});
     (StorageService.getPasswordCount as jest.Mock).mockResolvedValue(0);
+    global.requestAnimationFrame = originalRequestAnimationFrame;
+  });
+
+  afterAll(() => {
+    global.requestAnimationFrame = originalRequestAnimationFrame;
   });
 
   it('renders correctly', async () => {
@@ -144,16 +151,77 @@ describe('Authentication Flow', () => {
     });
   });
 
-  it('starts PIN login without waiting for an artificial timeout', async () => {
+  it('starts PIN login after the next frame without waiting for an artificial timeout', async () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    global.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 1;
+    });
     mockAuthContext.login.mockResolvedValue(false);
 
     const { getByTestId } = render(<AuthScreen />);
 
     fireEvent.changeText(getByTestId('auth-pin-input'), '000000');
     fireEvent.press(getByTestId('auth-login-button'));
-    await Promise.resolve();
 
-    expect(mockAuthContext.login).toHaveBeenCalledWith('000000');
+    expect(mockAuthContext.login).not.toHaveBeenCalled();
+
+    await act(async () => {
+      frameCallback?.(0);
+    });
+
+    await waitFor(() => {
+      expect(mockAuthContext.login).toHaveBeenCalledWith('000000');
+    });
+  });
+
+  it('renders the PIN loading state before starting password verification', async () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    global.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 1;
+    });
+    mockAuthContext.login.mockResolvedValue(false);
+
+    const { getByTestId, getByText } = render(<AuthScreen />);
+
+    fireEvent.changeText(getByTestId('auth-pin-input'), '000000');
+    fireEvent.press(getByTestId('auth-login-button'));
+
+    expect(getByText('logging_in')).toBeTruthy();
+    expect(mockAuthContext.login).not.toHaveBeenCalled();
+
+    await act(async () => {
+      frameCallback?.(0);
+    });
+
+    await waitFor(() => {
+      expect(mockAuthContext.login).toHaveBeenCalledWith('000000');
+    });
+  });
+
+  it('keeps PIN loading visible after successful verification until auth navigation takes over', async () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    global.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 1;
+    });
+    mockAuthContext.login.mockResolvedValue(true);
+
+    const { getByTestId, getByText } = render(<AuthScreen />);
+
+    fireEvent.changeText(getByTestId('auth-pin-input'), '123456');
+    fireEvent.press(getByTestId('auth-login-button'));
+
+    await act(async () => {
+      frameCallback?.(0);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(mockAuthContext.login).toHaveBeenCalledWith('123456');
+    });
+    expect(getByText('logging_in')).toBeTruthy();
   });
 
   it('shows a dedicated message when native KDF is unavailable', async () => {

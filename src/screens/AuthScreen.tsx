@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,7 @@ const AuthScreen: React.FC = () => {
   // Note: keyboard visibility tracking removed to simplify and avoid RN typing issues
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [isPinVisible, setIsPinVisible] = useState(false);
+  const isLoginInFlightRef = useRef(false);
 
   // Security: Clean up sensitive data on unmount
   useEffect(() => {
@@ -63,12 +64,12 @@ const AuthScreen: React.FC = () => {
     title: {
       fontSize: AppTheme.fonts.sizes.xxlarge,
       fontWeight: 'bold',
-      color: theme.colors.text, // Fix: da textDark a text
+      color: theme.colors.text,
       marginBottom: AppTheme.spacing.s,
     },
     subtitle: {
       fontSize: AppTheme.fonts.sizes.medium,
-      color: theme.colors.textSecondary, // Fix: da textDark a textSecondary
+      color: theme.colors.textSecondary,
       marginBottom: AppTheme.spacing.xl,
       textAlign: 'center',
     },
@@ -77,7 +78,7 @@ const AuthScreen: React.FC = () => {
       borderRadius: AppTheme.borderRadius.medium,
       padding: AppTheme.spacing.m,
       fontSize: AppTheme.fonts.sizes.large,
-      color: theme.colors.text, // Fix: da textDark a text
+      color: theme.colors.text,
       textAlign: 'center',
       width: '100%',
       marginBottom: AppTheme.spacing.m,
@@ -144,7 +145,7 @@ const AuthScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Imposta isInitialRender a false dopo il primo render
+    // Mark the initial render as complete after the first pass.
     if (isInitialRender) {
       setIsInitialRender(false);
     }
@@ -223,21 +224,28 @@ const AuthScreen: React.FC = () => {
   };
 
   const handleLogin = async () => {
+    if (isLoginInFlightRef.current) {
+      return;
+    }
+
     if (!password) {
       setError(t('enter_pin'));
       return;
     }
 
+    isLoginInFlightRef.current = true;
     setIsLoading(true);
     setError('');
 
     try {
+      await waitForNextFrame();
       const success = await login(password);
       if (success) {
         void runSuccessfulLoginFollowUp();
 
         // Manual navigation removed because it caused an error
         // navigation.navigate('Main', { refresh: Date.now() });
+        return;
       } else {
         setError(t(getPinLoginFailureMessageKey()));
       }
@@ -245,8 +253,10 @@ const AuthScreen: React.FC = () => {
       setError(t('auth_error'));
       Logger.error('AuthScreen: Authentication error', err);
     } finally {
-      setIsLoading(false);
+      isLoginInFlightRef.current = false;
     }
+
+    setIsLoading(false);
   };
 
   const handleBiometricAuth = async () => {
@@ -444,7 +454,7 @@ const AuthScreen: React.FC = () => {
         </View>
       </KeyboardAwareScrollView>
 
-      {/* Loading Modal durante il login */}
+      {/* Loading modal shown during login */}
       <Modal
         visible={isLoading}
         transparent={true}
@@ -497,6 +507,17 @@ function getBiometricFailureMessageKey(): string {
   }
 
   return 'biometric_auth_failed';
+}
+
+function waitForNextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => resolve());
+      return;
+    }
+
+    setTimeout(resolve, 0);
+  });
 }
 
 const styles = StyleSheet.create({

@@ -20,7 +20,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Expo SDK            | 55.0.23                   |
 | React Native        | 0.83.6                    |
 | TypeScript          | 5.9.3, strict mode        |
-| Test suite          | 22 suites, 149 tests      |
+| Test suite          | 22 suites, 151 tests      |
 | Health check        | `expo-doctor` 18/18       |
 
 ## Core Capabilities
@@ -128,7 +128,7 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 22 suites and 149 tests
+- `bun run test`: passing, 22 suites and 151 tests
 - `bunx expo-doctor`: passing, 18/18 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 

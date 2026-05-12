@@ -2,6 +2,18 @@
 
 All notable project changes are documented here.
 
+## Unreleased
+
+### Fixed
+
+- Restored visible PIN login feedback by letting React Native render the loading state before password verification starts.
+- Kept the PIN login loader visible after successful verification until authenticated navigation replaces the login screen.
+
+### Tests
+
+- Added regression coverage for PIN loading visibility before verification and during the successful auth handoff.
+- Suite: 22 suites, 151 tests.
+
 ## 1.9 (versionCode 90)
 
 ### Performance
