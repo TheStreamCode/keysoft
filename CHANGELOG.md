@@ -2,12 +2,20 @@
 
 All notable project changes are documented here.
 
-## Unreleased
+## 2.0 (versionCode 100)
 
 ### Fixed
 
 - Restored visible PIN login feedback by letting React Native render the loading state before password verification starts.
 - Kept the PIN login loader visible after successful verification until authenticated navigation replaces the login screen.
+
+### Release
+
+- Updated application version to 2.0 and Android versionCode to 100.
+
+### Documentation
+
+- Updated README status, release guide, pre-build review, and release notes for Keysoft 2.0 / Android versionCode 100.
 
 ### Tests
 

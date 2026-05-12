@@ -15,8 +15,8 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                    |
 | ------------------- | ------------------------- |
 | Platform focus      | Android-first, iOS paused |
-| App version         | 1.9                       |
-| Android versionCode | 90                        |
+| App version         | 2.0                       |
+| Android versionCode | 100                       |
 | Expo SDK            | 55.0.23                   |
 | React Native        | 0.83.6                    |
 | TypeScript          | 5.9.3, strict mode        |
