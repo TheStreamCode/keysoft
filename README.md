@@ -157,6 +157,10 @@ Path aliases (`@/*`, `@components/*`, `@services/*`, …) are configured in
 
 Keysoft is local-first. The user owns their vault data and is responsible for keeping backup files and the master password secure. The app cannot recover a lost master password because no server-side recovery material exists.
 
+## Support
+
+If Keysoft's local-first security work is useful to you, support continued development through GitHub Sponsors: [github.com/sponsors/TheStreamCode](https://github.com/sponsors/TheStreamCode).
+
 ## License
 
 This repository is source-available. See [LICENSE](LICENSE) for permitted use and restrictions.
