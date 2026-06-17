@@ -1091,10 +1091,10 @@ const SettingsScreen: React.FC = () => {
           </Text>
 
           <ListItem
-            title={t('buy_coffee')}
-            description={t('buy_coffee_description')}
-            onPress={() => Linking.openURL('https://buymeacoffee.com/mikesoft')}
-            leftIcon={<Text style={{ fontSize: 18 }}>☕</Text>}
+            title={t('sponsor_github')}
+            description={t('sponsor_github_description')}
+            onPress={() => Linking.openURL('https://github.com/sponsors/TheStreamCode')}
+            leftIcon={<Text style={{ fontSize: 18 }}>❤️</Text>}
             rightIcon={<Ionicons name="open-outline" size={20} color={theme.colors.text} />}
             style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           />

@@ -2,6 +2,29 @@
 
 All notable project changes are documented here.
 
+## 2.2 (versionCode 120)
+
+### Changed
+
+- The settings support entry now links to GitHub Sponsors (`github.com/sponsors/TheStreamCode`) instead of Buy Me a Coffee, relabeled "Sponsor on GitHub" / "Sponsorizza su GitHub" with a heart icon.
+
+### Internationalization
+
+- Device-language detection is now resolved synchronously on the first render, so an Italian device shows Italian from the first frame with no English flash. Italian devices use Italian; every other language falls back to English. The initialization fallback now defers to system detection instead of forcing Italian.
+- Removed 492 unreferenced translation keys from the Italian and English dictionaries (generic networking/cloud/sync/upload/file filler plus other unused keys), roughly halving both files from 1065 to 573 keys. No user-facing string changed; the i18n parity, used-key, and placeholder tests still pass.
+
+### Release
+
+- Updated application version to 2.2 and Android versionCode to 120.
+
+### Documentation
+
+- Updated README, release guide, and pre-build review docs for Keysoft 2.2 / Android versionCode 120, and added release notes.
+
+### Tests
+
+- Suite: 22 suites, 158 tests.
+
 ## 2.1 (versionCode 110)
 
 ### Performance

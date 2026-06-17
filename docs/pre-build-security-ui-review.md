@@ -2,13 +2,17 @@
 
 Date: 2026-06-17
 
-Release target: Keysoft 2.1, Android versionCode 110.
+Release target: Keysoft 2.2, Android versionCode 120.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 2.2 Update
+
+The 2.2 release is documentation- and content-only on top of 2.1: the settings support entry now points to GitHub Sponsors, 492 unreferenced translation keys were removed from both dictionaries (no user-facing string changed), and device-language detection now resolves synchronously on first render. No new release blockers were identified; the 2.1 findings above remain remediated. Verification (typecheck, lint, 22 suites / 158 tests) still passes.
 
 ## Release Blockers
 

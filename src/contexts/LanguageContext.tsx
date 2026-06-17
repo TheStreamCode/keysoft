@@ -18,23 +18,25 @@ const LanguageContext = React.createContext(undefined as LanguageContextType | u
 
 const translations = { it, en };
 
+// Resolve the device language to a supported app language.
+// Italian devices use Italian; every other language falls back to English.
+// getLocales() is synchronous, so this can run during the first render.
+const resolveSystemLanguage = (): 'it' | 'en' => {
+  try {
+    const systemLocale = Localization.getLocales()[0]?.languageCode || 'en';
+    Logger.debug('🌍 System locale detected:', systemLocale);
+    return systemLocale.toLowerCase().startsWith('it') ? 'it' : 'en';
+  } catch (_error) {
+    Logger.warn('🌍 Language detection error, fallback to English');
+    return 'en';
+  }
+};
+
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLanguage] = React.useState('system' as Language);
-  const [systemLanguage, setSystemLanguage] = React.useState('en' as 'it' | 'en');
+  // Initialize synchronously so an Italian device renders Italian on the very first frame.
+  const [systemLanguage, setSystemLanguage] = React.useState<'it' | 'en'>(resolveSystemLanguage);
   const appState = React.useRef(AppState.currentState);
-
-  // Detect the system language
-  const detectSystemLanguage = async (): Promise<'it' | 'en'> => {
-    try {
-      const locales = Localization.getLocales();
-      const systemLocale = locales[0]?.languageCode || 'en';
-      Logger.debug('🌍 System locale detected:', systemLocale);
-      return systemLocale.toLowerCase().startsWith('it') ? 'it' : 'en';
-    } catch (_error) {
-      Logger.warn('🌍 Language detection error, fallback to English');
-      return 'en';
-    }
-  };
 
   // Load initial preferences
   React.useEffect(() => {
@@ -42,8 +44,8 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
       try {
         Logger.info('🌍 Initializing language settings...');
 
-        // Detect the system language
-        const sysLang = await detectSystemLanguage();
+        // Refresh the detected system language (already initialized synchronously above)
+        const sysLang = resolveSystemLanguage();
         setSystemLanguage(sysLang);
         Logger.debug('🌍 System language set to:', sysLang);
 
@@ -63,7 +65,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
         }
       } catch (error) {
         Logger.error('🌍 Language initialization failed:', error);
-        setLanguage('it'); // Fallback
+        setLanguage('system'); // Fallback to device language detection
       }
     };
 
@@ -84,7 +86,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         Logger.debug('🌍 App tornata attiva, verifico lingua di sistema...');
 
-        const newSysLang = await detectSystemLanguage();
+        const newSysLang = resolveSystemLanguage();
         if (newSysLang !== systemLanguage) {
           Logger.info('🌍 Lingua di sistema cambiata da', systemLanguage, 'a', newSysLang);
           setSystemLanguage(newSysLang);
