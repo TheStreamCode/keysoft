@@ -1,0 +1,26 @@
+name: Build Android production
+
+# Release-oriented triggers to conserve EAS build credits (free tier):
+# - push a version tag (e.g. v2.1) to build that release, or
+# - run it manually from the Expo dashboard ("Run workflow") / `eas workflow:run`.
+# Intentionally NOT triggered on every push to main, to avoid burning build minutes.
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  build_android:
+    type: build
+    params:
+      platform: android
+      profile: production
+  # To auto-upload to Google Play after the build, add a submit job once the
+  # Play service-account JSON is configured in eas.json (submit.production):
+  # submit_android:
+  #   needs: [build_android]
+  #   type: submit
+  #   params:
+  #     platform: android
+  #     profile: production
