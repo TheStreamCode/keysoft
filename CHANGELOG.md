@@ -25,6 +25,7 @@ All notable project changes are documented here.
 
 - Aligned all `expo-*` packages to the exact Expo SDK 55 pins (expo-doctor: 19/19 checks passing).
 - Migrated linting to ESLint 9 with a flat config (`eslint.config.js`); ESLint 8 is end-of-life.
+- Added an EAS Workflow (`.eas/workflows/build-android-production.yml`) for Android production builds from GitHub, triggered on a version tag push (`v*`) or manual dispatch.
 
 ### Release
 

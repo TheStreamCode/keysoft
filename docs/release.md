@@ -55,7 +55,13 @@ bun run build:android:production
 
 These commands upload the project to expo.dev. Do not start them until the release checklist is complete and the upload has been explicitly approved.
 
-Production submission:
+### Build from GitHub
+
+The repository is linked to EAS Build. The EAS Workflow `.eas/workflows/build-android-production.yml` builds the Android production app-bundle and runs only on a version tag push (`v*`) or manual dispatch, to keep build-credit usage low. Trigger a release build by pushing the matching tag (for example `git tag v2.1 && git push origin v2.1`) or by running the workflow from the Expo dashboard. iOS is excluded while paused, so the missing-iOS-credentials warning does not apply; build Android only.
+
+### Google Play Submission
+
+Google Play submission is currently performed manually (upload the app-bundle in the Play Console). To automate it later, configure a Google service-account key in `eas.json` (`submit.production`) and run:
 
 ```bash
 bun run submit:android:production

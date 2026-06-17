@@ -15,7 +15,8 @@
 - Web: `bun run web`
 - Preview cloud build: `bun run build:android:preview`
 - Production cloud build: `bun run build:android:production`
-- Production submit: `bun run submit:android:production`
+- Production submit: `bun run submit:android:production` (Google Play submission is currently performed manually)
+- Build from GitHub: EAS Workflow `.eas/workflows/build-android-production.yml` (Android production), triggered on a version tag push (`v*`) or manual dispatch only
 - Android bundle export check: `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - Lint: `bun run lint`
 - Typecheck: `bun run typecheck`

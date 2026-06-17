@@ -153,6 +153,8 @@ bun run build:android:preview
 bun run build:android:production
 ```
 
+The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` can build the Android production app-bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. iOS is excluded while paused.
+
 Expo Go cannot load custom native modules. Keysoft therefore uses the PBKDF2 KDF fallback in Expo Go and keeps Argon2 for EAS/native builds where `react-native-argon2` is available.
 
 Use Expo Go for development and smoke testing only. Create release-test vaults in an EAS/native build when validating Argon2 behavior. Vault metadata that requires Argon2 (`memory > 0`) must fail with the native-KDF diagnostic if the native module is unavailable; do not reintroduce PBKDF2 fallback for that path.
