@@ -31,10 +31,16 @@ Keysoft does not protect against:
 
 Master-password authentication derives a vault key using:
 
-- Argon2id in EAS/native builds where the native module is available.
+- Argon2id in EAS/native builds where the native module is available, with the OWASP minimum parameters (`memory = 19456` KiB ≈ 19 MiB, `iterations = 2`, `parallelism = 1`). These are strong yet far lighter than the previous `64 MiB / t = 3`, so unlocking is noticeably faster on entry-level phones and tablets.
 - PBKDF2 fallback in Expo Go for new development vaults and for vault metadata that explicitly uses PBKDF2 (`memory = 0`).
 
+Each vault stores its own KDF parameters (`salt`, `iterations`, `memory`) in its metadata, so the parameters used to verify a login always match the ones the vault was created with.
+
 Derived keys are normalized to 64-character lowercase hex strings. Invalid derived key formats are rejected. Argon2id derivation is bounded by the shared KDF timeout so a slow native release device cannot block login indefinitely. If stored vault metadata requires Argon2id (`memory > 0`) and the native Argon2 module is unavailable, login fails with a native-KDF diagnostic instead of falling back to PBKDF2 and reporting a misleading invalid PIN.
+
+### Transparent KDF upgrade on login
+
+Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier) and re-encrypts the vault atomically. It is best-effort and non-destructive: on any failure the vault is left on its previous working key and the upgrade simply retries on the next login, so the user is never locked out. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
 
 When creating or changing the PIN, the verifier metadata and the vault key are produced from the same KDF result. This avoids a duplicate KDF pass for the same new PIN while preserving the configured KDF cost and the 64-character derived-key requirement.
 

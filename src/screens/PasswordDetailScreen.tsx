@@ -39,7 +39,7 @@ const PasswordDetailScreen: React.FC = () => {
   const route = useRoute<PasswordDetailScreenRouteProp>();
   const { passwordId } = route.params || {};
   const isEditing = !!passwordId;
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { alert } = useAlert();
   const { t } = useLanguage();
 
@@ -87,9 +87,6 @@ const PasswordDetailScreen: React.FC = () => {
     };
   }, []);
 
-  // Use adaptive categories based on the current mode
-  const isDarkMode = theme.colors.background === '#121212';
-
   // Helper functions for categories
   const getCategoryName = (categoryId: string | undefined): string => {
     if (!categoryId) return t('select_category');
@@ -130,13 +127,13 @@ const PasswordDetailScreen: React.FC = () => {
       {
         value: '',
         label: t('no_category'),
-        color: '#9e9e9e', // grigio
+        color: theme.colors.textSecondary,
       },
       ...availableCategories,
     ];
 
     setCategoryOptions(categoriesWithNone);
-  }, [isDarkMode, t]);
+  }, [isDarkMode, t, theme.colors.textSecondary]);
 
   const loadPassword = useCallback(async () => {
     if (!passwordId) return;
@@ -496,7 +493,9 @@ const PasswordDetailScreen: React.FC = () => {
                 const { score, label, color } = calculatePasswordStrength(password.password);
                 return (
                   <>
-                    <View style={styles.passwordStrengthBar}>
+                    <View
+                      style={[styles.passwordStrengthBar, { backgroundColor: theme.colors.border }]}
+                    >
                       <View
                         style={[
                           styles.passwordStrengthFill,
@@ -609,7 +608,11 @@ const PasswordDetailScreen: React.FC = () => {
                     { backgroundColor: getCategoryColor(password.category) },
                   ]}
                 >
-                  <Ionicons name={getCategoryIcon(password.category)} size={20} color="white" />
+                  <Ionicons
+                    name={getCategoryIcon(password.category)}
+                    size={20}
+                    color={theme.colors.textLight}
+                  />
                 </View>
               ) : null}
               <Text style={[styles.categoryText, { color: theme.colors.text }]}>
@@ -628,7 +631,7 @@ const PasswordDetailScreen: React.FC = () => {
             disabled={isSaving}
           >
             {isSaving ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={theme.colors.textLight} size="small" />
             ) : (
               <Text style={styles.saveButtonText}>{t('save')}</Text>
             )}
@@ -815,7 +818,6 @@ const styles = StyleSheet.create({
   passwordStrengthBar: {
     flex: 1,
     height: 4,
-    backgroundColor: '#e0e0e0',
     borderRadius: 2,
     overflow: 'hidden',
   },

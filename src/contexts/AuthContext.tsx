@@ -6,6 +6,7 @@ import React, {
   useRef,
   ReactNode,
   useCallback,
+  useMemo,
 } from 'react';
 import { Alert } from 'react-native';
 import { UserMasterKey } from '../models/User';
@@ -240,137 +241,146 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     schedulePostLoginTasks();
   }, [schedulePostLoginTasks]);
 
-  const login = async (password: string): Promise<boolean> => {
-    try {
-      const success = await Auth.authenticateWithMasterPassword(password);
+  const login = useCallback(
+    async (password: string): Promise<boolean> => {
+      try {
+        const success = await Auth.authenticateWithMasterPassword(password);
 
-      if (success) {
-        await completeSuccessfulLogin();
-      } else {
-        NotificationService.sendLoginFailure();
-      }
-
-      return success;
-    } catch (error) {
-      Logger.error('Errore durante il login:', error);
-      NotificationService.sendLoginFailure();
-      return false;
-    }
-  };
-
-  const logout = (resetComplete: boolean = false) => {
-    clearPendingTimeouts();
-    Auth.logout();
-    setIsAuthenticated(false);
-    setMasterKeyInfo(null);
-
-    if (resetComplete) {
-      Logger.debug("AuthContext: Reset completo - reindirizzamento all'onboarding");
-      setIsMasterPasswordConfigured(false);
-    }
-  };
-
-  const setupMasterPassword = async (
-    password: string,
-    showBiometricPrompt: boolean = false,
-  ): Promise<boolean> => {
-    try {
-      const success = await Auth.setupMasterPassword(password);
-
-      if (success) {
-        setIsMasterPasswordConfigured(true);
-        setIsAuthenticated(true);
-        setMasterKeyInfo(Auth.getMasterKeyInfo());
-
-        await runPostAuthMigration();
-        await loadUserPreferencesAndSyncServices();
-
-        if (showBiometricPrompt) {
-          // Wait briefly so navigation can complete.
-          // The timeout is tracked and cancelled on logout/unmount.
-          scheduleTimeout(async () => {
-            try {
-              const { available } = await Auth.isBiometricsAvailable();
-
-              if (!available) {
-                Logger.debug('AuthContext: Biometria non disponibile sul dispositivo');
-                return;
-              }
-
-              Alert.alert(t('enable_biometrics_title'), t('enable_biometrics_message'), [
-                { text: t('enable_biometrics_later'), onPress: () => {}, style: 'cancel' },
-                {
-                  text: t('enable_biometrics_enable'),
-                  onPress: async () => {
-                    try {
-                      const enabled = await Auth.enableBiometrics();
-                      if (enabled) {
-                        Alert.alert(t('biometrics_enabled'), t('biometrics_enabled_message'));
-                      } else {
-                        Alert.alert(t('error'), t('biometrics_verification_error'));
-                      }
-                    } catch (error) {
-                      Logger.error(
-                        "AuthContext: Errore durante l'abilitazione della biometria:",
-                        error,
-                      );
-                      Alert.alert(t('error'), t('biometrics_setup_error'));
-                    }
-                  },
-                },
-              ]);
-            } catch (error) {
-              Logger.error('AuthContext: Errore durante la verifica della biometria:', error);
-            }
-          }, 500);
+        if (success) {
+          await completeSuccessfulLogin();
+        } else {
+          NotificationService.sendLoginFailure();
         }
+
+        return success;
+      } catch (error) {
+        Logger.error('Errore durante il login:', error);
+        NotificationService.sendLoginFailure();
+        return false;
       }
+    },
+    [completeSuccessfulLogin],
+  );
 
-      return success;
-    } catch (error) {
-      Logger.error('Errore durante la configurazione della master password:', error);
-      return false;
-    }
-  };
+  const logout = useCallback(
+    (resetComplete: boolean = false) => {
+      clearPendingTimeouts();
+      Auth.logout();
+      setIsAuthenticated(false);
+      setMasterKeyInfo(null);
 
-  const updateMasterPassword = async (password: string): Promise<boolean> => {
-    try {
-      const success = await Auth.updateMasterPassword(password);
-
-      if (success) {
-        setIsMasterPasswordConfigured(true);
-        setIsAuthenticated(true);
-        setMasterKeyInfo(Auth.getMasterKeyInfo());
-        await runPostAuthMigration();
-        await loadUserPreferencesAndSyncServices();
-      } else if (!Auth.getIsAuthenticated()) {
-        // If Auth forced logout because updateMasterPassword rollback failed,
-        // synchronize React state so the UI does not remain "logged in" with
-        // an empty encryptionKey that makes encrypted operations fail silently.
-        Logger.warn('AuthContext: forced logout detected after failed master password update');
-        logout();
+      if (resetComplete) {
+        Logger.debug("AuthContext: Reset completo - reindirizzamento all'onboarding");
+        setIsMasterPasswordConfigured(false);
       }
+    },
+    [clearPendingTimeouts],
+  );
 
-      return success;
-    } catch (error) {
-      Logger.error('Errore durante la aggiornamento della master password:', error);
-      return false;
-    }
-  };
+  const setupMasterPassword = useCallback(
+    async (password: string, showBiometricPrompt: boolean = false): Promise<boolean> => {
+      try {
+        const success = await Auth.setupMasterPassword(password);
 
-  const enableBiometrics = async (): Promise<boolean> => {
+        if (success) {
+          setIsMasterPasswordConfigured(true);
+          setIsAuthenticated(true);
+          setMasterKeyInfo(Auth.getMasterKeyInfo());
+
+          await runPostAuthMigration();
+          await loadUserPreferencesAndSyncServices();
+
+          if (showBiometricPrompt) {
+            // Wait briefly so navigation can complete.
+            // The timeout is tracked and cancelled on logout/unmount.
+            scheduleTimeout(async () => {
+              try {
+                const { available } = await Auth.isBiometricsAvailable();
+
+                if (!available) {
+                  Logger.debug('AuthContext: Biometria non disponibile sul dispositivo');
+                  return;
+                }
+
+                Alert.alert(t('enable_biometrics_title'), t('enable_biometrics_message'), [
+                  { text: t('enable_biometrics_later'), onPress: () => {}, style: 'cancel' },
+                  {
+                    text: t('enable_biometrics_enable'),
+                    onPress: async () => {
+                      try {
+                        const enabled = await Auth.enableBiometrics();
+                        if (enabled) {
+                          Alert.alert(t('biometrics_enabled'), t('biometrics_enabled_message'));
+                        } else {
+                          Alert.alert(t('error'), t('biometrics_verification_error'));
+                        }
+                      } catch (error) {
+                        Logger.error(
+                          "AuthContext: Errore durante l'abilitazione della biometria:",
+                          error,
+                        );
+                        Alert.alert(t('error'), t('biometrics_setup_error'));
+                      }
+                    },
+                  },
+                ]);
+              } catch (error) {
+                Logger.error('AuthContext: Errore durante la verifica della biometria:', error);
+              }
+            }, 500);
+          }
+        }
+
+        return success;
+      } catch (error) {
+        Logger.error('Errore durante la configurazione della master password:', error);
+        return false;
+      }
+    },
+    [runPostAuthMigration, loadUserPreferencesAndSyncServices, scheduleTimeout, t],
+  );
+
+  const updateMasterPassword = useCallback(
+    async (password: string): Promise<boolean> => {
+      try {
+        const success = await Auth.updateMasterPassword(password);
+
+        if (success) {
+          setIsMasterPasswordConfigured(true);
+          setIsAuthenticated(true);
+          setMasterKeyInfo(Auth.getMasterKeyInfo());
+          await runPostAuthMigration();
+          await loadUserPreferencesAndSyncServices();
+        } else if (!Auth.getIsAuthenticated()) {
+          // If Auth forced logout because updateMasterPassword rollback failed,
+          // synchronize React state so the UI does not remain "logged in" with
+          // an empty encryptionKey that makes encrypted operations fail silently.
+          Logger.warn('AuthContext: forced logout detected after failed master password update');
+          logout();
+        }
+
+        return success;
+      } catch (error) {
+        Logger.error('Errore durante la aggiornamento della master password:', error);
+        return false;
+      }
+    },
+    [runPostAuthMigration, loadUserPreferencesAndSyncServices, logout],
+  );
+
+  const enableBiometrics = useCallback(async (): Promise<boolean> => {
     return await Auth.enableBiometrics();
-  };
+  }, []);
 
-  const loginWithBiometrics = async (): Promise<boolean> => {
+  const loginWithBiometrics = useCallback(async (): Promise<boolean> => {
     const success = await Auth.loginWithBiometrics();
     if (success) {
       await completeSuccessfulLogin();
     }
     return success;
-  };
+  }, [completeSuccessfulLogin]);
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = useCallback(() => {
     const authenticated = Auth.getIsAuthenticated();
     Logger.debug('AuthContext: Verifica stato autenticazione:', authenticated);
 
@@ -379,27 +389,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (authenticated) {
       setMasterKeyInfo(Auth.getMasterKeyInfo());
     }
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        isLoading,
-        masterKeyInfo,
-        login,
-        logout,
-        setupMasterPassword,
-        updateMasterPassword,
-        enableBiometrics,
-        loginWithBiometrics,
-        isMasterPasswordConfigured,
-        checkAuthStatus,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      isAuthenticated,
+      isLoading,
+      masterKeyInfo,
+      login,
+      logout,
+      setupMasterPassword,
+      updateMasterPassword,
+      enableBiometrics,
+      loginWithBiometrics,
+      isMasterPasswordConfigured,
+      checkAuthStatus,
+    }),
+    [
+      isAuthenticated,
+      isLoading,
+      masterKeyInfo,
+      login,
+      logout,
+      setupMasterPassword,
+      updateMasterPassword,
+      enableBiometrics,
+      loginWithBiometrics,
+      isMasterPasswordConfigured,
+      checkAuthStatus,
+    ],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

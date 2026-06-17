@@ -101,6 +101,62 @@ async function disableBiometrics(
   });
 }
 
+/**
+ * Best-effort, non-destructive upgrade of a legacy vault (PBKDF2 or the old heavy
+ * Argon2 parameters) to the current Argon2id parameters. Runs after a successful
+ * password login while the vault is decrypted in memory. On any failure the vault is
+ * left on its previous (working) key, so the user is never locked out and the upgrade
+ * simply retries on the next login.
+ */
+async function upgradeVaultKdfIfLegacy(
+  masterPassword: string,
+  mkInfo: UserMasterKey,
+): Promise<void> {
+  if (!CryptoService.isNativeKdfAvailable()) return; // Expo Go: cannot derive Argon2
+  if (!CryptoService.isLegacyKdf(mkInfo)) return;
+
+  const currentKey = StorageService.getEncryptionKey();
+  if (!currentKey) return;
+
+  try {
+    Logger.info('AuthService: upgrading vault KDF to current Argon2id parameters');
+
+    const { masterKeyInfo: newMkInfo, derivedKey: newKey } =
+      await CryptoService.createMasterKeyInfoWithDerivedKey(masterPassword);
+
+    // Re-encrypt the in-memory vault with the new key, then persist the new metadata.
+    await StorageService.reEncryptAllData(newKey);
+    try {
+      await StorageService.saveMasterKeyInfo(newMkInfo);
+    } catch (error) {
+      // Roll back to the previous key so storage and metadata stay consistent.
+      await StorageService.reEncryptAllData(currentKey);
+      StorageService.setEncryptionKey(currentKey);
+      throw error;
+    }
+
+    // Keep biometric unlock working by storing the new vault key.
+    const prefs = await StorageService.getUserPreferences();
+    if (prefs.biometricsEnabled) {
+      try {
+        await StorageService.saveBiometricKey(newKey);
+      } catch (biometricError) {
+        Logger.warn(
+          'AuthService: failed to refresh biometric key after KDF upgrade',
+          biometricError,
+        );
+        await disableBiometrics(prefs);
+      }
+    }
+
+    masterKeyInfo = newMkInfo;
+    StorageService.setEncryptionKey(newKey);
+    Logger.info('AuthService: vault KDF upgrade completed');
+  } catch (error) {
+    Logger.warn('AuthService: vault KDF upgrade skipped (will retry next login)', error);
+  }
+}
+
 function getBiometryType(types: number[]): TBiometryTypes {
   if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
     return 'FaceID';
@@ -261,6 +317,11 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
       }
       masterKeyInfo = mkInfo;
       isAuthenticated = true;
+
+      // Transparently migrate legacy/heavy KDFs to the lighter OWASP Argon2id
+      // parameters now that the vault is unlocked. Best-effort: never fails login.
+      await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
+
       return true;
     }
 

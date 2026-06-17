@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useDeferredValue } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,8 @@ import Logger from '../utils/logger';
 
 type NotesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Notes'>;
 
+const NOTES_PER_PAGE = 20;
+
 const NotesScreen: React.FC = () => {
   const navigation = useNavigation<NotesScreenNavigationProp>();
   const { theme, isDarkMode } = useTheme();
@@ -31,23 +33,33 @@ const NotesScreen: React.FC = () => {
   const { alert } = useAlert();
 
   const [notes, setNotes] = useState<Note[]>([]);
-  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
-  const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const NOTES_PER_PAGE = 20;
+  // React 19 native deferred value: keeps the input responsive while the
+  // (potentially heavy) filtering runs at a lower priority. No manual debounce.
+  const deferredQuery = useDeferredValue(searchQuery);
+
+  const filteredNotes = useMemo(() => {
+    const q = deferredQuery.trim().toLowerCase();
+    if (!q) return notes;
+    return notes.filter(
+      (note) => note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q),
+    );
+  }, [notes, deferredQuery]);
+
+  const displayedNotes = useMemo(
+    () => filteredNotes.slice(0, currentPage * NOTES_PER_PAGE),
+    [filteredNotes, currentPage],
+  );
 
   const loadNotes = useCallback(async () => {
     try {
       setIsLoading(true);
       const loadedNotes = await Storage.getNotes();
       setNotes(loadedNotes);
-      setFilteredNotes(loadedNotes);
       setCurrentPage(1);
-      setDisplayedNotes(loadedNotes.slice(0, NOTES_PER_PAGE));
     } catch (error) {
       Logger.error('Errore durante il caricamento delle note:', error);
       alert(t('error'), t('notes_load_error'));
@@ -62,101 +74,84 @@ const NotesScreen: React.FC = () => {
     }, [loadNotes]),
   );
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
+    setCurrentPage(1);
+  }, []);
 
-    if (query.trim() === '') {
-      setFilteredNotes(notes);
-      setCurrentPage(1);
-      setDisplayedNotes(notes.slice(0, NOTES_PER_PAGE));
-    } else {
-      const filtered = notes.filter(
-        (note) =>
-          note.title.toLowerCase().includes(query.toLowerCase()) ||
-          note.content.toLowerCase().includes(query.toLowerCase()),
-      );
-      setFilteredNotes(filtered);
-      setCurrentPage(1);
-      setDisplayedNotes(filtered.slice(0, NOTES_PER_PAGE));
-    }
-  };
+  const loadMoreNotes = useCallback(() => {
+    setCurrentPage((page) => (page * NOTES_PER_PAGE < filteredNotes.length ? page + 1 : page));
+  }, [filteredNotes.length]);
 
-  const loadMoreNotes = () => {
-    if (isLoadingMore || displayedNotes.length >= filteredNotes.length) {
-      return;
-    }
+  const handleNotePress = useCallback(
+    (noteId: string) => {
+      navigation.navigate('NoteDetail', { noteId, mode: 'view' });
+    },
+    [navigation],
+  );
 
-    setIsLoadingMore(true);
-    const nextPage = currentPage + 1;
-    const startIndex = currentPage * NOTES_PER_PAGE;
-    const endIndex = startIndex + NOTES_PER_PAGE;
-    const moreNotes = filteredNotes.slice(startIndex, endIndex);
-
-    setTimeout(() => {
-      setDisplayedNotes([...displayedNotes, ...moreNotes]);
-      setCurrentPage(nextPage);
-      setIsLoadingMore(false);
-    }, 300);
-  };
-
-  const handleNotePress = (noteId: string) => {
-    navigation.navigate('NoteDetail', { noteId, mode: 'view' });
-  };
-
-  const handleNewNote = () => {
+  const handleNewNote = useCallback(() => {
     navigation.navigate('NoteDetail', { mode: 'create' });
-  };
+  }, [navigation]);
 
-  const renderNoteItem = ({ item }: { item: Note }) => {
-    const contentPreview =
-      item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content;
+  const renderNoteItem = useCallback(
+    ({ item }: { item: Note }) => {
+      const contentPreview =
+        item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content;
 
-    const colorName = (item.color as NoteColorName) || 'default';
-    const noteColor = isDarkMode ? NOTE_COLORS.dark[colorName] : NOTE_COLORS.light[colorName];
+      const colorName = (item.color as NoteColorName) || 'default';
+      const noteColor = isDarkMode ? NOTE_COLORS.dark[colorName] : NOTE_COLORS.light[colorName];
 
-    return (
-      <TouchableOpacity
-        style={[
-          styles.noteCard,
-          {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderLeftWidth: 6,
-            borderLeftColor: noteColor,
-            borderRadius: AppTheme.borderRadius.large,
-          },
-          // Removed shadow
-        ]}
-        onPress={() => handleNotePress(item.id)}
-      >
-        <View style={styles.noteHeader}>
-          <Text style={[styles.noteTitle, { color: theme.colors.text }]} numberOfLines={1}>
-            {item.title}
+      return (
+        <TouchableOpacity
+          style={[
+            styles.noteCard,
+            {
+              backgroundColor: theme.colors.backgroundElevated,
+              borderLeftWidth: 6,
+              borderLeftColor: noteColor,
+              borderRadius: AppTheme.borderRadius.large,
+            },
+            // Removed shadow
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={item.title}
+          onPress={() => handleNotePress(item.id)}
+        >
+          <View style={styles.noteHeader}>
+            <Text style={[styles.noteTitle, { color: theme.colors.text }]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            {item.isPinned && (
+              <View
+                style={[
+                  styles.iconBadge,
+                  {
+                    backgroundColor: isDarkMode ? '#FFFFFF20' : theme.colors.primary + '20',
+                    borderColor: isDarkMode ? '#FFFFFF' : theme.colors.primary,
+                  },
+                ]}
+              >
+                <Text style={styles.badgeEmoji}>📌</Text>
+              </View>
+            )}
+          </View>
+
+          <Text
+            style={[styles.noteContent, { color: theme.colors.textSecondary }]}
+            numberOfLines={3}
+          >
+            {contentPreview}
           </Text>
-          {item.isPinned && (
-            <View
-              style={[
-                styles.iconBadge,
-                {
-                  backgroundColor: isDarkMode ? '#FFFFFF20' : theme.colors.primary + '20',
-                  borderColor: isDarkMode ? '#FFFFFF' : theme.colors.primary,
-                },
-              ]}
-            >
-              <Text style={styles.badgeEmoji}>📌</Text>
-            </View>
-          )}
-        </View>
 
-        <Text style={[styles.noteContent, { color: theme.colors.textSecondary }]} numberOfLines={3}>
-          {contentPreview}
-        </Text>
-
-        <Text style={[styles.noteDate, { color: theme.colors.textSecondary }]}>
-          {new Date(item.updatedAt).toLocaleDateString()}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+          <Text style={[styles.noteDate, { color: theme.colors.textSecondary }]}>
+            {new Date(item.updatedAt).toLocaleDateString()}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    [theme, isDarkMode, handleNotePress],
+  );
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -254,16 +249,6 @@ const NotesScreen: React.FC = () => {
           ListEmptyComponent={renderEmptyState}
           onEndReached={loadMoreNotes}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            isLoadingMore ? (
-              <View style={styles.loadingMoreContainer}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-                <Text style={[styles.loadingMoreText, { color: theme.colors.textSecondary }]}>
-                  {t('loading_more_notes')}
-                </Text>
-              </View>
-            ) : null
-          }
         />
       )}
     </SafeAreaView>
@@ -380,16 +365,6 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     fontSize: AppTheme.fonts.sizes.medium,
     fontWeight: 'bold',
-  },
-  loadingMoreContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: AppTheme.spacing.l,
-    gap: 8,
-  },
-  loadingMoreText: {
-    fontSize: AppTheme.fonts.sizes.small,
   },
 });
 

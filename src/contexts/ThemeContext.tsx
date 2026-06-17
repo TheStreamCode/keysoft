@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react';
 import { DarkTheme, LightTheme, Theme } from '../constants/theme';
 import * as SystemUI from 'expo-system-ui';
@@ -132,7 +133,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [themeMode, determineTheme, determineIsDarkMode, updateAppAppearance]);
 
   // Change the theme mode
-  const setThemeMode = async (mode: ThemeMode) => {
+  const setThemeMode = useCallback(async (mode: ThemeMode) => {
     try {
       setThemeModeState(mode);
 
@@ -147,20 +148,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (error) {
       Logger.error('Errore durante il salvataggio della modalità del tema:', error);
     }
-  };
+  }, []);
 
-  return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        isDarkMode,
-        themeMode,
-        setThemeMode,
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo<ThemeContextType>(
+    () => ({
+      theme,
+      isDarkMode,
+      themeMode,
+      setThemeMode,
+    }),
+    [theme, isDarkMode, themeMode, setThemeMode],
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = (): ThemeContextType => {

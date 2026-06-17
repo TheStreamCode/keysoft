@@ -1,8 +1,8 @@
 # Pre-Build Security And UI Review
 
-Date: 2026-05-12
+Date: 2026-06-17
 
-Release target: Keysoft 2.0, Android versionCode 100.
+Release target: Keysoft 2.1, Android versionCode 110.
 
 ## Executive Summary
 
@@ -39,7 +39,7 @@ The release-blocking privacy/config mismatch and the main accessibility issues w
 - Evidence: Expo Go intentionally uses PBKDF2 fallback. `createMasterKeyInfo` stores the KDF metadata used at setup time.
 - Impact: Vaults created in Expo Go remain PBKDF2-backed even when later opened in an EAS/native build with Argon2 available.
 - Fix: Document that Expo Go is development-only for real vault creation, or add a post-login KDF upgrade/rekey flow when Argon2 becomes available.
-- Status: Documented. Expo Go is now explicitly development/smoke-test only for KDF validation; release-grade Argon2 validation belongs to EAS/native builds.
+- Status: Remediated. A best-effort, non-destructive post-login KDF upgrade now rekeys legacy vaults (PBKDF2 or the old heavy Argon2 parameters) to the current Argon2id OWASP parameters (`memory = 19456` KiB, `iterations = 2`, `parallelism = 1`) on the next successful password login; on any failure the vault is left on its previous working key, so the user is never locked out. Expo Go remains development/smoke-test only for KDF validation.
 
 ### UX-2: Several Touch Targets Are Below The 44px Mobile Minimum
 
@@ -72,8 +72,8 @@ The release-blocking privacy/config mismatch and the main accessibility issues w
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 22 suites, 151 tests
-- `bunx expo-doctor`: 18/18 checks
+- `bun run test`: 22 suites, 158 tests
+- `bunx expo-doctor`: 19/19 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 
 ## Remaining Manual Checks

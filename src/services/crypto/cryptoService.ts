@@ -44,6 +44,21 @@ function loadArgon2(): void {
 
 loadArgon2();
 
+// OWASP Argon2id minimum configuration (m = 19 MiB, t = 2, p = 1). Strong, but far
+// lighter than the previous 64 MiB / t = 3, so unlocking is noticeably faster on
+// entry-level phones and tablets while staying within OWASP guidance.
+export const ARGON2_ITERATIONS = 2;
+export const ARGON2_MEMORY_KB = 19456;
+
+// PBKDF2 iteration count used only on Expo Go (no native Argon2 available).
+const PBKDF2_ITERATIONS = 100_000;
+
+/**
+ * Whether the native Argon2 KDF is available (false on Expo Go). Used to decide
+ * if a legacy vault can be transparently upgraded to the Argon2id parameters.
+ */
+export const isNativeKdfAvailable = (): boolean => !!argon2id;
+
 function normalizeDerivedKeyInput(input: string | Uint8Array | number[]): string {
   if (typeof input === 'string') {
     const trimmed = input.trim();
@@ -143,8 +158,8 @@ export const generateSalt = (): string => {
 export const deriveKey = async (
   masterPassword: string,
   salt: string,
-  iterations: number = 3,
-  memory: number = 65536,
+  iterations: number = ARGON2_ITERATIONS,
+  memory: number = ARGON2_MEMORY_KB,
 ): Promise<string> => {
   try {
     // Only verifiers created with memory=0 use PBKDF2. If metadata requires
@@ -153,7 +168,7 @@ export const deriveKey = async (
     if (memory === 0) {
       // Use PBKDF2 with an appropriate iteration count
       // If iterations is very low (Argon2 metadata), use a safe PBKDF2 value
-      const pbkdf2Iterations = iterations && iterations >= 1000 ? iterations : 100_000;
+      const pbkdf2Iterations = iterations && iterations >= 1000 ? iterations : PBKDF2_ITERATIONS;
       const key = CryptoJS.PBKDF2(masterPassword, salt, {
         keySize: 256 / 32,
         iterations: pbkdf2Iterations,
@@ -206,8 +221,8 @@ export const createMasterKeyInfoWithDerivedKey = async (
   const salt = generateSalt();
   // Parameters depend on the available algorithm
   const usingArgon2 = !!argon2id;
-  const iterations = usingArgon2 ? 3 : 100_000; // PBKDF2 requires many more iterations
-  const memory = usingArgon2 ? 65536 : 0;
+  const iterations = usingArgon2 ? ARGON2_ITERATIONS : PBKDF2_ITERATIONS;
+  const memory = usingArgon2 ? ARGON2_MEMORY_KB : 0;
 
   const derivedKey = await deriveKey(masterPassword, salt, iterations, memory);
 
@@ -229,6 +244,14 @@ export const createMasterKeyInfo = async (masterPassword: string): Promise<UserM
   const { masterKeyInfo } = await createMasterKeyInfoWithDerivedKey(masterPassword);
   return masterKeyInfo;
 };
+
+/**
+ * Returns true when a vault uses a legacy KDF configuration (PBKDF2 with memory=0,
+ * or the old heavy Argon2 parameters). Such vaults are transparently upgraded to the
+ * current Argon2id parameters on the next successful login.
+ */
+export const isLegacyKdf = (masterKeyInfo: UserMasterKey): boolean =>
+  masterKeyInfo.memory !== ARGON2_MEMORY_KB || masterKeyInfo.iterations !== ARGON2_ITERATIONS;
 
 /**
  * Verifies whether the master password is correct.

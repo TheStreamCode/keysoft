@@ -49,7 +49,7 @@ const PasswordCard = React.memo(
     onDelete: _onDelete,
     categoryColor,
   }: PasswordCardProps) => {
-    const { theme } = useTheme();
+    const { theme, isDarkMode } = useTheme();
     const { t } = useLanguage();
     const reducedMotion = useReducedMotion();
     const tiltValue = React.useRef(new Animated.Value(0)).current;
@@ -157,12 +157,14 @@ const PasswordCard = React.memo(
               styles.card,
               {
                 backgroundColor: theme.colors.background,
-                borderWidth: theme.colors.background === '#121212' ? 1 : 0,
+                borderWidth: isDarkMode ? 1 : 0,
                 borderColor: theme.colors.border,
               },
             ]}
             onPress={handlePress}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${password.title}, ${password.username}`}
           >
             <View style={[styles.cardContent]}>
               <View
@@ -205,6 +207,7 @@ const PasswordCard = React.memo(
                 <TouchableOpacity
                   style={[styles.actionButton]}
                   onPress={togglePasswordVisibility}
+                  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                   accessibilityLabel={isPasswordVisible ? t('hide_password') : t('show_password')}
                   accessibilityRole="button"
                 >
@@ -218,6 +221,7 @@ const PasswordCard = React.memo(
                 <TouchableOpacity
                   style={[styles.actionButton]}
                   onPress={handleCopyToClipboard}
+                  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                   accessibilityLabel={t('copy')}
                   accessibilityRole="button"
                 >
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
     marginLeft: AppTheme.spacing.s,
   },
   actionButton: {
-    padding: AppTheme.spacing.xs,
+    padding: AppTheme.spacing.s,
     marginLeft: AppTheme.spacing.xs,
   },
 });

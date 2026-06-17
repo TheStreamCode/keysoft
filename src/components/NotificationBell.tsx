@@ -323,7 +323,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
                       onPress={() => deleteNotification(item.id)}
                       accessibilityRole="button"
                       accessibilityLabel={t('delete_notification')}
-                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                       <Ionicons
                         name="close-circle-outline"

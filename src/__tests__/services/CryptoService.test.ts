@@ -147,4 +147,40 @@ describe('CryptoService', () => {
       expect(verifier).toBe(info.verifier);
     });
   });
+
+  describe('KDF configuration', () => {
+    it('exposes native KDF availability as a boolean', () => {
+      expect(typeof CryptoService.isNativeKdfAvailable()).toBe('boolean');
+    });
+
+    it('flags PBKDF2 and legacy heavy-Argon2 vaults as legacy', () => {
+      expect(
+        CryptoService.isLegacyKdf({ salt: 's', verifier: 'v', iterations: 100_000, memory: 0 }),
+      ).toBe(true);
+      expect(
+        CryptoService.isLegacyKdf({ salt: 's', verifier: 'v', iterations: 3, memory: 65536 }),
+      ).toBe(true);
+    });
+
+    it('does not flag vaults already on the current Argon2id parameters', () => {
+      expect(
+        CryptoService.isLegacyKdf({
+          salt: 's',
+          verifier: 'v',
+          iterations: CryptoService.ARGON2_ITERATIONS,
+          memory: CryptoService.ARGON2_MEMORY_KB,
+        }),
+      ).toBe(false);
+    });
+
+    it('creates new vaults with the current KDF parameters', async () => {
+      const info = await CryptoService.createMasterKeyInfo(password);
+      if (CryptoService.isNativeKdfAvailable()) {
+        expect(info.memory).toBe(CryptoService.ARGON2_MEMORY_KB);
+        expect(info.iterations).toBe(CryptoService.ARGON2_ITERATIONS);
+      } else {
+        expect(info.memory).toBe(0);
+      }
+    });
+  });
 });

@@ -5,6 +5,7 @@ import { AlertProvider } from './src/contexts/AlertContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import Navigation from './src/navigation';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { useWebScrollFix } from './src/utils/webScrollFix';
 
 export default function App() {
@@ -17,7 +18,9 @@ export default function App() {
         <LanguageProvider>
           <AlertProvider>
             <AuthProvider>
-              <Navigation />
+              <ErrorBoundary>
+                <Navigation />
+              </ErrorBoundary>
             </AuthProvider>
           </AlertProvider>
         </LanguageProvider>

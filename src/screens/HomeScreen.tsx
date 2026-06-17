@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -54,6 +54,10 @@ const HomeScreen: React.FC = () => {
   } = useHomeLogic();
 
   // --- UI Helpers ---
+
+  // Compute the adaptive category list once per language change instead of
+  // rebuilding it on every render (used by the filter row and the section title).
+  const adaptiveCategories = useMemo(() => getAdaptiveCategories(false, t), [t]);
 
   const getGreeting = (): string => {
     const currentHour = new Date().getHours();
@@ -161,7 +165,7 @@ const HomeScreen: React.FC = () => {
 
     const categories = [
       allCategory,
-      ...getAdaptiveCategories(false, t).map((cat) => ({
+      ...adaptiveCategories.map((cat) => ({
         ...cat,
         selected: categoryFilter === cat.id,
       })),
@@ -275,6 +279,8 @@ const HomeScreen: React.FC = () => {
           value={searchQuery}
           onChangeText={(text: string) => text.length <= 25 && setSearchQuery(text)}
           maxLength={25}
+          accessibilityLabel={t('search_passwords')}
+          accessibilityRole="search"
         />
         {searchQuery.length > 0 && (
           <View style={styles.searchCountContainer}>
@@ -304,8 +310,7 @@ const HomeScreen: React.FC = () => {
             ]}
           >
             {categoryFilter && categoryFilter !== 'all'
-              ? getAdaptiveCategories(false, t).find((c) => c.id === categoryFilter)?.name ||
-                categoryFilter
+              ? adaptiveCategories.find((c) => c.id === categoryFilter)?.name || categoryFilter
               : t('all_passwords')}
             {searchQuery ? ` - ${t('results_for')} "${searchQuery}"` : ''}
           </Text>

@@ -22,7 +22,6 @@ declare module 'react-native' {
   interface TextInputProps {
     className?: string;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface FlatListProps<_ItemT> {
     className?: string;
   }

@@ -22,7 +22,14 @@ const PasswordCounter: React.FC<PasswordCounterProps> = ({ count, onPress, color
   const backgroundColor = color || (isAtLimit ? '#d9534f' : isNearLimit ? '#f0ad4e' : '#2a6ca6');
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} disabled={!onPress}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      disabled={!onPress}
+      accessible
+      accessibilityRole={onPress ? 'button' : 'text'}
+      accessibilityLabel={displayText}
+    >
       <View style={[styles.counterContainer, { backgroundColor }]}>
         <Ionicons name="key-outline" size={16} color="white" />
         <Text style={styles.counterText}>{displayText}</Text>

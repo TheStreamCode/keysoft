@@ -104,14 +104,14 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   }, [language, systemLanguage]);
 
   // Resolve the effective language to use
-  const getEffectiveLanguage = (): 'it' | 'en' => {
+  const getEffectiveLanguage = React.useCallback((): 'it' | 'en' => {
     if (language === 'system') {
       return systemLanguage;
     }
     return language as 'it' | 'en';
-  };
+  }, [language, systemLanguage]);
 
-  const updateLanguage = async (newLanguage: Language) => {
+  const updateLanguage = React.useCallback(async (newLanguage: Language) => {
     Logger.info('🌍 Changing language to:', newLanguage);
 
     try {
@@ -128,31 +128,35 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
     } catch (error) {
       Logger.error('🌍 Failed to save language preference:', error);
     }
-  };
+  }, []);
 
   // Translation function
-  const t = (key: string, params?: Record<string, string | number>): string => {
-    const effectiveLang = getEffectiveLanguage();
-    const currentTranslations = translations[effectiveLang] as Record<string, string> | undefined;
-    const translation = currentTranslations?.[key];
-    if (!translation) {
-      Logger.error(`🌍 Missing translation key: ${key}`);
-      return '';
-    }
-    if (!params) {
-      return translation;
-    }
-    return Object.entries(params).reduce((acc, [paramKey, value]) => {
-      const safeValue = String(value);
-      return acc.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), safeValue);
-    }, translation);
-  };
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage: updateLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
+  const t = React.useCallback(
+    (key: string, params?: Record<string, string | number>): string => {
+      const effectiveLang = getEffectiveLanguage();
+      const currentTranslations = translations[effectiveLang] as Record<string, string> | undefined;
+      const translation = currentTranslations?.[key];
+      if (!translation) {
+        Logger.error(`🌍 Missing translation key: ${key}`);
+        return '';
+      }
+      if (!params) {
+        return translation;
+      }
+      return Object.entries(params).reduce((acc, [paramKey, value]) => {
+        const safeValue = String(value);
+        return acc.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), safeValue);
+      }, translation);
+    },
+    [getEffectiveLanguage],
   );
+
+  const value = React.useMemo<LanguageContextType>(
+    () => ({ language, setLanguage: updateLanguage, t }),
+    [language, updateLanguage, t],
+  );
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useLanguage = () => {

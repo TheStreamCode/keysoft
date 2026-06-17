@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useCallback, useMemo, ReactNode } from 'react';
 import CustomAlert from '../components/CustomAlert';
 import { useLanguage } from './LanguageContext';
 
@@ -29,27 +29,32 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   >([]);
   const { t } = useLanguage();
 
-  const alert = (
-    title: string,
-    message: string,
-    buttons: {
-      text: string;
-      onPress: () => void;
-      style?: 'default' | 'cancel' | 'destructive';
-    }[] = [{ text: t('ok'), onPress: () => {}, style: 'default' }],
-  ) => {
-    setTitle(title);
-    setMessage(message);
-    setButtons(buttons);
-    setVisible(true);
-  };
+  const alert = useCallback(
+    (
+      title: string,
+      message: string,
+      buttons: {
+        text: string;
+        onPress: () => void;
+        style?: 'default' | 'cancel' | 'destructive';
+      }[] = [{ text: t('ok'), onPress: () => {}, style: 'default' }],
+    ) => {
+      setTitle(title);
+      setMessage(message);
+      setButtons(buttons);
+      setVisible(true);
+    },
+    [t],
+  );
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setVisible(false);
-  };
+  }, []);
+
+  const value = useMemo(() => ({ alert }), [alert]);
 
   return (
-    <AlertContext.Provider value={{ alert }}>
+    <AlertContext.Provider value={value}>
       {children}
       <CustomAlert
         visible={visible}

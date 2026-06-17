@@ -2,6 +2,43 @@
 
 All notable project changes are documented here.
 
+## 2.1 (versionCode 110)
+
+### Performance
+
+- Faster password unlock on all devices: Argon2id now uses the OWASP minimum parameters (19 MiB / t = 2 / p = 1) instead of the heavier 64 MiB / t = 3.
+- Eliminated cascading re-renders by memoizing every context value (`Auth`, `Theme`, `Language`, `Alert`). In particular, the `Alert` provider no longer reloads the whole password list whenever a dialog opens or closes.
+- Rewrote the Notes screen around React 19 `useDeferredValue` and derived `useMemo` state (removed three redundant state arrays, the per-keystroke filter, and the artificial pagination delay).
+- Memoized the Home screen adaptive category list (was rebuilt three times per render).
+
+### Security
+
+- Legacy vaults (PBKDF2 or the old heavy Argon2id parameters) are transparently and non-destructively upgraded to the current Argon2id parameters on the next successful password login.
+
+### UI/UX & Accessibility
+
+- Replaced hardcoded colors with theme tokens and two fragile dark-mode checks (`background === '#121212'`) with the theme `isDarkMode` flag, fixing dark-mode contrast on the password detail and card views.
+- Added accessibility roles/labels to the password card, password counter, bottom-sheet options/buttons, and the search field; enlarged action touch targets.
+- Added a top-level error boundary so a single screen crash shows a recoverable, themed fallback instead of a blank screen.
+
+### Tooling & Dependencies
+
+- Aligned all `expo-*` packages to the exact Expo SDK 55 pins (expo-doctor: 19/19 checks passing).
+- Migrated linting to ESLint 9 with a flat config (`eslint.config.js`); ESLint 8 is end-of-life.
+
+### Release
+
+- Updated application version to 2.1 and Android versionCode to 110.
+
+### Documentation
+
+- Updated README, security, architecture, release, and pre-build review docs for Keysoft 2.1 / Android versionCode 110, including the new Argon2id OWASP parameters and the transparent KDF upgrade-on-login.
+
+### Tests
+
+- Added coverage for the KDF configuration helpers and the transparent KDF upgrade-on-login flow.
+- Suite: 22 suites, 158 tests.
+
 ## 2.0 (versionCode 100)
 
 ### Fixed

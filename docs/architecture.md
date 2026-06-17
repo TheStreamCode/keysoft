@@ -62,10 +62,14 @@ Services own core behavior:
 - `import-export/backupValidation`: validation and normalization of imported backup data.
 - `utils/*Service`: notifications, clipboard, auto-lock, screen capture.
 
+### Error Boundary
+
+A top-level error boundary (`src/components/ErrorBoundary.tsx`) wraps the navigator inside the context providers. A render error in any screen shows a recoverable, themed and localized fallback instead of a blank screen, and the failure is logged through the sanitized `Logger`.
+
 ## Data Flow
 
 1. The user authenticates with the master password/PIN, or with biometrics if biometric unlock was previously enabled.
-2. PIN login uses `CryptoService` to derive a 64-character hex vault key and verify it against the stored master-key verifier.
+2. PIN login uses `CryptoService` to derive a 64-character hex vault key and verify it against the stored master-key verifier. Argon2id uses the OWASP minimum parameters (19 MiB / t = 2). Legacy vaults (PBKDF2 or the old heavy Argon2 parameters) are transparently and non-destructively upgraded to the current parameters after a successful password login.
 3. Biometric login asks SecureStore for the stored biometric vault key with device authentication, verifies it against the same master-key verifier, and then loads it into memory.
 4. `StorageService` initializes the encrypted vault cache with the active key.
 5. `AuthContext` completes the shared post-login pipeline: authentication state, login notification, post-auth migration, notification settings, clipboard timeout, and auto-lock timeout.

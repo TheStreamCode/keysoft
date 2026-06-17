@@ -54,6 +54,9 @@ describe('AuthService', () => {
     });
     (CryptoService.deriveKey as jest.Mock).mockResolvedValue(mockEncryptionKey);
     (CryptoService.verifyDerivedKey as jest.Mock).mockReturnValue(true);
+    // KDF migration off by default; specific tests opt in.
+    (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(false);
+    (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(false);
 
     (StorageService.saveMasterKeyInfo as jest.Mock).mockResolvedValue(undefined);
     (StorageService.setEncryptionKey as jest.Mock).mockImplementation(() => {});
@@ -108,6 +111,66 @@ describe('AuthService', () => {
       expect(AuthService.getIsAuthenticated()).toBe(false); // Should be false if previous tests didn't leak state, or we need to reset it.
       // Note: AuthService has internal state. Ideally we should add a reset method for testing,
       // or rely on logout() in beforeEach.
+    });
+  });
+
+  describe('KDF migration on login', () => {
+    const newInfo: UserMasterKey = {
+      salt: 'new-salt',
+      iterations: 2,
+      memory: 19456,
+      verifier: 'new-verifier',
+    };
+    const newKey = 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+
+    it('upgrades a legacy vault to current Argon2id parameters after a password login', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.reEncryptAllData as jest.Mock).mockResolvedValue(undefined);
+      (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+        biometricsEnabled: false,
+      });
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(true);
+      expect(StorageService.reEncryptAllData).toHaveBeenCalledWith(newKey);
+      expect(StorageService.saveMasterKeyInfo).toHaveBeenCalledWith(newInfo);
+      expect(AuthService.getMasterKeyInfo()).toEqual(newInfo);
+    });
+
+    it('does not re-encrypt when the KDF is already current', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(false);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(true);
+      expect(StorageService.reEncryptAllData).not.toHaveBeenCalled();
+    });
+
+    it('keeps the user logged in even if the upgrade fails', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+        biometricsEnabled: false,
+      });
+      (StorageService.reEncryptAllData as jest.Mock).mockRejectedValue(new Error('disk error'));
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(true);
+      expect(AuthService.getIsAuthenticated()).toBe(true);
     });
   });
 

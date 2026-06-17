@@ -190,6 +190,9 @@ export const BottomSheetOption: React.FC<BottomSheetOptionProps> = ({
       style={[styles.option, selected && styles.optionSelected]}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!selected }}
+      accessibilityLabel={value ? `${label}, ${value}` : label}
     >
       <View style={styles.optionLeft}>
         {(icon || iconEmoji || iconImage) && (
@@ -259,6 +262,9 @@ export const BottomSheetButton: React.FC<BottomSheetButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!(disabled || loading) }}
+      accessibilityLabel={label}
     >
       <Text
         style={[
