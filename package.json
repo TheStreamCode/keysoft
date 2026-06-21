@@ -49,7 +49,7 @@
     "expo-screen-capture": "~55.0.14",
     "expo-secure-store": "~55.0.14",
     "expo-sharing": "~55.0.20",
-    "expo-status-bar": "~55.0.6",
+    "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~55.0.18",
     "expo-updates": "~55.0.24",
     "react": "19.2.0",
