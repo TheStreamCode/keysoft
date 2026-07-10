@@ -3,6 +3,7 @@
 # Keysoft
 
 [![CI](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg)](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20NC%201.0.0-blue.svg)](LICENSE)
 
 Keysoft is an offline-first password manager for Android, built with Expo, React Native, and TypeScript. It stores vault data locally and protects user content with authenticated encryption.
 
@@ -15,8 +16,8 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                    |
 | ------------------- | ------------------------- |
 | Platform focus      | Android-first, iOS paused |
-| App version         | 2.2                       |
-| Android versionCode | 120                       |
+| App version         | 2.3                       |
+| Android versionCode | 121                       |
 | Expo SDK            | 56.0.15                   |
 | React Native        | 0.85.3                    |
 | TypeScript          | 6.0.3, strict mode          |
@@ -167,7 +168,7 @@ If Keysoft's local-first security work is useful to you, support continued devel
 
 ## License
 
-This repository is source-available. See [LICENSE](LICENSE) for permitted use and restrictions.
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may view, study, fork, modify, and distribute the software for noncommercial purposes. Commercial use, including selling the software or uploading modified builds to app stores, requires written permission from the author. See [LICENSE](LICENSE) for the full terms.
 
 ## Responsible Disclosure
 

@@ -4,6 +4,10 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced custom "Keysoft Source-Available License" with the standardized [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) (SPDX: `PolyForm-Noncommercial-1.0.0`). Same intent — source-available, noncommercial use only — but with a recognized SPDX identifier, proper legal language, and automatic GitHub license badge.
+
 ## [2.3] - 2026-07-10
 
 ### Tooling
