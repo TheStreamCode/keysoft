@@ -2,6 +2,12 @@
 
 All notable project changes are documented here.
 
+## [Unreleased]
+
+### Tooling
+
+- Dependabot now ignores semver-major updates for Expo SDK, `expo-*`, React Native, and `react-native-*` packages; Expo SDK upgrades require a coordinated manual migration and cannot be handled through automated pull requests.
+
 ## 2.2 (versionCode 120)
 
 ### Changed
