@@ -6,6 +6,7 @@ All notable project changes are documented here.
 
 ### Tooling
 
+- Added Jest preload setup (`jest.preload.js`) to install Expo's global polyfill and provide a no-op `ExpoModulesCoreJSLogger` before jest-expo's bootstrap, preventing async "Cannot log after tests are done" warnings without `--forceExit` or console suppression.
 - Upgraded to Expo SDK 56 (React Native 0.85, React 19.2, TypeScript 6). Aligned all `expo-*` packages and compatible native dependencies via `expo install --fix`. `expo-doctor` passes 21/21 checks.
 - Migrated `tsconfig.json` path aliases to relative paths (TypeScript 6 deprecates `baseUrl` with non-relative `paths`). Added explicit `types` for jest and node globals.
 - Disabled new React Compiler lint rules (`react-hooks/refs`, `react-hooks/set-state-in-effect`, etc.) introduced by `eslint-config-expo` SDK 56; the project does not use the React Compiler yet and these rules would require broad refactoring of existing working code.
