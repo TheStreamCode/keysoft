@@ -1,7 +1,7 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '2.2',
+  version: '2.3',
   orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
   updates: {
@@ -44,7 +44,7 @@ module.exports = {
       backgroundColor: '#FFFFFF', // Neutral white background
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 120,
+    versionCode: 121,
     // Target Android 16 (API 36) stable
     targetSdkVersion: 36,
     compileSdkVersion: 36,

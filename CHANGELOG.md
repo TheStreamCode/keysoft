@@ -4,6 +4,8 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [2.3] - 2026-07-10
+
 ### Tooling
 
 - Added Jest preload setup (`jest.preload.js`) to install Expo's global polyfill and provide a no-op `ExpoModulesCoreJSLogger` before jest-expo's bootstrap, preventing async "Cannot log after tests are done" warnings without `--forceExit` or console suppression.
@@ -15,6 +17,10 @@ All notable project changes are documented here.
 - Removed the unjustified `--forceExit` flag from the test script; `jest --runInBand --detectOpenHandles` exits cleanly without it.
 - Dependabot still ignores semver-major updates for Expo SDK, `expo-*`, React Native, and `react-native-*` packages; Expo SDK upgrades require a coordinated manual migration and cannot be handled through automated pull requests.
 - Corrected the EAS production workflow definition so the manual `workflow_dispatch` trigger is an empty object, fixing the EAS parser rejection of the previous empty node.
+
+### Release
+
+- Updated application version to 2.3 and Android versionCode to 121.
 
 ## 2.2 (versionCode 120)
 
