@@ -48,19 +48,60 @@ module.exports = [
       'import/no-named-as-default': 'off',
     },
   },
+  // Legacy exceptions: each React Compiler rule is disabled only for the
+  // specific files that currently violate it. These narrow overrides must be
+  // removed as the listed files are refactored to comply.
   {
-    // The React Compiler lint rules shipped with eslint-config-expo SDK 56
-    // enforce patterns for the experimental React Compiler. This project does
-    // not use the compiler yet. Enable as warnings to surface legacy issues
-    // without breaking the build. Refactoring these would require broad changes
-    // to existing working code.
+    files: [
+      'src/components/CustomAlert.tsx',
+      'src/components/ScreenWrapper.tsx',
+      'src/components/ui/bottom-sheet.tsx',
+      'src/screens/OnboardingScreen.tsx',
+    ],
     rules: {
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/immutability': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
-      'react-hooks/error-boundaries': 'warn',
-      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'off',
+    },
+  },
+  {
+    files: [
+      'src/contexts/ThemeContext.tsx',
+      'src/hooks/settings/useNotificationSettings.ts',
+      'src/hooks/settings/useProfileForm.ts',
+      'src/hooks/useHomeLogic.ts',
+      'src/screens/AuthScreen.tsx',
+      'src/screens/PasswordDetailScreen.tsx',
+      'src/screens/PasswordGeneratorScreen.tsx',
+      'src/screens/SettingsScreen.tsx',
+    ],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
+    files: [
+      'src/contexts/AuthContext.tsx',
+      'src/screens/AuthScreen.tsx',
+    ],
+    rules: {
+      'react-hooks/immutability': 'off',
+    },
+  },
+  {
+    files: ['src/contexts/AuthContext.tsx'],
+    rules: {
+      'react-hooks/preserve-manual-memoization': 'off',
+    },
+  },
+  {
+    files: ['src/screens/OnboardingScreen.tsx'],
+    rules: {
+      'react-hooks/error-boundaries': 'off',
+    },
+  },
+  {
+    files: ['src/screens/PasswordDetailScreen.tsx'],
+    rules: {
+      'react-hooks/purity': 'off',
     },
   },
 ];
