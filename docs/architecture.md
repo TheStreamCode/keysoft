@@ -8,7 +8,7 @@ Keysoft is an offline-first React Native application built with Expo. The archit
 
 | Layer           | Technology                         |
 | --------------- | ---------------------------------- |
-| App framework   | Expo SDK 55                        |
+| App framework   | Expo SDK 56                        |
 | UI runtime      | React Native 0.83.6                |
 | Language        | TypeScript, strict mode            |
 | Navigation      | React Navigation v7                |

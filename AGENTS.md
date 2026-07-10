@@ -2,7 +2,7 @@
 
 ## Project Snapshot
 
-- Offline-first Android password manager built with Expo SDK 55, React Native, TypeScript.
+- Offline-first Android password manager built with Expo SDK 56, React Native, TypeScript.
 - Security model: KS1 (AES-256-CBC + HMAC-SHA256) with Argon2/PBKDF2 key derivation.
 - Android-first, iOS paused.
 

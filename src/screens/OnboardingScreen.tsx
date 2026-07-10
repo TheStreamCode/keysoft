@@ -777,7 +777,7 @@ const createStyles = (theme: Theme) => {
 
     // Loading Overlay
     loadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0, 0, 0, 0.7)',
       justifyContent: 'center',
       alignItems: 'center',

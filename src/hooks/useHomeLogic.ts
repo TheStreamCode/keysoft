@@ -307,7 +307,7 @@ export const useHomeLogic = () => {
 
   // Focus Effect
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const unsubscribe = navigation.addListener('focus', () => {
       try {
         loadPreferences();

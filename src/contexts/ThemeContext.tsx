@@ -98,13 +98,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         isDark ? DarkTheme.colors.background : LightTheme.colors.background,
       );
 
-      // Su Android, imposta anche la barra di navigazione gestuale per Edge-to-Edge
+      // Su Android, imposta lo stile della barra di navigazione gestuale
       if (Platform.OS === 'android' && !isAndroid15OrNewer()) {
-        // API 36 (Android 16) enforcing Edge-to-Edge: barre trasparenti
-        await NavigationBar.setPositionAsync('absolute');
-        await NavigationBar.setBackgroundColorAsync('#00000000'); // Trasparente
-        // Imposta lo stile dei pulsanti della barra di navigazione
-        await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+        NavigationBar.setStyle(isDark ? 'light' : 'dark');
       }
 
       Logger.debug(`ThemeContext: Aspetto dell'app aggiornato a ${isDark ? 'scuro' : 'chiaro'}`);

@@ -7,8 +7,8 @@ import Logger from '../../utils/logger';
  * Service for clipboard management with an auto-clear timer.
  */
 export class ClipboardService {
-  private static timeoutIds: { [key: string]: NodeJS.Timeout } = {};
-  private static warningTimeoutIds: { [key: string]: NodeJS.Timeout } = {};
+  private static timeoutIds: { [key: string]: ReturnType<typeof setTimeout> } = {};
+  private static warningTimeoutIds: { [key: string]: ReturnType<typeof setTimeout> } = {};
   private static notificationIds: { [key: string]: string | null } = {};
   private static defaultTimeoutSeconds: number = 60; // 1 minuto
   private static warningThreshold: number = 15; // Avvisa 15 secondi prima della cancellazione

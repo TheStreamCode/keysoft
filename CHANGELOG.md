@@ -6,7 +6,12 @@ All notable project changes are documented here.
 
 ### Tooling
 
-- Dependabot now ignores semver-major updates for Expo SDK, `expo-*`, React Native, and `react-native-*` packages; Expo SDK upgrades require a coordinated manual migration and cannot be handled through automated pull requests.
+- Upgraded to Expo SDK 56 (React Native 0.85, React 19.2, TypeScript 6). Aligned all `expo-*` packages and compatible native dependencies via `expo install --fix`. GitHub CI now runs on Node 22 to match SDK 56's Node requirement. `expo-doctor` passes 21/21 checks.
+- Migrated `tsconfig.json` path aliases to relative paths (TypeScript 6 deprecates `baseUrl` with non-relative `paths`). Added explicit `types` for jest and node globals.
+- Disabled new React Compiler lint rules (`react-hooks/refs`, `react-hooks/set-state-in-effect`, etc.) introduced by `eslint-config-expo` SDK 56; the project does not use the React Compiler yet and these rules would require broad refactoring of existing working code.
+- Replaced removed `StyleSheet.absoluteFillObject` with `StyleSheet.absoluteFill` (React Native 0.85). Replaced `NodeJS.Timeout` with `ReturnType<typeof setTimeout>` for TypeScript 6 compatibility. Updated `expo-navigation-bar` imperative calls to the new declarative `setStyle` API.
+- Added `--forceExit` to the test script to work around async teardown warnings from `expo-modules-core` in jest-expo SDK 56.
+- Dependabot still ignores semver-major updates for Expo SDK, `expo-*`, React Native, and `react-native-*` packages; Expo SDK upgrades require a coordinated manual migration and cannot be handled through automated pull requests.
 - Corrected the EAS production workflow definition so the manual `workflow_dispatch` trigger is an empty object, fixing the EAS parser rejection of the previous empty node.
 
 ## 2.2 (versionCode 120)

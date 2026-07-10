@@ -77,7 +77,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 - `bun run typecheck`
 - `bun run lint`
 - `bun run test`: 22 suites, 158 tests
-- `bunx expo-doctor`: 19/19 checks
+- `bunx expo-doctor`: 21/21 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 
 ## Remaining Manual Checks
