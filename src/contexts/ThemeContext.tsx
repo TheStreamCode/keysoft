@@ -9,18 +9,11 @@ import React, {
 } from 'react';
 import { DarkTheme, LightTheme, Theme } from '../constants/theme';
 import * as SystemUI from 'expo-system-ui';
-import * as NavigationBar from 'expo-navigation-bar';
+import { NavigationBar } from 'expo-navigation-bar';
 import { useColorScheme } from 'react-native';
 import { Storage } from '../services';
 import { ThemeMode } from '../models/User';
-import { Platform } from 'react-native';
 import Logger from '../utils/logger';
-
-function isAndroid15OrNewer(): boolean {
-  return (
-    Platform.OS === 'android' && typeof Platform.Version === 'number' && Platform.Version >= 35
-  );
-}
 
 interface ThemeContextType {
   theme: Theme;
@@ -30,15 +23,6 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-// Do not set a fixed initial color; let the detected theme handle it
-// SystemUI.setBackgroundColorAsync(AppTheme.colors.background);
-
-// On Android, the navigation bar is set after theme detection
-// if (Platform.OS === 'android') {
-//   NavigationBar.setBackgroundColorAsync(AppTheme.colors.background);
-//   NavigationBar.setButtonStyleAsync('dark');
-// }
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const systemColorScheme = useColorScheme();
@@ -98,11 +82,6 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         isDark ? DarkTheme.colors.background : LightTheme.colors.background,
       );
 
-      // Su Android, imposta lo stile della barra di navigazione gestuale
-      if (Platform.OS === 'android' && !isAndroid15OrNewer()) {
-        NavigationBar.setStyle(isDark ? 'light' : 'dark');
-      }
-
       Logger.debug(`ThemeContext: Aspetto dell'app aggiornato a ${isDark ? 'scuro' : 'chiaro'}`);
     } catch (error) {
       Logger.error("Errore durante l'aggiornamento dell'aspetto dell'app:", error);
@@ -156,7 +135,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     [theme, isDarkMode, themeMode, setThemeMode],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <NavigationBar style={isDarkMode ? 'light' : 'dark'} />
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export const useTheme = (): ThemeContextType => {

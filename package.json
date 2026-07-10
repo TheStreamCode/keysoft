@@ -21,7 +21,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "jest --forceExit",
+    "test": "jest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

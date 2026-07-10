@@ -26,6 +26,12 @@ jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'it', regionCode: 'IT', languageTag: 'it-IT' }],
 }));
 
+// Mock Expo NavigationBar
+jest.mock('expo-navigation-bar', () => ({
+  __esModule: true,
+  NavigationBar: jest.fn(() => null),
+}));
+
 // Mock Expo FileSystem
 jest.mock('expo-file-system', () => ({
   documentDirectory: 'file:///test-directory/',

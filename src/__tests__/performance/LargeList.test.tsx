@@ -11,6 +11,7 @@ jest.mock('expo-system-ui', () => ({
 }));
 
 jest.mock('expo-navigation-bar', () => ({
+  NavigationBar: jest.fn(() => null),
   setBackgroundColorAsync: jest.fn(),
   setButtonStyleAsync: jest.fn(),
 }));

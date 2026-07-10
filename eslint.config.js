@@ -51,15 +51,16 @@ module.exports = [
   {
     // The React Compiler lint rules shipped with eslint-config-expo SDK 56
     // enforce patterns for the experimental React Compiler. This project does
-    // not use the compiler yet, and these rules would require broad refactoring
-    // of existing working code. Disable them to keep the SDK upgrade focused.
+    // not use the compiler yet. Enable as warnings to surface legacy issues
+    // without breaking the build. Refactoring these would require broad changes
+    // to existing working code.
     rules: {
-      'react-hooks/refs': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/error-boundaries': 'off',
-      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/error-boundaries': 'warn',
+      'react-hooks/purity': 'warn',
     },
   },
 ];

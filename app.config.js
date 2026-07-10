@@ -140,6 +140,12 @@ module.exports = {
     ],
     'expo-localization',
     'expo-system-ui',
+    [
+      'expo-navigation-bar',
+      {
+        enforceContrast: false,
+      },
+    ],
     'expo-secure-store',
     'expo-sharing',
     './plugins/withArgon2ProGuard.js',

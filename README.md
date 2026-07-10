@@ -19,7 +19,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Android versionCode | 120                       |
 | Expo SDK            | 56.0.15                   |
 | React Native        | 0.85.3                    |
-| TypeScript          | 5.9.3, strict mode        |
+| TypeScript          | 6.0.3, strict mode          |
 | Test suite          | 22 suites, 158 tests      |
 | Health check        | `expo-doctor` 21/21       |
 
