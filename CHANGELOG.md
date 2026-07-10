@@ -7,6 +7,7 @@ All notable project changes are documented here.
 ### Tooling
 
 - Dependabot now ignores semver-major updates for Expo SDK, `expo-*`, React Native, and `react-native-*` packages; Expo SDK upgrades require a coordinated manual migration and cannot be handled through automated pull requests.
+- Corrected the EAS production workflow definition so the manual `workflow_dispatch` trigger is an empty object, fixing the EAS parser rejection of the previous empty node.
 
 ## 2.2 (versionCode 120)
 
