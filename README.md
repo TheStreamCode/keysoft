@@ -3,7 +3,7 @@
 # Keysoft
 
 [![CI](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg)](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml)
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20NC%201.0.0-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 
 Keysoft is an offline-first password manager for Android, built with Expo, React Native, and TypeScript. It stores vault data locally and protects user content with authenticated encryption.
 
@@ -20,7 +20,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Android versionCode | 121                       |
 | Expo SDK            | 56.0.15                   |
 | React Native        | 0.85.3                    |
-| TypeScript          | 6.0.3, strict mode          |
+| TypeScript          | 6.0.3, strict mode        |
 | Test suite          | 22 suites, 158 tests      |
 | Health check        | `expo-doctor` 21/21       |
 
@@ -61,6 +61,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Development Guide](docs/development.md)
 - [Release Guide](docs/release.md)
 - [Public Repository Checklist](docs/publication.md)
+- [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
 - [Changelog](CHANGELOG.md)
 
@@ -115,7 +116,7 @@ EAS builds upload the project to expo.dev. Start them only after the release che
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. An EAS Workflow (`.eas/workflows/build-android-production.yml`) builds the Android production app-bundle. To keep build-credit usage low, it runs only on a version tag push (`v*`) or manual dispatch — not on every push. iOS is excluded while it is paused, so the missing-iOS-credentials warning does not apply. Trigger a release build by pushing a tag (`git tag v2.2 && git push origin v2.2`) or by running the workflow from the Expo dashboard. Google Play submission is performed manually.
+The repository is linked to EAS Build. An EAS Workflow (`.eas/workflows/build-android-production.yml`) builds the Android production app-bundle. To keep build-credit usage low, it runs only on a version tag push (`v*`) or manual dispatch — not on every push. iOS is excluded while it is paused, so the missing-iOS-credentials warning does not apply. Trigger a release build by pushing a tag (`git tag v2.3 && git push origin v2.3`) or by running the workflow from the Expo dashboard. Google Play submission is performed manually.
 
 ## Verification
 
@@ -168,7 +169,7 @@ If Keysoft's local-first security work is useful to you, support continued devel
 
 ## License
 
-This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may view, study, fork, modify, and distribute the software for noncommercial purposes. Commercial use, including selling the software or uploading modified builds to app stores, requires written permission from the author. See [LICENSE](LICENSE) for the full terms.
+This project is licensed under the [GNU General Public License version 3.0 only](LICENSE) (`GPL-3.0-only`). See the [first-party copyright and scope record](COPYRIGHT.md) and [TRADEMARKS.md](TRADEMARKS.md) for ownership scope and the separate policy governing the Keysoft and Mikesoft brands.
 
 ## Responsible Disclosure
 

@@ -2,7 +2,7 @@
 
 Date: 2026-06-17
 
-Release target: Keysoft 2.2, Android versionCode 120.
+Release target: Keysoft 2.3, Android versionCode 121.
 
 ## Executive Summary
 

@@ -6,7 +6,7 @@ All notable project changes are documented here.
 
 ### Changed
 
-- Replaced custom "Keysoft Source-Available License" with the standardized [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) (SPDX: `PolyForm-Noncommercial-1.0.0`). Same intent — source-available, noncommercial use only — but with a recognized SPDX identifier, proper legal language, and automatic GitHub license badge.
+- Relicensed Keysoft under the GNU General Public License version 3 only (`GPL-3.0-only`). Added a separate trademark policy for the Keysoft and Mikesoft brands.
 
 ## [2.3] - 2026-07-10
 
