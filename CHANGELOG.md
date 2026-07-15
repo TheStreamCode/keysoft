@@ -7,6 +7,8 @@ All notable project changes are documented here.
 ### Changed
 
 - Relicensed Keysoft under the GNU General Public License version 3 only (`GPL-3.0-only`). Added a separate trademark policy for the Keysoft and Mikesoft brands.
+- Upgraded to Expo SDK 57 and React Native 0.86. Aligned Expo modules, React Native native dependencies, Jest Expo, and ESLint config through `expo install --fix`; moved Android build settings to supported SDK 57 fields and added tested optional hardware manifest declarations. `expo-doctor` passes 20/20 checks and the Android export completes locally.
+- Prepared Keysoft 2.4 with Android versionCode 122 so the SDK 57 native build has a distinct `appVersion` runtime from the 2.3/SDK 56 release.
 
 ## [2.3] - 2026-07-10
 

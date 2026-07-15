@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 2.3, Android versionCode 121.
+Current release target: Keysoft 2.4, Android versionCode 122.
 
 Before preparing a release:
 
@@ -28,7 +28,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 2.3 Android production release, `app.config.js` uses `version: "2.3"` and `android.versionCode: 121`.
+For the 2.4 Android production release, `app.config.js` uses `version: "2.4"` and `android.versionCode: 122`. Because EAS Update uses the `appVersion` runtime policy, changing the app version keeps the Expo SDK 57 native runtime separate from the 2.3/SDK 56 runtime.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
@@ -57,7 +57,7 @@ These commands upload the project to expo.dev. Do not start them until the relea
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. The EAS Workflow `.eas/workflows/build-android-production.yml` builds the Android production app-bundle and runs only on a version tag push (`v*`) or manual dispatch, to keep build-credit usage low. Trigger a release build by pushing the matching tag (for example `git tag v2.3 && git push origin v2.3`) or by running the workflow from the Expo dashboard. iOS is excluded while paused, so the missing-iOS-credentials warning does not apply; build Android only.
+The repository is linked to EAS Build. The EAS Workflow `.eas/workflows/build-android-production.yml` builds the Android production app-bundle and runs only on a version tag push (`v*`) or manual dispatch, to keep build-credit usage low. Trigger a release build by pushing the matching tag (for example `git tag v2.4 && git push origin v2.4`) or by running the workflow from the Expo dashboard. iOS is excluded while paused, so the missing-iOS-credentials warning does not apply; build Android only.
 
 ### Google Play Submission
 

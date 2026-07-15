@@ -1,7 +1,7 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '2.3',
+  version: '2.4',
   orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
   updates: {
@@ -44,10 +44,7 @@ module.exports = {
       backgroundColor: '#FFFFFF', // Neutral white background
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 121,
-    // Target Android 16 (API 36) stable
-    targetSdkVersion: 36,
-    compileSdkVersion: 36,
+    versionCode: 122,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',
@@ -55,17 +52,6 @@ module.exports = {
       'CAMERA',
       'POST_NOTIFICATIONS',
       'VIBRATE',
-    ],
-    usesFeature: [
-      { name: 'android.hardware.camera', required: false },
-      { name: 'android.hardware.camera.any', required: false },
-      { name: 'android.hardware.camera.front', required: false },
-      { name: 'android.hardware.camera.autofocus', required: false },
-      { name: 'android.hardware.camera.flash', required: false },
-      { name: 'android.hardware.fingerprint', required: false },
-      { name: 'android.hardware.biometrics', required: false },
-      { name: 'android.hardware.biometrics.face', required: false },
-      { name: 'android.hardware.biometrics.iris', required: false },
     ],
     // Block unnecessary permissions that may be added automatically
     blockedPermissions: [
@@ -111,16 +97,11 @@ module.exports = {
       'expo-build-properties',
       {
         android: {
-          extraGradleProps: {
-            'android.experimental.enablePageSizeConfiguration': 'true',
-            'android.enableMinifyInReleaseBuilds': 'true',
-          },
-          ndkVersion: '27.1.12297006',
-          packagingOptions: {
-            jniLibs: {
-              useLegacyPackaging: false,
-            },
-          },
+          // Target Android 16 (API 36) stable.
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+          enableMinifyInReleaseBuilds: true,
+          useLegacyPackaging: false,
         },
       },
     ],
@@ -148,6 +129,7 @@ module.exports = {
     ],
     'expo-secure-store',
     'expo-sharing',
+    './plugins/withOptionalAndroidFeatures.js',
     './plugins/withArgon2ProGuard.js',
   ],
   extra: {

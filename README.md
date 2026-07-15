@@ -16,13 +16,13 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                    |
 | ------------------- | ------------------------- |
 | Platform focus      | Android-first, iOS paused |
-| App version         | 2.3                       |
-| Android versionCode | 121                       |
-| Expo SDK            | 56.0.15                   |
-| React Native        | 0.85.3                    |
+| App version         | 2.4                       |
+| Android versionCode | 122                       |
+| Expo SDK            | 57.0.4                    |
+| React Native        | 0.86.0                    |
 | TypeScript          | 6.0.3, strict mode        |
-| Test suite          | 22 suites, 158 tests      |
-| Health check        | `expo-doctor` 21/21       |
+| Test suite          | 24 suites, 162 tests      |
+| Health check        | `expo-doctor` 20/20       |
 
 ## Core Capabilities
 
@@ -116,7 +116,7 @@ EAS builds upload the project to expo.dev. Start them only after the release che
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. An EAS Workflow (`.eas/workflows/build-android-production.yml`) builds the Android production app-bundle. To keep build-credit usage low, it runs only on a version tag push (`v*`) or manual dispatch — not on every push. iOS is excluded while it is paused, so the missing-iOS-credentials warning does not apply. Trigger a release build by pushing a tag (`git tag v2.3 && git push origin v2.3`) or by running the workflow from the Expo dashboard. Google Play submission is performed manually.
+The repository is linked to EAS Build. An EAS Workflow (`.eas/workflows/build-android-production.yml`) builds the Android production app-bundle. To keep build-credit usage low, it runs only on a version tag push (`v*`) or manual dispatch — not on every push. iOS is excluded while it is paused, so the missing-iOS-credentials warning does not apply. Trigger a release build by pushing a tag (`git tag v2.4 && git push origin v2.4`) or by running the workflow from the Expo dashboard. Google Play submission is performed manually.
 
 ## Verification
 
@@ -134,8 +134,8 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 22 suites and 158 tests
-- `bunx expo-doctor`: passing, 21/21 checks
+- `bun run test`: passing, 24 suites and 162 tests
+- `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 
 ## Project Structure
