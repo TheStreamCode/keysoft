@@ -58,7 +58,7 @@ describe('Apache legal notices', () => {
       expect(translations).toContain('Expo Updates');
       expect(translations).toContain('Argon2id');
       expect(translations).toContain('PBKDF2');
-      expect(translations).toContain('3.0.0');
+      expect(translations).toContain('3.0.1');
     }
 
     expect(italian).toContain('token casuali');

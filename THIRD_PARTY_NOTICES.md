@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Keysoft includes open-source dependencies. The inventory below records the direct runtime dependencies resolved for Keysoft 3.0.0. Transitive packages and their license files remain available in the package distribution and lockfile.
+Keysoft includes open-source dependencies. The inventory below records the direct runtime dependencies resolved for Keysoft 3.0.1. Transitive packages and their license files remain available in the package distribution and lockfile.
 
 Unless noted otherwise, these direct dependencies are licensed under the MIT License:
 

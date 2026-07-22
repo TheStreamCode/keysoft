@@ -16,7 +16,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                             |
 | ------------------- | ---------------------------------- |
 | Platform focus      | Android release; iOS cloud testing |
-| App version         | 3.0.0                              |
+| App version         | 3.0.1                              |
 | Android versionCode | 125 (EAS production)               |
 | Expo SDK            | 57.0.8                             |
 | React Native        | 0.86.0                             |
@@ -24,7 +24,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Test suite          | 28 suites, 176 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
-Production build numbers are managed remotely by EAS. The local Android versionCode 123 in `app.config.js` is a manifest fallback and is ignored by EAS production builds; the Keysoft 3.0 release build targets remote versionCode 125.
+Production build numbers are managed remotely by EAS. `app.config.js` is aligned to Android versionCode 125 for local manifest visibility, while the Keysoft 3.0.1 production build obtains the same value by auto-incrementing the EAS remote version source from 124.
 
 ## Core Capabilities
 
@@ -76,7 +76,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Public Repository Checklist](docs/publication.md)
 - [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
-- [Keysoft 3.0 Release Notes](docs/releases/3.0.0.md)
+- [Keysoft 3.0.1 Release Notes](docs/releases/3.0.1.md)
 - [Changelog](CHANGELOG.md)
 
 ## Requirements

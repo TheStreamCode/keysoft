@@ -4,7 +4,7 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
-## [3.0.0] - 2026-07-22
+## [3.0.1] - 2026-07-22
 
 ### Changed
 
@@ -13,11 +13,11 @@ All notable project changes are documented here.
 - Unified alerts, destructive confirmations, selection sheets, notification history, loading dialogs, and transient feedback under shared Nocturne dialog, bottom-sheet, and toast primitives.
 - Restored the original Keysoft shield-and-eye artwork and reused it consistently for launcher, adaptive, splash, web, and onboarding branding.
 - Replaced the unlock text field with a dedicated PIN keypad that starts verification immediately after the sixth digit while retaining biometric access and sanitized failure feedback.
-- Prepared Keysoft 3.0 for Android release and iPhone/iPad cloud-simulator testing with responsive light/dark UI, native-stack navigation, a local vault-health view, and shared Mikesoft support links. App Store publication is not part of the release plan.
+- Prepared Keysoft 3.0.1 for Android release and iPhone/iPad cloud-simulator testing with responsive light/dark UI, native-stack navigation, a local vault-health view, and shared Mikesoft support links. App Store publication is not part of the release plan.
 - Reduced password-login work by batching storage reads and replacing per-password category migration writes with a single encrypted vault write.
 - Relicensed Keysoft under the Apache License 2.0 (`Apache-2.0`) and retained a separate trademark policy for the Keysoft and Mikesoft brands.
 - Upgraded to Expo SDK 57 and React Native 0.86. Aligned Expo modules, React Native native dependencies, Jest Expo, and ESLint config through `expo install --fix`; moved Android build settings to supported SDK 57 fields and added tested optional hardware manifest declarations. `expo-doctor` passes 20/20 checks and the Android export completes locally.
-- Set application version 3.0.0. The release production build targets Android versionCode 125 through EAS remote auto-increment; the local `app.config.js` fallback remains 123 and is ignored by EAS production builds.
+- Set application version 3.0.1 and Android versionCode 125. EAS production builds use the remote version source and auto-increment from the previously published build number.
 - Aligned the Expo SDK 57 patch releases and `react-native-screens` with the versions required by the installed Expo SDK.
 
 ### Fixed
@@ -32,7 +32,7 @@ All notable project changes are documented here.
 
 ### Documentation
 
-- Updated the public overview, architecture, security model, development standards, iOS testing boundary, publication checklist, release checklist, pre-build review, and 3.0 release notes for the completed redesign, privacy-policy synchronization, visible support/sponsorship paths, persistent profile avatar, responsive light/dark behavior, canonical app-icon assets, final responsive fixes, and current verification results.
+- Updated the public overview, architecture, security model, development standards, iOS testing boundary, publication checklist, release checklist, pre-build review, and 3.0.1 release notes for the completed redesign, privacy-policy synchronization, visible support/sponsorship paths, persistent profile avatar, responsive light/dark behavior, canonical app-icon assets, final responsive fixes, and current verification results.
 
 ### Tests
 

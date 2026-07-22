@@ -3,7 +3,7 @@
 Original review date: 2026-06-17
 Latest update: 2026-07-22
 
-Release target: Keysoft 3.0.0, Android versionCode 125 through EAS remote auto-increment, with iOS simulator readiness.
+Release target: Keysoft 3.0.1, Android versionCode 125 through EAS remote auto-increment, with iOS simulator readiness.
 
 ## Executive Summary
 
@@ -11,9 +11,9 @@ The codebase passes local static and test verification, and the Android JS bundl
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
 
-### 3.0 Update
+### 3.0.1 Update
 
-The 3.0 target completes the Nocturne redesign across onboarding, PIN unlock, vault, credential and note workflows, generator, settings, shared overlays, and navigation. It adds responsive phone/tablet layouts, semantic light/dark themes, reduced-motion-aware effects, local vault-health analysis, an iOS simulator build profile, and a shared Mikesoft support URL. Alerts, destructive confirmations, loading states, selection sheets, notification history, and transient feedback now use shared dialog, bottom-sheet, and toast primitives. The original Keysoft shield-and-eye artwork remains the canonical app and onboarding identity.
+The 3.0.1 target completes the Nocturne redesign across onboarding, PIN unlock, vault, credential and note workflows, generator, settings, shared overlays, and navigation. It adds responsive phone/tablet layouts, semantic light/dark themes, reduced-motion-aware effects, local vault-health analysis, an iOS simulator build profile, and a shared Mikesoft support URL. Alerts, destructive confirmations, loading states, selection sheets, notification history, and transient feedback now use shared dialog, bottom-sheet, and toast primitives. The original Keysoft shield-and-eye artwork remains the canonical app and onboarding identity.
 
 Profile images now use one avatar renderer across unlock, vault, and settings. Native picker files are copied into application-owned storage only when the profile is saved, preventing temporary image URIs from disappearing after reload or login. Password unlock batches native storage reads and performs category migration with at most one encrypted vault write instead of rewriting the vault once per credential. The KS1 envelope and configured Argon2/PBKDF2 derivation costs are unchanged.
 

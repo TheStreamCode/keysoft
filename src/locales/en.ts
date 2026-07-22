@@ -700,7 +700,7 @@ export const en = {
   privacy_section18_title: '18. Contacts',
   privacy_section18_text:
     'For any questions regarding this Privacy Policy or personal data processing:',
-  privacy_version_text: 'Document version: 3.0 - Keysoft 3.0.0',
+  privacy_version_text: 'Document version: 3.0 - Keysoft 3.0.1',
   email_label: 'Email: ',
   tel_label: 'Tel: ',
   website_label: 'Website: ',

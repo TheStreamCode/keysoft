@@ -715,7 +715,7 @@ export const it = {
   privacy_section18_title: '18. Contatti',
   privacy_section18_text:
     'Per qualsiasi domanda relativa a questa Privacy Policy o al trattamento dei dati personali:',
-  privacy_version_text: 'Versione documento: 3.0 - Keysoft 3.0.0',
+  privacy_version_text: 'Versione documento: 3.0 - Keysoft 3.0.1',
 
   // Notes
   personal_notes: 'Note Personali',

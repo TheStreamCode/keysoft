@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 3.0.0, Android versionCode 125 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current release target: Keysoft 3.0.1, Android versionCode 125 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
@@ -34,7 +34,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.0 release, `app.config.js` uses `version: "3.0.0"`, a local Android fallback of `android.versionCode: 123`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source and auto-increments the store build number to 125 for this release; the local fallback remains available through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.0 has a distinct native runtime.
+For the 3.0.1 release, `app.config.js` uses `version: "3.0.1"`, `android.versionCode: 125`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source and auto-increments the store build number from 124 to 125 for this release. The aligned local value remains visible through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.0.1 has a distinct native runtime.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
