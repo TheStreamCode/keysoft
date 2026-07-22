@@ -3,7 +3,7 @@
 Original review date: 2026-06-17
 Latest update: 2026-07-22
 
-Release target: Keysoft 3.0.0, Android versionCode 123, with iOS simulator readiness.
+Release target: Keysoft 3.0.0, Android versionCode 125 through EAS remote auto-increment, with iOS simulator readiness.
 
 ## Executive Summary
 
@@ -18,6 +18,8 @@ The 3.0 target completes the Nocturne redesign across onboarding, PIN unlock, va
 Profile images now use one avatar renderer across unlock, vault, and settings. Native picker files are copied into application-owned storage only when the profile is saved, preventing temporary image URIs from disappearing after reload or login. Password unlock batches native storage reads and performs category migration with at most one encrypted vault write instead of rewriting the vault once per credential. The KS1 envelope and configured Argon2/PBKDF2 derivation costs are unchanged.
 
 The visible compact Settings layout again exposes GitHub Sponsors in addition to the shared generic Mikesoft support hub. The in-app and public Keysoft privacy notices are synchronized to the 3.0 implementation and now use a fixed effective date, the dedicated `keysoft@mikesoft.it` privacy contact, accurate Expo Updates technical traffic, Argon2id/PBKDF2 wording, camera/photo-picker and clipboard behavior, and the Android-release/iOS-simulator-only boundary.
+
+Final release review extended shared dialog dimming beneath the Android navigation bar and reserved responsive space for the Vault Health percentage so it remains inside the summary card at compact widths. Focused Vault Health tests cover healthy credentials, empty-password reuse handling, and expiry boundaries. A mobile-viewport web smoke covered onboarding, credential creation and detail, Vault Health findings and filters, password generation, notes, light/dark themes, Italian/English language switching, logout, and PIN login; native-only biometrics, notifications, file pickers, and Argon2 remain release-build checks.
 
 ### 2.4 Update
 
@@ -89,7 +91,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 28 suites, 173 tests
+- `bun run test`: 28 suites, 176 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`

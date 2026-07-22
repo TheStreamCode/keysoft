@@ -65,6 +65,7 @@ export function Dialog({
     <Modal
       accessibilityViewIsModal
       animationType="none"
+      navigationBarTranslucent
       onRequestClose={dismissible ? onClose : undefined}
       statusBarTranslucent
       transparent

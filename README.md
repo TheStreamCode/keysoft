@@ -17,12 +17,14 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | ------------------- | ---------------------------------- |
 | Platform focus      | Android release; iOS cloud testing |
 | App version         | 3.0.0                              |
-| Android versionCode | 123                                |
-| Expo SDK            | 57.0.7                             |
+| Android versionCode | 125 (EAS production)               |
+| Expo SDK            | 57.0.8                             |
 | React Native        | 0.86.0                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 28 suites, 173 tests               |
+| Test suite          | 28 suites, 176 tests               |
 | Health check        | `expo-doctor` 20/20                |
+
+Production build numbers are managed remotely by EAS. The local Android versionCode 123 in `app.config.js` is a manifest fallback and is ignored by EAS production builds; the Keysoft 3.0 release build targets remote versionCode 125.
 
 ## Core Capabilities
 
@@ -74,6 +76,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Public Repository Checklist](docs/publication.md)
 - [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
+- [Keysoft 3.0 Release Notes](docs/releases/3.0.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Requirements
@@ -146,7 +149,7 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 28 suites and 173 tests
+- `bun run test`: passing, 28 suites and 176 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing

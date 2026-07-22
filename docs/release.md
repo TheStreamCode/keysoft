@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 3.0.0, Android versionCode 123. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current release target: Keysoft 3.0.0, Android versionCode 125 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
@@ -34,7 +34,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.0 release, `app.config.js` uses `version: "3.0.0"`, `android.versionCode: 123`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile auto-increments its store build number remotely. Because EAS Update uses the `appVersion` runtime policy, 3.0 has a distinct native runtime.
+For the 3.0 release, `app.config.js` uses `version: "3.0.0"`, a local Android fallback of `android.versionCode: 123`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source and auto-increments the store build number to 125 for this release; the local fallback remains available through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.0 has a distinct native runtime.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
@@ -148,8 +148,10 @@ Before release, manually smoke test on Expo Go and on the EAS preview build:
 - Create, edit, delete, search, and copy password records.
 - Create, edit, delete, and search secure notes.
 - Open and dismiss notification history, alerts, destructive confirmations, loading dialogs, bottom sheets, and toasts. Confirm a dialog opened from a sheet appears above the interface and that canceling restores the expected workflow.
+- Confirm loading and confirmation dialog dimming extends beneath the Android navigation bar with no undimmed strip at the bottom of the screen.
 - Pick a profile photo, save it, reload the app, lock/log out, and confirm the same avatar is visible on unlock, vault, and settings screens. Canceling profile edits must keep the previously saved image.
 - Verify automatic light/dark appearance and responsive layout at compact-phone, tall-phone, landscape/tablet, and narrow split-view sizes without clipped content or full-height compact dialogs.
+- Open Vault Health at compact widths and with long translations; confirm the percentage remains inside the summary card and weak, reused, and expired findings match the stored credentials.
 - Confirm the original Keysoft shield appears without distortion on onboarding, launcher/adaptive icon, splash, and favicon.
 - Navigate icon-only controls with TalkBack where possible.
 - Confirm touch targets remain comfortable on smaller Android screens.

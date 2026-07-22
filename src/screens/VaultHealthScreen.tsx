@@ -153,8 +153,10 @@ const VaultHealthScreen: React.FC = () => {
 
       <View style={styles.summaryPanel}>
         <View style={styles.summaryHeading}>
-          <View>
-            <Text style={styles.eyebrow}>{t('vault_health_local_only')}</Text>
+          <View style={styles.summaryCopy}>
+            <Text style={styles.eyebrow} numberOfLines={2}>
+              {t('vault_health_local_only')}
+            </Text>
             <Text style={styles.summaryTitle}>{t(`vault_health_status_${summary.status}`)}</Text>
           </View>
           <Text style={[styles.score, { color: statusColor }]}>{securePercentage}%</Text>
@@ -276,7 +278,13 @@ function createStyles(theme: Theme) {
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
-    summaryHeading: { flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
+    summaryHeading: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    summaryCopy: { flex: 1, minWidth: 0 },
     eyebrow: {
       ...DesignSystem.typography.caption,
       color: theme.colors.textSecondary,
@@ -284,7 +292,13 @@ function createStyles(theme: Theme) {
       letterSpacing: 1.2,
     },
     summaryTitle: { ...DesignSystem.typography.headline, color: theme.colors.text, marginTop: 4 },
-    score: { fontSize: 30, lineHeight: 36, fontWeight: '700', fontVariant: ['tabular-nums'] },
+    score: {
+      flexShrink: 0,
+      fontSize: 30,
+      lineHeight: 36,
+      fontWeight: '700',
+      fontVariant: ['tabular-nums'],
+    },
     track: { height: 5, borderRadius: 3, overflow: 'hidden', backgroundColor: theme.colors.border },
     progress: { height: '100%', borderRadius: 3 },
     summaryBody: { ...DesignSystem.typography.body, color: theme.colors.textSecondary },

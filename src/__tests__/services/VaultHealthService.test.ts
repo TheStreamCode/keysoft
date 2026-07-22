@@ -50,6 +50,51 @@ describe('analyzeVaultHealth', () => {
     expect(JSON.stringify(result)).not.toContain('A-different-password-2026!');
   });
 
+  it('keeps a healthy credential out of the findings', () => {
+    const result = analyzeVaultHealth(
+      [password({ id: 'healthy', password: 'A-unique-password-2026!' })],
+      NOW,
+    );
+
+    expect(result).toMatchObject({
+      total: 1,
+      weak: 0,
+      reused: 0,
+      expired: 0,
+      affected: 0,
+      status: 'good',
+      issues: [],
+    });
+  });
+
+  it('does not classify empty passwords as reused', () => {
+    const result = analyzeVaultHealth(
+      [password({ id: 'one', password: '' }), password({ id: 'two', password: '' })],
+      NOW,
+    );
+
+    expect(result).toMatchObject({ total: 2, weak: 2, reused: 0, affected: 2 });
+    expect(result.issues.every((issue) => !issue.kinds.includes('reused'))).toBe(true);
+  });
+
+  it('only marks credentials expiring now or earlier as expired', () => {
+    const result = analyzeVaultHealth(
+      [
+        password({ id: 'past', expiryDate: NOW - 1 }),
+        password({ id: 'now', expiryDate: NOW }),
+        password({ id: 'future', expiryDate: NOW + 1 }),
+      ],
+      NOW,
+    );
+
+    expect(result.expired).toBe(2);
+    expect(
+      result.issues
+        .filter((issue) => issue.kinds.includes('expired'))
+        .map((issue) => issue.passwordId),
+    ).toEqual(['past', 'now']);
+  });
+
   it('marks four affected credentials as critical', () => {
     const result = analyzeVaultHealth(
       ['one', 'two', 'three', 'four'].map((id) => password({ id, password: id })),

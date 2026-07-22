@@ -4,6 +4,8 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-22
+
 ### Changed
 
 - Completed the Nocturne redesign across onboarding, PIN unlock, vault, credential view/edit, password generator, notes, note detail, settings, and bottom navigation. The new UI uses compact semantic surfaces, responsive content bounds, light/dark palettes, accessible touch targets, reduced-motion-aware entrance transitions, and copy-first credential details.
@@ -15,7 +17,8 @@ All notable project changes are documented here.
 - Reduced password-login work by batching storage reads and replacing per-password category migration writes with a single encrypted vault write.
 - Relicensed Keysoft under the Apache License 2.0 (`Apache-2.0`) and retained a separate trademark policy for the Keysoft and Mikesoft brands.
 - Upgraded to Expo SDK 57 and React Native 0.86. Aligned Expo modules, React Native native dependencies, Jest Expo, and ESLint config through `expo install --fix`; moved Android build settings to supported SDK 57 fields and added tested optional hardware manifest declarations. `expo-doctor` passes 20/20 checks and the Android export completes locally.
-- Set application version 3.0.0 and Android versionCode 123; EAS production builds use remote build-number auto-increment.
+- Set application version 3.0.0. The release production build targets Android versionCode 125 through EAS remote auto-increment; the local `app.config.js` fallback remains 123 and is ignored by EAS production builds.
+- Aligned the Expo SDK 57 patch releases and `react-native-screens` with the versions required by the installed Expo SDK.
 
 ### Fixed
 
@@ -24,14 +27,17 @@ All notable project changes are documented here.
 - Removed broad React Native Web CSS overrides that forced every clipped surface to viewport height, restoring compact dialogs and correct nested scrolling.
 - Restored the GitHub Sponsors action to the visible compact Settings layout after the redesign left it only in the hidden legacy layout.
 - Synchronized the in-app and public Keysoft privacy notices with version 3.0 behavior: fixed effective date, Android distribution and iOS simulator status, Expo Updates technical traffic, Argon2id/PBKDF2 key derivation, camera/photo picker, clipboard, the dedicated Keysoft privacy contact, and user-controlled backups.
+- Extended shared dialog overlays beneath the Android navigation bar so loading and confirmation states dim the complete screen.
+- Prevented the Vault Health percentage from overflowing on narrow screens and large translations by reserving score space and allowing the summary copy to wrap.
 
 ### Documentation
 
-- Updated the public overview, architecture, security model, development standards, iOS testing boundary, publication checklist, release checklist, and pre-build review for the completed redesign, privacy-policy synchronization, visible support/sponsorship paths, persistent profile avatar, responsive light/dark behavior, and canonical app-icon assets.
+- Updated the public overview, architecture, security model, development standards, iOS testing boundary, publication checklist, release checklist, pre-build review, and 3.0 release notes for the completed redesign, privacy-policy synchronization, visible support/sponsorship paths, persistent profile avatar, responsive light/dark behavior, canonical app-icon assets, final responsive fixes, and current verification results.
 
 ### Tests
 
-- Suite: 28 suites, 173 tests.
+- Suite: 28 suites, 176 tests.
+- Added Vault Health coverage for healthy credentials, duplicate empty passwords, and expiry boundaries; completed a mobile-viewport web smoke covering onboarding, credential creation and detail, Vault Health findings and filters, password generation, notes, themes, languages, logout, and PIN login.
 
 ## [2.3] - 2026-07-10
 
