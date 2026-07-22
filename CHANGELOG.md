@@ -23,7 +23,7 @@ All notable project changes are documented here.
 - Fixed profile photos disappearing from the unlock, vault, and settings avatars by rendering one shared avatar component and persisting selected image files only when profile changes are saved.
 - Removed broad React Native Web CSS overrides that forced every clipped surface to viewport height, restoring compact dialogs and correct nested scrolling.
 - Restored the GitHub Sponsors action to the visible compact Settings layout after the redesign left it only in the hidden legacy layout.
-- Synchronized the in-app and public Keysoft privacy notices with version 3.0 behavior: fixed effective date, Android distribution and iOS simulator status, Expo Updates technical traffic, Argon2id/PBKDF2 key derivation, camera/photo picker, clipboard, generic Mikesoft privacy contact, and user-controlled backups.
+- Synchronized the in-app and public Keysoft privacy notices with version 3.0 behavior: fixed effective date, Android distribution and iOS simulator status, Expo Updates technical traffic, Argon2id/PBKDF2 key derivation, camera/photo picker, clipboard, the dedicated Keysoft privacy contact, and user-controlled backups.
 
 ### Documentation
 

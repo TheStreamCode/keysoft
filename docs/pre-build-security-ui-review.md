@@ -17,7 +17,7 @@ The 3.0 target completes the Nocturne redesign across onboarding, PIN unlock, va
 
 Profile images now use one avatar renderer across unlock, vault, and settings. Native picker files are copied into application-owned storage only when the profile is saved, preventing temporary image URIs from disappearing after reload or login. Password unlock batches native storage reads and performs category migration with at most one encrypted vault write instead of rewriting the vault once per credential. The KS1 envelope and configured Argon2/PBKDF2 derivation costs are unchanged.
 
-The visible compact Settings layout again exposes GitHub Sponsors in addition to the shared generic Mikesoft support hub. The in-app and public Keysoft privacy notices are synchronized to the 3.0 implementation and now use a fixed effective date, the generic Mikesoft privacy contact, accurate Expo Updates technical traffic, Argon2id/PBKDF2 wording, camera/photo-picker and clipboard behavior, and the Android-release/iOS-simulator-only boundary.
+The visible compact Settings layout again exposes GitHub Sponsors in addition to the shared generic Mikesoft support hub. The in-app and public Keysoft privacy notices are synchronized to the 3.0 implementation and now use a fixed effective date, the dedicated `keysoft@mikesoft.it` privacy contact, accurate Expo Updates technical traffic, Argon2id/PBKDF2 wording, camera/photo-picker and clipboard behavior, and the Android-release/iOS-simulator-only boundary.
 
 ### 2.4 Update
 

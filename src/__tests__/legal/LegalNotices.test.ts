@@ -48,8 +48,8 @@ describe('Apache legal notices', () => {
     const italian = readRepositoryFile('src/locales/it.ts');
     const english = readRepositoryFile('src/locales/en.ts');
 
-    expect(privacyScreen).toContain('info@mikesoft.it');
-    expect(privacyScreen).not.toContain('keysoft@mikesoft.it');
+    expect(privacyScreen).toContain('keysoft@mikesoft.it');
+    expect(privacyScreen).not.toContain("const email = 'info@mikesoft.it'");
     expect(privacyScreen).not.toContain('new Date()');
     expect(privacyScreen).toContain("t('privacy_section12_5_title')");
     expect(privacyScreen).toContain("t('privacy_section12_6_title')");

@@ -19,7 +19,7 @@ Before preparing a release:
 - Backup import/export still works with encrypted payloads.
 - Biometric login behavior is verified on a physical Android device when possible.
 - Privacy text discloses that `INTERNET` is used for Expo/EAS updates only, not vault sync.
-- The in-app and public Mikesoft Keysoft policies show the same fixed effective date, generic `info@mikesoft.it` contact, implemented permissions/features, Android release status, and iOS simulator-only boundary.
+- The in-app and public Mikesoft Keysoft policies show the same fixed effective date, dedicated `keysoft@mikesoft.it` contact, implemented permissions/features, Android release status, and iOS simulator-only boundary.
 - The visible compact Settings layout exposes shared Mikesoft Support, Privacy Policy, Open source and legal, and GitHub Sponsors; an entry present only in the hidden legacy layout does not satisfy this check.
 - Launcher, Android adaptive, splash, web favicon, and onboarding all use the original Keysoft shield-and-eye artwork; no obsolete alternate logo is packaged.
 - Verify Settings > Open source and legal while offline: it identifies Keysoft as Apache-2.0 and displays the complete bundled license. Confirm source, notices, and trademark links.
