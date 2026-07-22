@@ -3,13 +3,19 @@
 Original review date: 2026-06-17
 Latest update: 2026-07-22
 
-Release target: Keysoft 3.0.1, Android versionCode 125 through EAS remote auto-increment, with iOS simulator readiness.
+Release target: Keysoft 3.0.2, Android versionCode 126 through EAS remote auto-increment, with iOS simulator readiness.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 3.0.2 Update
+
+The 3.0.2 target enables resource shrinking and replaces Android's compatibility-oriented default ProGuard configuration with `proguard-android-optimize.txt`. A tested Expo config plugin also enables the AGP 8.12 optimized resource shrinker and fails explicitly if a future generated Gradle template cannot be patched. Existing Argon2 keep rules remain unchanged because native PIN login is release-sensitive.
+
+Google Play's edge-to-edge API locations resolve to React Native/Fresco/Glide compatibility code rather than Keysoft application calls. Keysoft does not set system-bar colors on Android 15+, and its profile image is selected locally, stored in the app document directory, and never downloaded from the network. No privacy, permission, vault format, or image-network behavior changes are introduced by this release.
 
 ### 3.0.1 Update
 
@@ -91,7 +97,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 28 suites, 176 tests
+- `bun run test`: 29 suites, 180 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`

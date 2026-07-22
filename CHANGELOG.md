@@ -4,6 +4,28 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.0.2] - 2026-07-22
+
+### Android
+
+- Enabled release resource shrinking and switched R8 from the compatibility-oriented `proguard-android.txt` defaults to `proguard-android-optimize.txt`.
+- Enabled the AGP 8.12 optimized resource shrinker through `android.r8.optimizedResourceShrinking=true` without forcing an unsupported Android Gradle Plugin upgrade outside the Expo SDK 57 / React Native 0.86 toolchain.
+- Added a fail-fast Expo config plugin so changes to the generated Gradle template cannot silently disable the optimized R8 configuration.
+- Retained the existing Argon2 keep rules required for native password login after minification.
+
+### Google Play
+
+- Documented that the reported edge-to-edge API references originate in React Native compatibility code; Keysoft does not set status or navigation bar colors on Android 15 and later.
+- Confirmed that Keysoft does not download profile images from the network. Profile photos use the system picker, local application storage, and the existing React Native image pipeline, so adding another image loader would not remove the Fresco/Glide classes identified by static analysis.
+
+### Release
+
+- Updated the application to version 3.0.2 and aligned the local Android manifest value to versionCode 126.
+
+### Tests
+
+- Added regression coverage for optimized ProGuard selection, unexpected Gradle templates, idempotent resource-shrinker properties, and Expo plugin registration.
+
 ## [3.0.1] - 2026-07-22
 
 ### Changed

@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 3.0.1, Android versionCode 125 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current release target: Keysoft 3.0.2, Android versionCode 126 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
@@ -14,6 +14,8 @@ Before preparing a release:
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export` passes.
 - Architecture and i18n regression tests are included in the passing test run.
 - Android permissions match `app.config.js` and native Android configuration.
+- The generated release build uses `proguard-android-optimize.txt`, `minifyEnabled true`, `shrinkResources true`, and `android.r8.optimizedResourceShrinking=true`.
+- The generated release build still includes the Argon2 keep rules required by native password login.
 - No local secrets, keystores, certificates, or environment files are staged or tracked.
 - Public repository checklist has been reviewed when preparing public GitHub visibility.
 - Backup import/export still works with encrypted payloads.
@@ -34,7 +36,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.0.1 release, `app.config.js` uses `version: "3.0.1"`, `android.versionCode: 125`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source and auto-increments the store build number from 124 to 125 for this release. The aligned local value remains visible through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.0.1 has a distinct native runtime.
+For the 3.0.2 release, `app.config.js` uses `version: "3.0.2"`, `android.versionCode: 126`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source. Its baseline is set to 125 before the production workflow so `autoIncrement` produces store build 126. The aligned local value remains visible through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.0.2 has a distinct native runtime.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
@@ -92,6 +94,20 @@ bun run submit:android:production
 Release validation for the KDF path must be performed on an EAS/native build. Expo Go uses the PBKDF2 fallback because it cannot load the Argon2 native module.
 
 Before approving a release build that touches KDF or native dependency configuration, confirm the generated Android project includes the Argon2 ProGuard keep rules inserted by `plugins/withArgon2ProGuard.js`, especially `com.poowf.argon2` for `react-native-argon2` v4.
+
+### Android Release Optimization
+
+`expo-build-properties` enables release minification and resource shrinking. `plugins/withAndroidReleaseOptimization.js` then selects `proguard-android-optimize.txt` and enables the optimized resource shrinker available in AGP 8.12. Do not force AGP 9 independently of Expo and React Native; upgrade it only through a supported Expo SDK toolchain.
+
+The Google Play edge-to-edge and bitmap recommendations are dependency-level static findings in the current React Native/Fresco/Glide binary. Keysoft already avoids status/navigation bar color setters on Android 15+, uses safe-area layouts, and does not download profile images from the network. Reassess these findings after supported Expo/React Native upgrades, but do not fork native dependencies or add another image loader solely to hide a scanner recommendation.
+
+For release validation, generate Android native files in a temporary copy and confirm:
+
+- `android/app/build.gradle` selects `proguard-android-optimize.txt`.
+- Release minification and resource shrinking are enabled.
+- `android/gradle.properties` contains `android.r8.optimizedResourceShrinking=true` once.
+- `android/app/proguard-rules.pro` retains the Argon2 package rules.
+- The EAS build produces `mapping.txt` and completes native PIN login in an internal-test installation.
 
 ## Permissions Policy
 

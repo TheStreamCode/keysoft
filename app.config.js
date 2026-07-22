@@ -1,7 +1,7 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '3.0.1',
+  version: '3.0.2',
   scheme: 'keysoft',
   orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
@@ -55,7 +55,7 @@ module.exports = {
       backgroundColor: '#FFFFFF',
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 125,
+    versionCode: 126,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',
@@ -87,9 +87,8 @@ module.exports = {
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ],
-    // Android 15: Edge-to-edge configuration
-    // Use expo-system-ui to manage StatusBar and NavigationBar
-    // and avoid deprecated Android APIs
+    // Android 15+: the app uses Expo system UI modules and safe-area layouts.
+    // React Native may retain compatibility references to deprecated bar-color APIs.
     softwareKeyboardLayoutMode: 'pan',
     // 16 KB page size support (Android 15)
     // Required for compatibility with newer devices
@@ -114,6 +113,7 @@ module.exports = {
           compileSdkVersion: 36,
           targetSdkVersion: 36,
           enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
           useLegacyPackaging: false,
         },
       },
@@ -144,6 +144,7 @@ module.exports = {
     'expo-sharing',
     './plugins/withOptionalAndroidFeatures.js',
     './plugins/withArgon2ProGuard.js',
+    './plugins/withAndroidReleaseOptimization.js',
   ],
   extra: {
     eas: {

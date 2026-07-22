@@ -174,6 +174,10 @@ Use Expo Go for development and smoke testing only. Create release-test vaults i
 
 The `withArgon2ProGuard` config plugin patches the native Argon2 dependency during prebuild and appends ProGuard keep rules for release builds, including `com.poowf.argon2` for `react-native-argon2` v4. When changing the Argon2 dependency or EAS prebuild behavior, verify that the generated Android project still contains those keep rules.
 
+The `withAndroidReleaseOptimization` config plugin switches the generated release build to `proguard-android-optimize.txt` and writes `android.r8.optimizedResourceShrinking=true`. Together with the `expo-build-properties` minify and shrink-resources options, this enables optimized R8 and resource shrinking on the AGP version supported by Expo SDK 57. Its transformations are intentionally fail-fast and must remain covered by the config regression tests.
+
+Google Play may report edge-to-edge or network-bitmap APIs that are present inside React Native, Fresco, or Glide even when application code does not call them. Verify app behavior and the generated native project before changing dependencies. Keysoft profile images are user-selected local files; do not add a network image library unless a measured application workload requires it.
+
 When changing authentication, biometric unlock, KDF behavior, or PIN-change flows, run the focused regression suite before the full checks:
 
 ```bash

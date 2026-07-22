@@ -26,11 +26,13 @@ describe('Expo Android native configuration', () => {
       compileSdkVersion: 36,
       targetSdkVersion: 36,
       enableMinifyInReleaseBuilds: true,
+      enableShrinkResourcesInReleaseBuilds: true,
       useLegacyPackaging: false,
     });
     expect(appConfig.android).not.toHaveProperty('compileSdkVersion');
     expect(appConfig.android).not.toHaveProperty('targetSdkVersion');
     expect(appConfig.android).not.toHaveProperty('usesFeature');
+    expect(appConfig.plugins).toContain('./plugins/withAndroidReleaseOptimization.js');
   });
 
   it('adds optional Android hardware features through a manifest plugin', () => {

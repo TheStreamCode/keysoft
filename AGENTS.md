@@ -67,6 +67,8 @@
 - `READ_MEDIA_*` permissions are blocked.
 - `POST_NOTIFICATIONS` is required on Android 13+ for local notifications.
 - `expo-updates` is enabled; update manifest and config together if changing.
+- Release builds must keep minification and resource shrinking enabled through `expo-build-properties`.
+- `plugins/withAndroidReleaseOptimization.js` must keep `proguard-android-optimize.txt` and `android.r8.optimizedResourceShrinking=true` in generated Android projects.
 
 ## Testing Notes
 
@@ -75,6 +77,7 @@
 - Use `src/__tests__/contexts` for provider lifecycle tests and `src/__tests__/hooks` for hook workflow tests.
 - Expo Go uses the PBKDF2 fallback because custom native modules are not available there; EAS/native builds may use Argon2.
 - Use EAS/native builds for release-grade Argon2 validation; Expo Go vaults are development data.
+- When R8 or native build configuration changes, verify optimized shrinking and the Argon2 keep rules in a temporary generated Android project before starting EAS.
 
 ## Documentation
 
