@@ -41,6 +41,8 @@ The presentation layer follows the Nocturne system: semantic light/dark theme to
 
 `ProfileAvatar` owns photo rendering and the initial-based fallback across unlock, vault, and settings surfaces. `KeysoftMark` renders the canonical shield-and-eye asset in onboarding, matching the launcher, adaptive, splash, and web artwork configured in `app.config.js`.
 
+The visible compact Settings layout is the canonical settings surface. It keeps the shared Mikesoft support hub, the in-app privacy notice, open-source notices, and GitHub Sponsors directly reachable. The hidden legacy layout is retained only as a temporary migration reference and must not be treated as proof that an action is user-accessible; regression tests inspect the visible layout before that boundary.
+
 ### Overlay Model
 
 - `Dialog` handles app alerts, blocking loading states, and confirmations, including destructive actions.

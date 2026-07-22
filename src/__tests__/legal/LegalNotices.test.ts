@@ -34,4 +34,38 @@ describe('Apache legal notices', () => {
     expect(legalScreen).toContain("'https://github.com/TheStreamCode/keysoft'");
     expect(legalScreen).toContain('/blob/main/TRADEMARKS.md');
   });
+
+  it('keeps GitHub Sponsors reachable from the visible settings layout', () => {
+    const settingsScreen = readRepositoryFile('src/screens/SettingsScreen.tsx');
+    const visibleSettings = settingsScreen.split('style={styles.legacyScrollView}')[0];
+
+    expect(visibleSettings).toContain("title={t('sponsor_github')}");
+    expect(visibleSettings).toContain('https://github.com/sponsors/TheStreamCode');
+  });
+
+  it('keeps the in-app privacy notice aligned with current app behavior', () => {
+    const privacyScreen = readRepositoryFile('src/screens/PrivacyPolicyScreen.tsx');
+    const italian = readRepositoryFile('src/locales/it.ts');
+    const english = readRepositoryFile('src/locales/en.ts');
+
+    expect(privacyScreen).toContain('info@mikesoft.it');
+    expect(privacyScreen).not.toContain('keysoft@mikesoft.it');
+    expect(privacyScreen).not.toContain('new Date()');
+    expect(privacyScreen).toContain("t('privacy_section12_5_title')");
+    expect(privacyScreen).toContain("t('privacy_section12_6_title')");
+
+    for (const translations of [italian, english]) {
+      expect(translations).toContain('Expo Updates');
+      expect(translations).toContain('Argon2id');
+      expect(translations).toContain('PBKDF2');
+      expect(translations).toContain('3.0.0');
+    }
+
+    expect(italian).toContain('token casuali');
+    expect(italian).toContain('metriche di prestazione');
+    expect(italian).toContain('22 luglio 2026');
+    expect(english).toContain('randomized tokens');
+    expect(english).toContain('performance metrics');
+    expect(english).toContain('July 22, 2026');
+  });
 });

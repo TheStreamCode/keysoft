@@ -959,6 +959,22 @@ const SettingsScreen: React.FC = () => {
 
         <Reveal delay={175}>
           <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('contribution')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              iconColor={theme.colors.primary}
+              leftIcon="heart-outline"
+              title={t('sponsor_github')}
+              onPress={() => Linking.openURL('https://github.com/sponsors/TheStreamCode')}
+              rightIcon="open-outline"
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal delay={210}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
             {t('account')}
           </Text>
           <View style={styles.compactGroup}>

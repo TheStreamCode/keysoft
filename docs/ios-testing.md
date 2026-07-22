@@ -46,6 +46,7 @@ Verify:
 5. Theme, language, keyboard, safe areas, rotation, iPad multi-window sizing, and screen-reader labels.
 6. Offline startup and vault use; confirm that vault secrets are never sent over the network.
 7. App background/foreground behavior, screenshot protection, local notifications, and update-channel behavior.
+8. The privacy screen and public policy describe iOS as cloud-simulator testing only and do not imply App Store availability; hardware-backed biometrics remain explicitly outside simulator coverage.
 
 ## Simulator Coverage Limits
 

@@ -52,6 +52,10 @@ Vault operations are local-first and do not sync, upload, or transmit vault cont
 
 The Android `INTERNET` permission is retained for platform services such as Expo/EAS updates. Update connectivity must not be used as a vault transport channel.
 
+Expo Updates may receive technical data needed to serve and operate compatible updates, including the device operating system/platform, randomized update-delivery tokens, app/build and runtime versions, IP address, request headers, errors, performance metrics, and update interactions. It must never receive vault secrets. Keysoft does not include separate analytics, advertising, remote backup, push-notification, or crash-reporting SDKs.
+
+The in-app notice in `src/locales/it.ts` and `src/locales/en.ts` and the public policy at `mikesoft.it/{locale}/keysoft-policy/` must stay aligned with `app.config.js` and the implemented data paths. Permission, update, backup, biometric, clipboard, profile-image, KDF, or platform-distribution changes require a privacy-text review in both repositories.
+
 Any future network feature must be documented before implementation and reviewed as a security-design change. Do not introduce analytics, remote backup, vault sync, or secret transport under the existing update-only permission rationale.
 
 ## Vault Encryption

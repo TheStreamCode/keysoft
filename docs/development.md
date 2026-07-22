@@ -142,6 +142,19 @@ bunx expo-doctor
 
 If `expo-doctor` reports duplicate native modules after a valid dependency update, regenerate `node_modules` and reinstall from the lockfile.
 
+## Documentation And Privacy Synchronization
+
+For significant behavior or release changes, update `README.md`, `CHANGELOG.md`, and the relevant file under `docs/`. Historical release notes under `docs/releases/` remain snapshots and should not be rewritten to describe later behavior.
+
+When a change affects permissions, networking, updates, backups, biometrics, clipboard handling, profile images, key derivation, data retention, support contacts, or supported platforms, also review:
+
+- the Italian and English privacy keys in `src/locales/`;
+- `PrivacyPolicyScreen.tsx`;
+- the localized public Keysoft policy in the Mikesoft website repository;
+- the release and privacy regression tests in both repositories.
+
+Use a fixed policy effective date. Do not calculate “last updated” from the device clock, because opening an unchanged notice must not make it appear newly revised.
+
 ## Expo Go And Cloud Builds
 
 Day-to-day development uses Expo Go. Do not use local Gradle builds as the default workflow.

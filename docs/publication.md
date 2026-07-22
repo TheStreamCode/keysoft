@@ -47,7 +47,7 @@ was already committed.
 
 ## Apache-2.0 Distribution
 
-Before distributing an Android or iOS binary:
+Before distributing an Android release binary or an iOS simulator test artifact:
 
 - Create and retain a release tag that identifies the exact source used for the binary.
 - Include the complete Apache-2.0 license in the repository and offline legal screen.
@@ -55,6 +55,7 @@ Before distributing an Android or iOS binary:
 - Review `THIRD_PARTY_NOTICES.md` against the resolved lockfile and packaged native dependencies.
 - Ensure modified third-party files carry any notices required by their licenses.
 - Verify **Settings > Open source and legal** works offline and links to the official repository and trademark policy.
+- Verify the localized public Keysoft privacy notice matches current permissions, Expo Updates behavior, data handling, Android distribution, and the iOS simulator-only boundary.
 
 ## GitHub Repository Settings
 

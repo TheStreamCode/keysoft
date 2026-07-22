@@ -25,7 +25,7 @@ interface PrivacyPolicyScreenProps {
 
 const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { notify } = useAlert();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
@@ -33,7 +33,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
   useWebScrollFix();
 
   const handleEmailPress = async () => {
-    const email = 'keysoft@mikesoft.it';
+    const email = 'info@mikesoft.it';
     await ClipboardService.copyToClipboard(email);
     notify(t('copied_message'), 'success');
   };
@@ -87,12 +87,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
           {/* Intestazione */}
           <View style={styles.section}>
             <Text style={styles.title}>{t('privacy_title')}</Text>
-            <Text style={styles.subtitle}>
-              {t('privacy_last_updated').replace(
-                '{date}',
-                new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'it-IT'),
-              )}
-            </Text>
+            <Text style={styles.subtitle}>{t('privacy_last_updated')}</Text>
           </View>
 
           {/* Titolare del Trattamento */}
@@ -104,7 +99,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
               <Text style={styles.companyDetail}>{t('privacy_controller_by')}</Text>
               <Text style={styles.companyDetail}>{t('privacy_vat')}</Text>
               <TouchableOpacity onPress={handleEmailPress}>
-                <Text style={styles.companyLink}>{t('email_label')}keysoft@mikesoft.it</Text>
+                <Text style={styles.companyLink}>{t('email_label')}info@mikesoft.it</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -217,7 +212,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
             <Text style={styles.paragraph}>
               {t('privacy_contact_text')}
               <TouchableOpacity onPress={handleEmailPress} style={styles.inlineLink}>
-                <Text style={styles.linkText}>keysoft@mikesoft.it</Text>
+                <Text style={styles.linkText}>info@mikesoft.it</Text>
               </TouchableOpacity>
             </Text>
           </View>
@@ -272,6 +267,12 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
 
             <Text style={styles.subSectionTitle}>{t('privacy_section12_4_title')}</Text>
             <Text style={styles.paragraph}>{t('privacy_section12_4_text')}</Text>
+
+            <Text style={styles.subSectionTitle}>{t('privacy_section12_5_title')}</Text>
+            <Text style={styles.paragraph}>{t('privacy_section12_5_text')}</Text>
+
+            <Text style={styles.subSectionTitle}>{t('privacy_section12_6_title')}</Text>
+            <Text style={styles.paragraph}>{t('privacy_section12_6_text')}</Text>
 
             <Text style={styles.paragraph}>
               <Text style={styles.bold}>{t('privacy_network_permission')}</Text>
@@ -356,7 +357,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
             <Text style={styles.paragraph}>{t('privacy_section18_text')}</Text>
             <View style={styles.contactInfo}>
               <TouchableOpacity onPress={handleEmailPress}>
-                <Text style={styles.contactLink}>📧 keysoft@mikesoft.it</Text>
+                <Text style={styles.contactLink}>📧 info@mikesoft.it</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleWebsitePress}>
                 <Text style={styles.contactLink}>🌐 www.mikesoft.it</Text>

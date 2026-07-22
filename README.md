@@ -21,7 +21,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Expo SDK            | 57.0.7                             |
 | React Native        | 0.86.0                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 28 suites, 171 tests               |
+| Test suite          | 28 suites, 173 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
 ## Core Capabilities
@@ -121,7 +121,6 @@ Build artifacts are produced on expo.dev through EAS:
 ```bash
 bun run build:android:preview
 bun run build:android:production
-bun run build:ios:preview
 bun run build:ios:simulator
 ```
 
@@ -147,7 +146,7 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 28 suites and 171 tests
+- `bun run test`: passing, 28 suites and 173 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing
@@ -184,6 +183,8 @@ Keysoft is local-first. The user owns their vault data and is responsible for ke
 Product assistance is available through the shared Mikesoft support page: [mikesoft.it/en/support](https://mikesoft.it/en/support/). Do not include passwords, PINs, encryption keys, or real vault data in support requests.
 
 If Keysoft's local-first security work is useful to you, support continued development through GitHub Sponsors: [github.com/sponsors/TheStreamCode](https://github.com/sponsors/TheStreamCode).
+
+The current public privacy notice is available in [English](https://mikesoft.it/en/keysoft-policy/) and [Italian](https://mikesoft.it/it/keysoft-policy/). It documents Android distribution, iOS cloud-simulator testing, local storage, Expo Updates traffic, permissions, and user-controlled backups.
 
 ## License
 

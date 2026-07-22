@@ -17,6 +17,8 @@ The 3.0 target completes the Nocturne redesign across onboarding, PIN unlock, va
 
 Profile images now use one avatar renderer across unlock, vault, and settings. Native picker files are copied into application-owned storage only when the profile is saved, preventing temporary image URIs from disappearing after reload or login. Password unlock batches native storage reads and performs category migration with at most one encrypted vault write instead of rewriting the vault once per credential. The KS1 envelope and configured Argon2/PBKDF2 derivation costs are unchanged.
 
+The visible compact Settings layout again exposes GitHub Sponsors in addition to the shared generic Mikesoft support hub. The in-app and public Keysoft privacy notices are synchronized to the 3.0 implementation and now use a fixed effective date, the generic Mikesoft privacy contact, accurate Expo Updates technical traffic, Argon2id/PBKDF2 wording, camera/photo-picker and clipboard behavior, and the Android-release/iOS-simulator-only boundary.
+
 ### 2.4 Update
 
 The 2.4 release target migrates to Expo SDK 57 and React Native 0.86. Android build properties now use the supported SDK 57 plugin fields, and optional camera/biometric hardware declarations are applied through a tested manifest config plugin.
@@ -34,7 +36,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 - Evidence: `app.config.js` configures `expo-updates` with `https://u.expo.dev/...` and explicitly includes `INTERNET`, while the privacy text says Keysoft does not require or use internet connectivity.
 - Impact: Release privacy/compliance mismatch. Users and reviewers may see a network permission and OTA update URL while the in-app policy says network access is not used.
 - Fix: Keep EAS Updates/Internet and update privacy/release docs to disclose update connectivity.
-- Status: Remediated in app privacy copy and docs by declaring that network access is limited to Expo/EAS updates and is not used for vault sync or secret transport.
+- Status: Remediated in the in-app and public Mikesoft privacy notices by declaring the limited Expo Updates technical traffic and confirming that it is not used for vault sync or secret transport. Regression coverage also rejects a dynamic policy date and checks current KDF and optional-feature disclosures.
 
 ### UX-1: Icon-Only Buttons Missing Accessibility Labels
 
@@ -87,7 +89,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 28 suites, 171 tests
+- `bun run test`: 28 suites, 173 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`

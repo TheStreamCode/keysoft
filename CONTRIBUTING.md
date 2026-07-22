@@ -49,6 +49,7 @@ merge.
 - Use `src/utils/cryptoRandom.ts` for randomness.
 - Keep user-visible strings in both `src/locales/it.ts` and
   `src/locales/en.ts`.
+- Keep the in-app and public Mikesoft privacy notices aligned when changing permissions, networking, updates, backups, biometrics, clipboard behavior, profile images, key derivation, or supported platforms.
 - Treat changes to KDF parameters, vault encryption, biometric unlock, and
   backup formats as security-sensitive.
 

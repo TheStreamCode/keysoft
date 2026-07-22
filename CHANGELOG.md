@@ -11,7 +11,7 @@ All notable project changes are documented here.
 - Unified alerts, destructive confirmations, selection sheets, notification history, loading dialogs, and transient feedback under shared Nocturne dialog, bottom-sheet, and toast primitives.
 - Restored the original Keysoft shield-and-eye artwork and reused it consistently for launcher, adaptive, splash, web, and onboarding branding.
 - Replaced the unlock text field with a dedicated PIN keypad that starts verification immediately after the sixth digit while retaining biometric access and sanitized failure feedback.
-- Prepared Keysoft 3.0 for Android, iPhone, and iPad with responsive light/dark UI, native-stack navigation, a local vault-health view, and shared Mikesoft support links.
+- Prepared Keysoft 3.0 for Android release and iPhone/iPad cloud-simulator testing with responsive light/dark UI, native-stack navigation, a local vault-health view, and shared Mikesoft support links. App Store publication is not part of the release plan.
 - Reduced password-login work by batching storage reads and replacing per-password category migration writes with a single encrypted vault write.
 - Relicensed Keysoft under the Apache License 2.0 (`Apache-2.0`) and retained a separate trademark policy for the Keysoft and Mikesoft brands.
 - Upgraded to Expo SDK 57 and React Native 0.86. Aligned Expo modules, React Native native dependencies, Jest Expo, and ESLint config through `expo install --fix`; moved Android build settings to supported SDK 57 fields and added tested optional hardware manifest declarations. `expo-doctor` passes 20/20 checks and the Android export completes locally.
@@ -22,14 +22,16 @@ All notable project changes are documented here.
 - Removed invalid nested credential actions on web and corrected post-save/delete navigation so the vault refreshes without deprecated or unhandled routes.
 - Fixed profile photos disappearing from the unlock, vault, and settings avatars by rendering one shared avatar component and persisting selected image files only when profile changes are saved.
 - Removed broad React Native Web CSS overrides that forced every clipped surface to viewport height, restoring compact dialogs and correct nested scrolling.
+- Restored the GitHub Sponsors action to the visible compact Settings layout after the redesign left it only in the hidden legacy layout.
+- Synchronized the in-app and public Keysoft privacy notices with version 3.0 behavior: fixed effective date, Android distribution and iOS simulator status, Expo Updates technical traffic, Argon2id/PBKDF2 key derivation, camera/photo picker, clipboard, generic Mikesoft privacy contact, and user-controlled backups.
 
 ### Documentation
 
-- Updated the public overview, architecture, development standards, release checklist, and pre-build review for the completed redesign, shared overlays, persistent profile avatar, responsive light/dark behavior, and canonical app-icon assets.
+- Updated the public overview, architecture, security model, development standards, iOS testing boundary, publication checklist, release checklist, and pre-build review for the completed redesign, privacy-policy synchronization, visible support/sponsorship paths, persistent profile avatar, responsive light/dark behavior, and canonical app-icon assets.
 
 ### Tests
 
-- Suite: 28 suites, 171 tests.
+- Suite: 28 suites, 173 tests.
 
 ## [2.3] - 2026-07-10
 
