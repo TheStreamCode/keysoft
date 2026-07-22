@@ -1,4 +1,4 @@
-import { Dimensions, Platform, PixelRatio } from 'react-native';
+import { Dimensions, Platform, PixelRatio, useWindowDimensions } from 'react-native';
 
 /**
  * Breakpoints for responsive design
@@ -35,6 +35,34 @@ export function getScreenDimensions(): WindowDimensions {
  * Determine device type based on screen width
  */
 export type DeviceType = 'phone' | 'tablet' | 'tv';
+
+export interface ResponsiveLayout {
+  width: number;
+  height: number;
+  deviceType: DeviceType;
+  isLargeScreen: boolean;
+  isLandscape: boolean;
+  columns: number;
+  horizontalPadding: number;
+  maxContentWidth: number;
+}
+
+export function useResponsiveLayout(): ResponsiveLayout {
+  const { width, height } = useWindowDimensions();
+  const deviceType: DeviceType =
+    width >= BREAKPOINTS.tv ? 'tv' : width >= BREAKPOINTS.tablet ? 'tablet' : 'phone';
+
+  return {
+    width,
+    height,
+    deviceType,
+    isLargeScreen: deviceType !== 'phone',
+    isLandscape: width > height,
+    columns: deviceType === 'phone' ? 1 : 2,
+    horizontalPadding: deviceType === 'phone' ? 16 : 32,
+    maxContentWidth: deviceType === 'phone' ? width : 1180,
+  };
+}
 
 export function getDeviceType(): DeviceType {
   const { width } = getWindowDimensions();
@@ -180,9 +208,9 @@ export function getMaxContentWidth(): number {
 
   switch (deviceType) {
     case 'tv':
-      return 1024; // TV usa larghezza tablet (layout fisso centrato)
+      return 1180;
     case 'tablet':
-      return 1024; // Max width for tablet
+      return 1180;
     default:
       return Infinity; // No limit for phone
   }

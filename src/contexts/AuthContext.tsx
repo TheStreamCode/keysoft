@@ -8,7 +8,6 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { Alert } from 'react-native';
 import { UserMasterKey } from '../models/User';
 import { Auth, Storage } from '../services';
 import Logger from '../utils/logger';
@@ -16,6 +15,7 @@ import AutoLockService from '../services/utils/autoLockService';
 import ClipboardService from '../services/utils/clipboardService';
 import NotificationService from '../services/utils/notificationService';
 import { useLanguage } from './LanguageContext';
+import { useAlert } from './AlertContext';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -35,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
+  const { alert } = useAlert();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [masterKeyInfo, setMasterKeyInfo] = useState<UserMasterKey | null>(null);
@@ -197,6 +198,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Configure the auto-lock service
   useEffect(() => {
+    void AutoLockService.initialize();
     AutoLockService.setLockCallback(() => {
       Logger.debug('AuthContext: Blocco automatico attivato, eseguo logout');
       logout();
@@ -208,22 +210,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const runPostAuthMigration = useCallback(async (): Promise<void> => {
-    try {
-      Logger.debug('AuthContext: Avvio migrazione delle categorie...');
-      await Storage.getAllPasswords();
-      Logger.debug('AuthContext: Migrazione delle categorie completata');
-    } catch (error) {
-      Logger.error('AuthContext: Errore durante la migrazione delle categorie:', error);
-    }
-  }, []);
-
   const schedulePostLoginTasks = useCallback((): void => {
     void (async () => {
       try {
-        await runPostAuthMigration();
-        if (!isMountedRef.current) return;
-
         await loadUserPreferencesAndSyncServices({
           syncNotifications: true,
           runPeriodicChecks: true,
@@ -232,7 +221,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         Logger.error('AuthContext: Deferred post-login tasks failed', error);
       }
     })();
-  }, [loadUserPreferencesAndSyncServices, runPostAuthMigration]);
+  }, [loadUserPreferencesAndSyncServices]);
 
   const completeSuccessfulLogin = useCallback(async (): Promise<void> => {
     setIsAuthenticated(true);
@@ -287,7 +276,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsAuthenticated(true);
           setMasterKeyInfo(Auth.getMasterKeyInfo());
 
-          await runPostAuthMigration();
           await loadUserPreferencesAndSyncServices();
 
           if (showBiometricPrompt) {
@@ -302,7 +290,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   return;
                 }
 
-                Alert.alert(t('enable_biometrics_title'), t('enable_biometrics_message'), [
+                alert(t('enable_biometrics_title'), t('enable_biometrics_message'), [
                   { text: t('enable_biometrics_later'), onPress: () => {}, style: 'cancel' },
                   {
                     text: t('enable_biometrics_enable'),
@@ -310,16 +298,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       try {
                         const enabled = await Auth.enableBiometrics();
                         if (enabled) {
-                          Alert.alert(t('biometrics_enabled'), t('biometrics_enabled_message'));
+                          alert(t('biometrics_enabled'), t('biometrics_enabled_message'));
                         } else {
-                          Alert.alert(t('error'), t('biometrics_verification_error'));
+                          alert(t('error'), t('biometrics_verification_error'));
                         }
                       } catch (error) {
                         Logger.error(
                           "AuthContext: Errore durante l'abilitazione della biometria:",
                           error,
                         );
-                        Alert.alert(t('error'), t('biometrics_setup_error'));
+                        alert(t('error'), t('biometrics_setup_error'));
                       }
                     },
                   },
@@ -337,7 +325,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
     },
-    [runPostAuthMigration, loadUserPreferencesAndSyncServices, scheduleTimeout, t],
+    [alert, loadUserPreferencesAndSyncServices, scheduleTimeout, t],
   );
 
   const updateMasterPassword = useCallback(
@@ -349,7 +337,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsMasterPasswordConfigured(true);
           setIsAuthenticated(true);
           setMasterKeyInfo(Auth.getMasterKeyInfo());
-          await runPostAuthMigration();
           await loadUserPreferencesAndSyncServices();
         } else if (!Auth.getIsAuthenticated()) {
           // If Auth forced logout because updateMasterPassword rollback failed,
@@ -365,7 +352,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
     },
-    [runPostAuthMigration, loadUserPreferencesAndSyncServices, logout],
+    [loadUserPreferencesAndSyncServices, logout],
   );
 
   const enableBiometrics = useCallback(async (): Promise<boolean> => {

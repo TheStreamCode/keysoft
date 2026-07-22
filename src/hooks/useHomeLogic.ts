@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ToastAndroid, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation';
@@ -52,7 +51,7 @@ function setCacheEntry(
 export const useHomeLogic = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const route = useRoute<HomeScreenRouteProp>();
-  const { alert: customAlert } = useAlert();
+  const { alert: customAlert, notify } = useAlert();
   const { t } = useLanguage();
 
   // Route Params
@@ -61,6 +60,7 @@ export const useHomeLogic = () => {
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
   const [passwords, setPasswords] = useState<Password[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -69,14 +69,13 @@ export const useHomeLogic = () => {
   const [categoryTotalPasswords, setCategoryTotalPasswords] = useState<number | null>(null);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [hasShownBiometricPrompt, setHasShownBiometricPrompt] = useState(false);
-  const [, setForceRefresh] = useState(0);
   const [hasUiError, setHasUiError] = useState(false);
-  const [initialLayoutComplete, setInitialLayoutComplete] = useState(false);
 
   // Refs
   const currentOffset = React.useRef(0);
   const searchCache = React.useRef<Record<string, SearchCacheEntry>>({});
   const hasShownLimitAlert = React.useRef(false);
+  const hasFocusedOnce = React.useRef(false);
 
   // --- Logic Methods ---
 
@@ -89,7 +88,7 @@ export const useHomeLogic = () => {
       }
 
       try {
-        const cacheKey = `${categoryFilter || 'all'}_${searchQuery || 'none'}_${currentOffset.current}`;
+        const cacheKey = `${categoryFilter || 'all'}_${deferredSearchQuery || 'none'}_${currentOffset.current}`;
         const now = Date.now();
 
         // Check Cache
@@ -114,7 +113,7 @@ export const useHomeLogic = () => {
             PASSWORDS_PER_PAGE,
             currentOffset.current,
             categoryFilter,
-            searchQuery,
+            deferredSearchQuery,
           );
 
           Logger.debug(`Caricate ${result.passwords.length} password, totale: ${result.total}`);
@@ -175,7 +174,7 @@ export const useHomeLogic = () => {
         setIsLoadingMore(false);
       }
     },
-    [categoryFilter, customAlert, searchQuery, t],
+    [categoryFilter, customAlert, deferredSearchQuery, t],
   );
 
   const invalidateCacheAndReload = useCallback(() => {
@@ -185,7 +184,6 @@ export const useHomeLogic = () => {
     setHasMorePasswords(true);
     setIsLoading(true);
     loadPasswords(true);
-    setForceRefresh((prev) => prev + 1);
   }, [loadPasswords]);
 
   const loadPreferences = useCallback(async (): Promise<void> => {
@@ -255,18 +253,13 @@ export const useHomeLogic = () => {
     try {
       setHasUiError(false);
       setIsLoading(true);
-      setTimeout(() => {
-        currentOffset.current = 0;
-        setPasswords([]);
-        setHasMorePasswords(true);
-        setSearchQuery('');
-        setCategoryTotalPasswords(null);
-        navigation.setParams({ categoryFilter: undefined });
-        setForceRefresh((prev) => prev + 1);
-        setTimeout(() => {
-          loadPasswords(true);
-        }, 100);
-      }, 50);
+      currentOffset.current = 0;
+      setPasswords([]);
+      setHasMorePasswords(true);
+      setSearchQuery('');
+      setCategoryTotalPasswords(null);
+      navigation.setParams({ categoryFilter: undefined });
+      void loadPasswords(true);
     } catch (error) {
       Logger.error('Errore durante il refresh protetto:', error);
       setIsLoading(false);
@@ -276,8 +269,8 @@ export const useHomeLogic = () => {
 
   const handleDeletePassword = useCallback(
     (id: string) => {
-      Alert.alert(t('delete_confirmation'), t('delete_confirmation_message'), [
-        { text: t('cancel'), style: 'cancel' },
+      customAlert(t('delete_confirmation'), t('delete_confirmation_message'), [
+        { text: t('cancel'), style: 'cancel', onPress: () => {} },
         {
           text: t('delete'),
           style: 'destructive',
@@ -287,54 +280,52 @@ export const useHomeLogic = () => {
               setPasswords((prev) => prev.filter((p) => p.id !== id));
               setTotalPasswords((prev) => prev - 1);
               searchCache.current = {};
-              setTimeout(() => {
-                setForceRefresh((prev) => prev + 1);
-                invalidateCacheAndReload();
-              }, 100);
-              ToastAndroid.show(t('delete_success_message'), ToastAndroid.SHORT);
+              invalidateCacheAndReload();
+              notify(t('delete_success_message'), 'success');
             } catch (error) {
               Logger.error("Errore durante l'eliminazione della password:", error);
-              Alert.alert(t('error'), t('save_error_message'));
+              customAlert(t('error'), t('save_error_message'));
             }
           },
         },
       ]);
     },
-    [invalidateCacheAndReload, t],
+    [customAlert, invalidateCacheAndReload, notify, t],
   );
 
   // --- Effects ---
 
+  // Load identity data even when a responsive/navigation remount happens after
+  // the initial focus event has already fired.
+  useEffect(() => {
+    const initialPreferencesLoad = setTimeout(() => void loadPreferences(), 0);
+    return () => clearTimeout(initialPreferencesLoad);
+  }, [loadPreferences]);
+
   // Focus Effect
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | null = null;
     const unsubscribe = navigation.addListener('focus', () => {
       try {
-        loadPreferences();
+        void loadPreferences();
         setHasUiError(false);
-        if (intervalId) clearInterval(intervalId);
-        intervalId = setInterval(() => setForceRefresh((prev) => prev + 1), 30000);
+
+        if (!hasFocusedOnce.current) {
+          hasFocusedOnce.current = true;
+          return;
+        }
 
         // Reset and reload on focus
         currentOffset.current = 0;
         setPasswords([]);
         setHasMorePasswords(true);
         searchCache.current = {};
-        loadPasswords(true);
-
-        setTimeout(() => {
-          setIsLoading(false);
-          setForceRefresh((prev) => prev + 1);
-        }, 100);
+        void loadPasswords(true);
       } catch (error) {
         Logger.error('Errore durante il focusEffect simulato:', error);
         setHasUiError(true);
       }
     });
-    return () => {
-      unsubscribe();
-      if (intervalId) clearInterval(intervalId);
-    };
+    return unsubscribe;
   }, [loadPasswords, loadPreferences, navigation, refresh]);
 
   // Biometrics Prompt
@@ -344,12 +335,6 @@ export const useHomeLogic = () => {
       setHasShownBiometricPrompt(true);
     }
   }, [userPreferences, hasShownBiometricPrompt, checkBiometrics]);
-
-  // Initial Layout
-  useEffect(() => {
-    const layoutTimeout = setTimeout(() => setInitialLayoutComplete(true), 100);
-    return () => clearTimeout(layoutTimeout);
-  }, []);
 
   // Forced Refresh param
   useEffect(() => {
@@ -444,7 +429,6 @@ export const useHomeLogic = () => {
     totalPasswords,
     categoryTotalPasswords,
     hasUiError,
-    initialLayoutComplete,
 
     // Actions
     handleLoadMore,

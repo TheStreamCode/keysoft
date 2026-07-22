@@ -1,19 +1,35 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import { File, Paths } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { Storage } from '../../services';
 import { UserPreferences } from '../../models/User';
 import Logger from '../../utils/logger';
+
+async function persistProfileAvatar(sourceUri: string): Promise<string> {
+  if (Platform.OS === 'web' || sourceUri.startsWith(Paths.document.uri)) return sourceUri;
+
+  const source = new File(sourceUri);
+  if (!source.exists) throw new Error('Selected profile image is no longer available');
+
+  const extension = /^\.(png|jpe?g|webp|heic)$/i.test(source.extension)
+    ? source.extension.toLowerCase()
+    : '.jpg';
+  const destination = new File(Paths.document, `keysoft-profile-avatar${extension}`);
+  await source.copy(destination, { overwrite: true });
+  return destination.uri;
+}
+
+function getSelectedAvatarUri(asset: ImagePicker.ImagePickerAsset): string {
+  if (Platform.OS !== 'web' || !asset.base64) return asset.uri;
+  return `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`;
+}
 
 interface UseProfileFormParams {
   preferences: UserPreferences | null;
   setPreferences: (prefs: UserPreferences) => void;
   setIsSaving: (saving: boolean) => void;
   t: (key: string) => string;
-  alert: (
-    title: string,
-    message: string,
-    buttons?: { text: string; onPress: () => void; style?: 'default' | 'cancel' | 'destructive' }[],
-  ) => void;
 }
 
 export const useProfileForm = ({
@@ -21,7 +37,6 @@ export const useProfileForm = ({
   setPreferences,
   setIsSaving,
   t,
-  alert,
 }: UseProfileFormParams) => {
   const [showModal, setShowModal] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
@@ -31,9 +46,7 @@ export const useProfileForm = ({
 
   // Synchronize the selected avatar when preferences change
   useEffect(() => {
-    if (preferences?.avatar) {
-      setSelectedImage(preferences.avatar);
-    }
+    setSelectedImage(preferences?.avatar ?? null);
   }, [preferences?.avatar]);
 
   const openProfileModal = useCallback(() => {
@@ -47,7 +60,8 @@ export const useProfileForm = ({
     setShowModal(false);
     setTempUsername('');
     setError('');
-  }, []);
+    setSelectedImage(preferences?.avatar ?? null);
+  }, [preferences?.avatar]);
 
   const handleSaveProfile = useCallback(async () => {
     if (!preferences) return;
@@ -63,10 +77,11 @@ export const useProfileForm = ({
 
     try {
       setIsSaving(true);
+      const persistedAvatar = selectedImage ? await persistProfileAvatar(selectedImage) : undefined;
       const updatedPreferences = {
         ...preferences,
         username: tempUsername,
-        avatar: selectedImage || undefined,
+        avatar: persistedAvatar,
       };
 
       await Storage.saveUserPreferences(updatedPreferences);
@@ -86,43 +101,45 @@ export const useProfileForm = ({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
+        base64: Platform.OS === 'web',
         quality: 0.7,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedImage(result.assets[0].uri);
-        Logger.info('Immagine selezionata dalla galleria:', result.assets[0].uri);
+        setSelectedImage(getSelectedAvatarUri(result.assets[0]));
+        Logger.info('Profile image selected from gallery');
       }
     } catch (err) {
       Logger.error("Errore durante la selezione dell'immagine:", err);
-      alert(t('error'), t('image_pick_error'));
+      setError(t('image_pick_error'));
     }
-  }, [t, alert]);
+  }, [t]);
 
   const takePhoto = useCallback(async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
       if (status !== 'granted') {
-        alert(t('permission_denied'), t('camera_permission_required'));
+        setError(t('camera_permission_required'));
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
+        base64: Platform.OS === 'web',
         quality: 0.7,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedImage(result.assets[0].uri);
-        Logger.info('Foto scattata con la fotocamera:', result.assets[0].uri);
+        setSelectedImage(getSelectedAvatarUri(result.assets[0]));
+        Logger.info('Profile photo captured');
       }
     } catch (err) {
       Logger.error("Errore durante l'acquisizione della foto:", err);
-      alert(t('error'), t('photo_capture_error'));
+      setError(t('photo_capture_error'));
     }
-  }, [t, alert]);
+  }, [t]);
 
   const openImageSourceModal = useCallback(() => {
     setShowImageSourceModal(true);

@@ -1,12 +1,12 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { SchedulableTriggerInputTypes } from 'expo-notifications';
+import type { Notification as ExpoNotification } from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Notification } from '../../components/NotificationBell';
 import Logger from '../../utils/logger';
+import { isExpoGo } from '../../utils/env';
 import { Password } from '../../models/Password';
 import { NotificationSettings } from '../../models/User';
-import { calculatePasswordStrength } from '../../utils/passwordUtils';
+import { analyzeVaultHealth } from '../vault-health/vaultHealthService';
 import { bytesToHex, getRandomBytes } from '../../utils/cryptoRandom';
 
 // AsyncStorage key for notifications
@@ -22,8 +22,30 @@ const PASSWORD_CHECK_INTERVAL = 30 * 24 * 60 * 60 * 1000; // 30 giorni tra un co
 const BACKUP_WARNING_THRESHOLD = 30 * 24 * 60 * 60 * 1000; // 30 giorni senza backup
 // const PASSWORD_EXPIRY_THRESHOLD = 180 * 24 * 60 * 60 * 1000; // 180 days before a password is considered old when it has no explicit expiration
 
-// Guard: disable native notifications on web and provide graceful no-ops
+// Loading the expo-notifications barrel in Expo Go on Android also initializes
+// its remote-push token listener. Remote push is intentionally unavailable in
+// Expo Go and SDK 57 throws during module evaluation, before React can mount.
+// Keep Expo Go in local-history mode; native/EAS builds load the module lazily
+// and retain full local-notification support.
 const IS_WEB = Platform.OS === 'web';
+const IS_EXPO_GO = isExpoGo();
+const IS_LOCAL_HISTORY_ONLY = IS_WEB || IS_EXPO_GO;
+
+type ExpoNotificationsModule = typeof import('expo-notifications');
+
+declare const require: (moduleName: string) => unknown;
+
+let notificationsModule: ExpoNotificationsModule | null | undefined;
+
+function getNativeNotifications(): ExpoNotificationsModule | null {
+  if (IS_LOCAL_HISTORY_ONLY) return null;
+
+  if (notificationsModule === undefined) {
+    notificationsModule = require('expo-notifications') as ExpoNotificationsModule;
+  }
+
+  return notificationsModule;
+}
 
 type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
 
@@ -38,18 +60,6 @@ function createNotificationId(type: NotificationType, suffix?: string): string {
 
 function createUniqueTimestamp(): string {
   return `${Date.now()}_${createNotificationNonce()}`;
-}
-
-if (!IS_WEB) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true, // Legacy, kept for compatibility if needed, but we rely on banner/list
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
 }
 
 /**
@@ -108,28 +118,41 @@ class NotificationService {
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
 
-    if (IS_WEB) {
-      // On web: skip native notifications; mark initialized to enable local list features
+    const notifications = getNativeNotifications();
+
+    if (!notifications) {
+      // Web and Expo Go keep the in-app notification history without loading
+      // remote-push APIs that are unavailable in the Expo Go Android client.
       this.isInitialized = true;
       Logger.debug(
-        'NotificationService (web): native notifications disabled; using local history only',
+        `NotificationService (${IS_EXPO_GO ? 'expo-go' : 'web'}): using local history only`,
       );
       return true;
     }
 
     try {
+      notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        }),
+      });
+
       // Cancel all scheduled notifications at startup
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      await notifications.cancelAllScheduledNotificationsAsync();
       Logger.debug(
         "NotificationService: Tutte le notifiche programmate sono state cancellate all'avvio",
       );
 
       // Request notification permissions
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } = await notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
+        const { status } = await notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
@@ -140,16 +163,16 @@ class NotificationService {
 
       // Configure notifications for the current platform
       if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
+        await notifications.setNotificationChannelAsync('default', {
           name: 'default',
-          importance: Notifications.AndroidImportance.DEFAULT,
+          importance: notifications.AndroidImportance.DEFAULT,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#4B86B4',
         });
       }
 
       // Configure the incoming notification listener
-      Notifications.addNotificationReceivedListener(this.handleNotificationReceived);
+      notifications.addNotificationReceivedListener(this.handleNotificationReceived);
 
       this.isInitialized = true;
       Logger.debug('Servizio di notifiche inizializzato con successo');
@@ -163,8 +186,8 @@ class NotificationService {
   /**
    * Handles an incoming notification
    */
-  private handleNotificationReceived = async (event: Notifications.Notification) => {
-    if (IS_WEB) return; // no-op on web
+  private handleNotificationReceived = async (event: ExpoNotification) => {
+    if (IS_LOCAL_HISTORY_ONLY) return;
 
     try {
       const { request } = event;
@@ -315,7 +338,9 @@ class NotificationService {
     try {
       const uniqueData = { type, ...data, _uniqueTimestamp: createUniqueTimestamp() };
 
-      if (IS_WEB) {
+      const notifications = getNativeNotifications();
+
+      if (!notifications) {
         // Simulate immediate notification by storing locally and notifying listeners
         const notification: Notification = {
           id: createNotificationId(type),
@@ -332,7 +357,7 @@ class NotificationService {
         return notification.id;
       }
 
-      const notificationId = await Notifications.scheduleNotificationAsync({
+      const notificationId = await notifications.scheduleNotificationAsync({
         content: { title, body, data: uniqueData },
         trigger: null,
       });
@@ -390,7 +415,9 @@ class NotificationService {
     try {
       const uniqueData = { type, ...data, _uniqueTimestamp: createUniqueTimestamp() };
 
-      if (IS_WEB) {
+      const notifications = getNativeNotifications();
+
+      if (!notifications) {
         // On web, don't actually schedule; just store a record indicating a scheduled intent
         const notification: Notification = {
           id: createNotificationId(type, 'scheduled'),
@@ -407,7 +434,7 @@ class NotificationService {
       }
 
       // Check whether notifications of the same type are already scheduled
-      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+      const scheduledNotifications = await notifications.getAllScheduledNotificationsAsync();
       const similarNotifications = scheduledNotifications.filter(
         (n) =>
           n.content.data &&
@@ -426,7 +453,7 @@ class NotificationService {
         return null;
       }
 
-      const notificationId = await Notifications.scheduleNotificationAsync({
+      const notificationId = await notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
@@ -434,7 +461,7 @@ class NotificationService {
         },
         trigger: {
           seconds: seconds,
-          type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+          type: notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         },
       });
 
@@ -452,7 +479,9 @@ class NotificationService {
    */
   async cancelNotification(notificationId: string): Promise<void> {
     try {
-      if (IS_WEB) {
+      const notifications = getNativeNotifications();
+
+      if (!notifications) {
         // Remove from local history only; no native cancel
         const notifications = await this.getRecentNotifications();
         const updated = notifications.filter((n) => n.id !== notificationId);
@@ -460,7 +489,7 @@ class NotificationService {
         Logger.debug(`NotificationService (web): simulated cancel for ${notificationId}`);
         return;
       }
-      await Notifications.cancelScheduledNotificationAsync(notificationId);
+      await notifications.cancelScheduledNotificationAsync(notificationId);
       Logger.debug(`Notifica con ID: ${notificationId} cancellata`);
     } catch (error) {
       Logger.error('Errore durante la cancellazione della notifica:', error);
@@ -472,12 +501,14 @@ class NotificationService {
    */
   async cancelAllNotifications(): Promise<void> {
     try {
-      if (IS_WEB) {
+      const notifications = getNativeNotifications();
+
+      if (!notifications) {
         await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify([]));
         Logger.debug('NotificationService (web): cleared local notifications');
         return;
       }
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      await notifications.cancelAllScheduledNotificationsAsync();
       Logger.debug('Tutte le notifiche cancellate');
     } catch (error) {
       Logger.error('Errore durante la cancellazione di tutte le notifiche:', error);
@@ -740,6 +771,7 @@ class NotificationService {
   ): Promise<{ [key in NotificationType]?: number }> {
     const now = Date.now();
     const updatedChecks = { ...lastChecks };
+    const health = analyzeVaultHealth(passwords, now);
 
     // 1. Backup check
     if (this.shouldRunCheck(lastChecks[NotificationType.BACKUP_REMINDER], BACKUP_CHECK_INTERVAL)) {
@@ -754,16 +786,10 @@ class NotificationService {
 
     // 2. Weak-password check
     if (this.shouldRunCheck(lastChecks[NotificationType.WEAK_PASSWORD], PASSWORD_CHECK_INTERVAL)) {
-      let weakCount = 0;
-      for (const pwd of passwords) {
-        const { score } = calculatePasswordStrength(pwd.password);
-        if (score <= 1) weakCount++;
-      }
-
-      if (weakCount > 0) {
+      if (health.weak > 0) {
         await this.sendNotification(
           this.t('notification_weak_password_warning_title'),
-          this.t('notification_weak_password_summary_body', { weakCount }),
+          this.t('notification_weak_password_summary_body', { weakCount: health.weak }),
           NotificationType.WEAK_PASSWORD,
         );
       }
@@ -774,20 +800,12 @@ class NotificationService {
     if (
       this.shouldRunCheck(lastChecks[NotificationType.DUPLICATE_PASSWORD], PASSWORD_CHECK_INTERVAL)
     ) {
-      const passwordCounts = new Map<string, number>();
-      for (const pwd of passwords) {
-        passwordCounts.set(pwd.password, (passwordCounts.get(pwd.password) || 0) + 1);
-      }
-
-      let duplicateCount = 0;
-      for (const count of passwordCounts.values()) {
-        if (count > 1) duplicateCount += count;
-      }
-
-      if (duplicateCount > 0) {
+      if (health.reused > 0) {
         await this.sendNotification(
           this.t('notification_duplicate_password_warning_title'),
-          this.t('notification_duplicate_password_summary_body', { duplicateCount }),
+          this.t('notification_duplicate_password_summary_body', {
+            duplicateCount: health.reused,
+          }),
           NotificationType.DUPLICATE_PASSWORD,
         );
       }
@@ -798,17 +816,10 @@ class NotificationService {
     if (
       this.shouldRunCheck(lastChecks[NotificationType.PASSWORD_EXPIRY], PASSWORD_CHECK_INTERVAL)
     ) {
-      let expiredCount = 0;
-      for (const pwd of passwords) {
-        if (pwd.expiryDate && pwd.expiryDate < now) {
-          expiredCount++;
-        }
-      }
-
-      if (expiredCount > 0) {
+      if (health.expired > 0) {
         await this.sendNotification(
           this.t('notification_password_expiry_warning_title'),
-          this.t('notification_password_expiry_summary_body', { expiredCount }),
+          this.t('notification_password_expiry_summary_body', { expiredCount: health.expired }),
           NotificationType.PASSWORD_EXPIRY,
         );
       }

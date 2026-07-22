@@ -7,7 +7,13 @@ const globals = require('globals');
 module.exports = [
   ...expoFlat,
   {
-    ignores: ['dist/**', 'dist-test/**', '.expo/**', 'web-build/**'],
+    ignores: [
+      'dist/**',
+      'dist-test/**',
+      '.expo/**',
+      'web-build/**',
+      'Keysoft Redesign completo/**',
+    ],
   },
   {
     files: [

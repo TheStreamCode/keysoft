@@ -10,6 +10,7 @@ type Language = 'it' | 'en' | 'system';
 
 interface LanguageContextType {
   language: Language;
+  effectiveLanguage: 'it' | 'en';
   setLanguage: (language: Language) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
@@ -154,8 +155,8 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   );
 
   const value = React.useMemo<LanguageContextType>(
-    () => ({ language, setLanguage: updateLanguage, t }),
-    [language, updateLanguage, t],
+    () => ({ language, effectiveLanguage: getEffectiveLanguage(), setLanguage: updateLanguage, t }),
+    [getEffectiveLanguage, language, updateLanguage, t],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

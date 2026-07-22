@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,8 @@ import Logger from '../utils/logger';
 import { calculatePasswordStrength } from '../utils/passwordUtils';
 import { copyToClipboardWithFeedback } from '../utils/clipboardUtils';
 import { bytesToHex, getRandomBytes } from '../utils/cryptoRandom';
+import { MotionPressable, Reveal } from '../components/ui/motion';
+import { useResponsiveLayout } from '../utils/responsive';
 
 type PasswordDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'PasswordDetail'>;
 type PasswordDetailScreenRouteProp = RouteProp<RootStackParamList, 'PasswordDetail'>;
@@ -37,11 +39,15 @@ function createPasswordId(): string {
 const PasswordDetailScreen: React.FC = () => {
   const navigation = useNavigation<PasswordDetailScreenNavigationProp>();
   const route = useRoute<PasswordDetailScreenRouteProp>();
-  const { passwordId } = route.params || {};
+  const { passwordId, mode: initialMode } = route.params || {};
   const isEditing = !!passwordId;
   const { theme, isDarkMode } = useTheme();
-  const { alert } = useAlert();
-  const { t } = useLanguage();
+  const { alert, notify } = useAlert();
+  const { t, effectiveLanguage } = useLanguage();
+  const layout = useResponsiveLayout();
+  const [screenMode, setScreenMode] = useState<'create' | 'edit' | 'view'>(
+    initialMode || (passwordId ? 'edit' : 'create'),
+  );
 
   const [password, setPassword] = useState<Password>({
     id: passwordId || createPasswordId(),
@@ -207,25 +213,7 @@ const PasswordDetailScreen: React.FC = () => {
         {
           text: t('ok'),
           onPress: () => {
-            // Generiamo un timestamp unico per forzare l'aggiornamento completo
-            const refreshTimestamp = Date.now();
-
-            // Prima navighiamo a Main con il parametro refresh
-            navigation.navigate({
-              name: 'Main',
-              params: { refresh: refreshTimestamp },
-              merge: true,
-            });
-
-            // Use a short timeout to ensure the update is applied correctly
-            setTimeout(() => {
-              // Also update Home with the same refresh parameter to keep screens synchronized
-              navigation.navigate({
-                name: 'Home',
-                params: { refresh: refreshTimestamp },
-                merge: true,
-              });
-            }, 50);
+            navigation.navigate('Main', { refresh: Date.now() });
           },
         },
       ]);
@@ -263,25 +251,7 @@ const PasswordDetailScreen: React.FC = () => {
           try {
             await Storage.deletePassword(passwordId);
 
-            // Generiamo un timestamp unico per forzare l'aggiornamento completo
-            const refreshTimestamp = Date.now();
-
-            // Prima navighiamo a Main con il parametro refresh
-            navigation.navigate({
-              name: 'Main',
-              params: { refresh: refreshTimestamp },
-              merge: true,
-            });
-
-            // Use a short timeout to ensure the update is applied correctly
-            setTimeout(() => {
-              // Also update Home with the same refresh parameter to keep screens synchronized
-              navigation.navigate({
-                name: 'Home',
-                params: { refresh: refreshTimestamp },
-                merge: true,
-              });
-            }, 50);
+            navigation.navigate('Main', { refresh: Date.now() });
           } catch (error) {
             Logger.error("Errore durante l'eliminazione della password:", error);
             alert(t('error'), t('save_error_message'));
@@ -313,19 +283,208 @@ const PasswordDetailScreen: React.FC = () => {
 
   const handleCopyToClipboard = useCallback(
     async (text: string): Promise<void> => {
-      await copyToClipboardWithFeedback(text, alert, {
-        successTitle: t('copied'),
-        successMessage: t('copied_message'),
-        errorTitle: t('error'),
-        errorMessage: t('copy_error_message'),
-      });
+      await copyToClipboardWithFeedback(
+        text,
+        alert,
+        {
+          successTitle: t('copied'),
+          successMessage: t('copied_message'),
+          errorTitle: t('error'),
+          errorMessage: t('copy_error_message'),
+        },
+        notify,
+      );
     },
-    [alert, t],
+    [alert, notify, t],
   );
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
+
+  const passwordStrength = useMemo(
+    () => calculatePasswordStrength(password.password),
+    [password.password],
+  );
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(effectiveLanguage === 'it' ? 'it-IT' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+    [effectiveLanguage],
+  );
+
+  function renderDetailRow(
+    label: string,
+    value: string,
+    options?: { isSecret?: boolean; copyLabel?: string },
+  ) {
+    const visibleValue = options?.isSecret && !isPasswordVisible ? '•'.repeat(12) : value;
+
+    return (
+      <View style={[styles.detailRow, { borderBottomColor: theme.colors.divider }]}>
+        <Text style={[styles.detailLabel, { color: theme.colors.textTertiary }]}>{label}</Text>
+        <View style={styles.detailValueRow}>
+          <Text
+            numberOfLines={options?.isSecret && isPasswordVisible ? 2 : 1}
+            selectable={!options?.isSecret || isPasswordVisible}
+            style={[
+              styles.detailValue,
+              options?.isSecret && styles.secretValue,
+              { color: theme.colors.text },
+            ]}
+          >
+            {visibleValue || t('not_available')}
+          </Text>
+          {options?.isSecret ? (
+            <MotionPressable
+              accessibilityLabel={isPasswordVisible ? t('hide_password') : t('show_password')}
+              accessibilityRole="button"
+              onPress={togglePasswordVisibility}
+              style={styles.detailAction}
+            >
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={17}
+                color={theme.colors.textTertiary}
+              />
+            </MotionPressable>
+          ) : null}
+          <MotionPressable
+            accessibilityLabel={options?.copyLabel || t('copy')}
+            accessibilityRole="button"
+            onPress={() => void handleCopyToClipboard(value)}
+            style={styles.detailAction}
+          >
+            <Ionicons name="copy-outline" size={17} color={theme.colors.primary} />
+          </MotionPressable>
+        </View>
+      </View>
+    );
+  }
+
+  if (screenMode === 'view' && passwordId) {
+    const detailWidth = Math.min(layout.width - layout.horizontalPadding * 2, 660);
+
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        edges={['top']}
+      >
+        <View style={[styles.detailContent, { width: detailWidth }]}>
+          <View style={styles.detailHeader}>
+            <MotionPressable
+              accessibilityLabel={t('back')}
+              accessibilityRole="button"
+              onPress={() => navigation.goBack()}
+              style={styles.headerIconButton}
+            >
+              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+            </MotionPressable>
+            <MotionPressable
+              accessibilityLabel={t('delete')}
+              accessibilityRole="button"
+              onPress={handleDelete}
+              style={styles.headerIconButton}
+            >
+              <Ionicons name="ellipsis-vertical" size={18} color={theme.colors.textTertiary} />
+            </MotionPressable>
+          </View>
+
+          <KeyboardAwareScrollView
+            contentContainerStyle={styles.detailScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Reveal style={styles.detailHero}>
+              <View
+                style={[styles.detailIcon, { backgroundColor: theme.colors.backgroundElevated }]}
+              >
+                <Ionicons
+                  name={getCategoryIcon(password.category)}
+                  size={23}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <View style={styles.detailHeroCopy}>
+                <Text style={[styles.detailTitle, { color: theme.colors.text }]}>
+                  {password.title}
+                </Text>
+                <View style={styles.detailMetaRow}>
+                  {password.category ? (
+                    <View
+                      style={[styles.detailTag, { backgroundColor: theme.colors.chipBackground }]}
+                    >
+                      <Text style={[styles.detailTagText, { color: theme.colors.primary }]}>
+                        {getCategoryName(password.category)}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {passwordStrength.label ? (
+                    <Text style={[styles.detailStrength, { color: passwordStrength.color }]}>
+                      • {t(passwordStrength.label)}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </Reveal>
+
+            <Reveal delay={55} style={styles.detailFields}>
+              {renderDetailRow(t('username'), password.username, { copyLabel: t('copy_username') })}
+              {renderDetailRow(t('password'), password.password, {
+                isSecret: true,
+                copyLabel: t('copy_password_card'),
+              })}
+              {password.website
+                ? renderDetailRow(t('website'), password.website, { copyLabel: t('copy_website') })
+                : null}
+              {password.notes ? (
+                <View style={[styles.detailNotes, { borderBottomColor: theme.colors.divider }]}>
+                  <Text style={[styles.detailLabel, { color: theme.colors.textTertiary }]}>
+                    {t('notes')}
+                  </Text>
+                  <Text selectable style={[styles.detailNotesText, { color: theme.colors.text }]}>
+                    {password.notes}
+                  </Text>
+                </View>
+              ) : null}
+            </Reveal>
+
+            <Reveal delay={95}>
+              <MotionPressable
+                accessibilityRole="button"
+                onPress={() => setScreenMode('edit')}
+                style={[styles.outlineButton, { borderColor: theme.colors.primary }]}
+              >
+                <Ionicons name="create-outline" size={17} color={theme.colors.primary} />
+                <Text style={[styles.outlineButtonText, { color: theme.colors.primary }]}>
+                  {t('edit_item')}
+                </Text>
+              </MotionPressable>
+              <MotionPressable
+                accessibilityRole="button"
+                onPress={handleDelete}
+                style={styles.destructiveButton}
+                testID="password-delete-button"
+              >
+                <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+                <Text style={[styles.destructiveText, { color: theme.colors.error }]}>
+                  {t('delete')}
+                </Text>
+              </MotionPressable>
+              <Text style={[styles.detailDates, { color: theme.colors.textTertiary }]}>
+                {t('item_dates', {
+                  created: dateFormatter.format(password.createdAt),
+                  updated: dateFormatter.format(password.updatedAt),
+                })}
+              </Text>
+            </Reveal>
+          </KeyboardAwareScrollView>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -336,27 +495,25 @@ const PasswordDetailScreen: React.FC = () => {
         style={[
           styles.header,
           {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            // Removed shadow
-            marginTop: AppTheme.spacing.xs,
-            marginHorizontal: AppTheme.spacing.l,
-            marginBottom: AppTheme.spacing.xs,
+            backgroundColor: theme.colors.background,
           },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[
-            styles.backButton,
-            { backgroundColor: theme.colors.primary + '15', borderRadius: 20 },
-          ]}
+        <MotionPressable
+          onPress={() =>
+            passwordId && screenMode === 'edit' ? setScreenMode('view') : navigation.goBack()
+          }
+          style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
+          <Ionicons
+            name={screenMode === 'edit' ? 'close' : 'chevron-back'}
+            size={21}
+            color={theme.colors.textSecondary}
+          />
+        </MotionPressable>
         <Text
           style={[
             styles.title,
@@ -369,19 +526,20 @@ const PasswordDetailScreen: React.FC = () => {
             },
           ]}
         >
-          {isEditing ? t('edit_password') : t('new_password')}
+          {screenMode === 'edit' ? t('edit_item') : t('new_password')}
         </Text>
-        {isEditing ? (
-          <TouchableOpacity
-            onPress={handleDelete}
-            style={styles.deleteButton}
-            testID="password-delete-button"
+        {screenMode === 'edit' ? (
+          <MotionPressable
+            onPress={() => void handleSave()}
+            style={styles.headerSaveButton}
             accessibilityRole="button"
-            accessibilityLabel={t('delete')}
+            accessibilityLabel={t('save')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={24} color={theme.colors.error} />
-          </TouchableOpacity>
+            <Text style={[styles.headerSaveText, { color: theme.colors.primary }]}>
+              {t('save')}
+            </Text>
+          </MotionPressable>
         ) : (
           <View style={styles.placeholder} />
         )}
@@ -624,18 +782,34 @@ const PasswordDetailScreen: React.FC = () => {
         </View>
 
         <View style={{ marginTop: 20, marginBottom: 20 }}>
-          <TouchableOpacity
+          <MotionPressable
             testID="password-save-button"
-            style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
+            style={[styles.saveButton, { borderColor: theme.colors.primary }]}
             onPress={handleSave}
             disabled={isSaving}
           >
             {isSaving ? (
-              <ActivityIndicator color={theme.colors.textLight} size="small" />
+              <ActivityIndicator color={theme.colors.primary} size="small" />
             ) : (
-              <Text style={styles.saveButtonText}>{t('save')}</Text>
+              <Text style={[styles.saveButtonText, { color: theme.colors.primary }]}>
+                {t(screenMode === 'edit' ? 'save_changes' : 'save')}
+              </Text>
             )}
-          </TouchableOpacity>
+          </MotionPressable>
+          {isEditing ? (
+            <MotionPressable
+              accessibilityLabel={t('delete')}
+              accessibilityRole="button"
+              onPress={handleDelete}
+              style={styles.destructiveButton}
+              testID="password-delete-button"
+            >
+              <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+              <Text style={[styles.destructiveText, { color: theme.colors.error }]}>
+                {t('delete')}
+              </Text>
+            </MotionPressable>
+          ) : null}
         </View>
       </KeyboardAwareScrollView>
 
@@ -681,8 +855,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: AppTheme.spacing.l,
-    paddingVertical: AppTheme.spacing.m,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   backButton: {
     padding: 8,
@@ -692,16 +869,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: AppTheme.fonts.sizes.xlarge,
-    fontWeight: 'bold',
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '600',
   },
-  deleteButton: {
-    padding: AppTheme.spacing.s,
+  headerSaveButton: {
     minWidth: 44,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerSaveText: { fontSize: 13, fontWeight: '600' },
   placeholder: {
     width: 40,
   },
@@ -709,21 +887,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    padding: AppTheme.spacing.l,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    padding: 14,
   },
   formGroup: {
-    marginBottom: AppTheme.spacing.l,
+    marginBottom: 14,
   },
   label: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'medium',
-    marginBottom: AppTheme.spacing.s,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '500',
+    marginBottom: 5,
   },
   input: {
     backgroundColor: AppTheme.colors.card,
     borderRadius: AppTheme.borderRadius.medium,
-    padding: AppTheme.spacing.m,
-    fontSize: AppTheme.fonts.sizes.medium,
+    minHeight: 44,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    fontSize: 13,
     color: AppTheme.colors.text,
     borderWidth: 1,
     borderColor: AppTheme.colors.border,
@@ -738,8 +922,10 @@ const styles = StyleSheet.create({
   },
   inputFlex: {
     flex: 1,
-    padding: AppTheme.spacing.m,
-    fontSize: AppTheme.fonts.sizes.medium,
+    minHeight: 44,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    fontSize: 13,
     color: AppTheme.colors.text,
   },
   inputIcon: {
@@ -750,7 +936,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 88,
   },
   generateButton: {
     flexDirection: 'row',
@@ -772,16 +958,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   saveButton: {
-    backgroundColor: AppTheme.colors.primary,
-    borderRadius: AppTheme.borderRadius.pill,
-    paddingVertical: AppTheme.spacing.m,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonText: {
-    color: AppTheme.colors.textLight,
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
   },
   categorySelector: {
     flexDirection: 'row',
@@ -830,6 +1016,81 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  detailContent: { flex: 1, alignSelf: 'center' },
+  detailHeader: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerIconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  detailScrollContent: { paddingHorizontal: 14, paddingBottom: 36 },
+  detailHero: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 22 },
+  detailIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  detailHeroCopy: { flex: 1, minWidth: 0 },
+  detailTitle: { fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: -0.4 },
+  detailMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  detailTag: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+  detailTagText: { fontSize: 9, lineHeight: 12, fontWeight: '600' },
+  detailStrength: { fontSize: 10, lineHeight: 14, fontWeight: '500' },
+  detailFields: { marginBottom: 20 },
+  detailRow: {
+    minHeight: 68,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+  },
+  detailLabel: {
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  detailValueRow: { flexDirection: 'row', alignItems: 'center' },
+  detailValue: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 19, fontWeight: '500' },
+  secretValue: { fontFamily: AppTheme.fonts.secure, letterSpacing: 1.2 },
+  detailAction: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -8,
+  },
+  detailNotes: {
+    minHeight: 86,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  detailNotesText: { fontSize: 13, lineHeight: 19 },
+  outlineButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  outlineButtonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  destructiveButton: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 6,
+  },
+  destructiveText: { fontSize: 12, fontWeight: '500' },
+  detailDates: { fontSize: 9, lineHeight: 13, textAlign: 'center', marginTop: 18 },
 });
 
 export default PasswordDetailScreen;

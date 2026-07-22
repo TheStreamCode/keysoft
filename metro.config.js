@@ -4,12 +4,13 @@ const path = require('path');
 
 let config = getDefaultConfig(__dirname);
 
-// Custom asset extensions; ensure 'ksx' is present
+// Custom asset extensions; ensure 'ksx' and 'txt' are present
 // and remove duplicates if getDefaultConfig already includes them.
 const defaultAssetExts = config.resolver.assetExts;
 config.resolver.assetExts = [
-  ...defaultAssetExts.filter((ext) => ext !== 'ksx'), // Remove 'ksx' when already present to avoid duplicates
-  'ksx', // Add 'ksx' when it is missing
+  ...defaultAssetExts.filter((ext) => ext !== 'ksx' && ext !== 'txt'),
+  'ksx',
+  'txt',
 ];
 
 // Transformer configuration
@@ -19,9 +20,6 @@ config.transformer.getTransformOptions = async () => ({
     inlineRequires: true,
   },
 });
-
-// Add this option for Node 18
-config.resolver.resolverMainFields = ['browser', 'main'];
 
 // Alias configuration
 const nanoidMockPath = path.resolve(__dirname, 'src/utils/nanoidMock.js');

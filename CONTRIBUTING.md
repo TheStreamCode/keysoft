@@ -65,7 +65,7 @@ Use focused PRs with:
 ## Contribution License
 
 By submitting a contribution, you attest that you have the right to submit it
-and certify that it is provided under GPL-3.0-only. You must disclose any
+and certify that it is provided under Apache-2.0. You must disclose any
 third-party material included in the contribution and its applicable license.
 This is not a contributor license agreement and does not transfer or assign
 copyright.

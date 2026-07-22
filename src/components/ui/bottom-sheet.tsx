@@ -1,22 +1,23 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
+  ActivityIndicator,
+  Animated,
   Image,
   ImageSourcePropType,
-  Dimensions,
-  Animated,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts/ThemeContext';
+
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getMaxContentWidth, isTabletOrLarger } from '../../utils/responsive';
+import { useTheme } from '../../contexts/ThemeContext';
+import { MotionPressable, usePrefersReducedMotion } from './motion';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -29,128 +30,111 @@ interface BottomSheetProps {
   height?: 'auto' | 'half' | 'full';
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-export const BottomSheet: React.FC<BottomSheetProps> = ({
+export function BottomSheet({
   visible,
   onClose,
   title,
   children,
   showCloseButton = true,
   height = 'auto',
-}) => {
+}: BottomSheetProps) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const translateY = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const window = useWindowDimensions();
+  const isReducedMotion = usePrefersReducedMotion();
+  const translateY = React.useRef(new Animated.Value(window.height)).current;
   const opacity = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(translateY, {
-          toValue: 0,
-          tension: 80,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    if (!visible) {
+      translateY.setValue(window.height);
+      opacity.setValue(0);
+      return;
     }
-  }, [visible, translateY, opacity]);
 
-  const getMaxHeight = () => {
-    switch (height) {
-      case 'full':
-        return SCREEN_HEIGHT * 0.9;
-      case 'half':
-        return SCREEN_HEIGHT * 0.5;
-      default:
-        return SCREEN_HEIGHT * 0.7;
+    if (isReducedMotion) {
+      translateY.setValue(0);
+      opacity.setValue(1);
+      return;
     }
-  };
 
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+    Animated.parallel([
+      Animated.spring(translateY, {
+        toValue: 0,
+        tension: 92,
+        friction: 13,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isReducedMotion, opacity, translateY, visible, window.height]);
+
+  const maxHeight =
+    height === 'full'
+      ? window.height - Math.max(insets.top, 12)
+      : window.height * (height === 'half' ? 0.58 : 0.78);
 
   return (
     <Modal
-      visible={visible}
-      transparent
+      accessibilityViewIsModal
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
-      accessibilityViewIsModal
+      transparent
+      visible={visible}
     >
-      <Animated.View style={[styles.overlay, { opacity }]}>
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
+      <Animated.View style={[styles.overlay, { backgroundColor: theme.surfaces.overlay, opacity }]}>
+        <View
           accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          onResponderRelease={onClose}
+          onStartShouldSetResponder={() => true}
+          style={StyleSheet.absoluteFill}
         />
-        {/* Wrapper per centrare su tablet/TV */}
         <View style={styles.contentWrapper}>
           <Animated.View
             style={[
               styles.container,
-              { paddingBottom: Math.max(insets.bottom, 20) },
               {
+                backgroundColor: theme.colors.backgroundElevated,
+                borderColor: theme.colors.divider,
+                maxHeight,
+                paddingBottom: Math.max(insets.bottom, 10),
                 transform: [{ translateY }],
-                maxHeight: getMaxHeight(),
-                // Limita larghezza su tablet/TV
-                ...(isTabletOrLarger() && {
-                  maxWidth: getMaxContentWidth(),
-                  width: '95%',
-                  alignSelf: 'center',
-                }),
               },
+              window.width >= 768 && styles.tabletContainer,
+              theme.shadows.large,
             ]}
           >
-            {/* Handle bar */}
-            <View style={styles.handleBar} />
-
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
-              {showCloseButton && (
-                <TouchableOpacity
-                  onPress={onClose}
-                  style={styles.closeButton}
-                  accessibilityRole="button"
+            <View style={[styles.handleBar, { backgroundColor: theme.colors.border }]} />
+            <View style={[styles.header, { borderBottomColor: theme.colors.divider }]}>
+              <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+              {showCloseButton ? (
+                <MotionPressable
                   accessibilityLabel={t('close')}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  onPress={onClose}
+                  style={[styles.closeButton, { backgroundColor: theme.colors.backgroundMuted }]}
                 >
-                  <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
-                </TouchableOpacity>
-              )}
+                  <Ionicons color={theme.colors.textSecondary} name="close" size={19} />
+                </MotionPressable>
+              ) : null}
             </View>
 
-            {/* Content con KeyboardAwareScrollView */}
             <KeyboardAwareScrollView
-              style={styles.content}
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
-              enableOnAndroid={true}
-              enableAutomaticScroll={true}
-              extraScrollHeight={150}
+              contentContainerStyle={styles.contentContainer}
+              enableAutomaticScroll
+              enableOnAndroid
+              extraScrollHeight={110}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={styles.content}
             >
               {children}
             </KeyboardAwareScrollView>
@@ -159,9 +143,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       </Animated.View>
     </Modal>
   );
-};
+}
 
-interface BottomSheetOptionProps {
+export interface BottomSheetOptionProps {
   icon?: IoniconName | string;
   iconColor?: string;
   iconEmoji?: string;
@@ -172,7 +156,7 @@ interface BottomSheetOptionProps {
   selected?: boolean;
 }
 
-export const BottomSheetOption: React.FC<BottomSheetOptionProps> = ({
+export function BottomSheetOption({
   icon,
   iconColor,
   iconEmoji,
@@ -181,58 +165,58 @@ export const BottomSheetOption: React.FC<BottomSheetOptionProps> = ({
   value,
   onPress,
   selected,
-}) => {
+}: BottomSheetOptionProps) {
   const { theme } = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const color = iconColor || theme.colors.primary;
 
   return (
-    <TouchableOpacity
-      style={[styles.option, selected && styles.optionSelected]}
-      onPress={onPress}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityState={{ selected: !!selected }}
+    <MotionPressable
       accessibilityLabel={value ? `${label}, ${value}` : label}
+      accessibilityRole="button"
+      accessibilityState={{ selected: Boolean(selected) }}
+      onPress={onPress}
+      style={[
+        styles.option,
+        {
+          backgroundColor: selected ? theme.colors.chipBackground : theme.colors.backgroundMuted,
+          borderColor: selected ? theme.colors.chipBorder : theme.colors.divider,
+        },
+      ]}
     >
       <View style={styles.optionLeft}>
-        {(icon || iconEmoji || iconImage) && (
+        {icon || iconEmoji || iconImage ? (
           <View
             style={[
               styles.optionIcon,
-              {
-                backgroundColor:
-                  iconEmoji || iconImage
-                    ? 'transparent'
-                    : (iconColor || theme.colors.primary) + '20',
-              },
+              { backgroundColor: iconEmoji || iconImage ? 'transparent' : `${color}16` },
             ]}
           >
             {iconImage ? (
-              <Image source={iconImage} style={styles.flagImage} resizeMode="contain" />
+              <Image resizeMode="contain" source={iconImage} style={styles.flagImage} />
             ) : iconEmoji ? (
               <Text style={styles.emojiIcon}>{iconEmoji}</Text>
-            ) : icon ? (
-              <Ionicons
-                name={icon as IoniconName}
-                size={20}
-                color={iconColor || theme.colors.primary}
-              />
-            ) : null}
+            ) : (
+              <Ionicons color={color} name={icon as IoniconName} size={18} />
+            )}
           </View>
-        )}
-        <Text style={styles.optionLabel}>{label}</Text>
+        ) : null}
+        <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{label}</Text>
       </View>
-      {(value || selected) && (
-        <View style={styles.optionRight}>
-          {value && <Text style={styles.optionValue}>{value}</Text>}
-          {selected && <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary} />}
-        </View>
-      )}
-    </TouchableOpacity>
+      <View style={styles.optionRight}>
+        {value ? (
+          <Text style={[styles.optionValue, { color: theme.colors.textSecondary }]}>{value}</Text>
+        ) : null}
+        {selected ? (
+          <Ionicons color={theme.colors.primary} name="checkmark" size={19} />
+        ) : (
+          <Ionicons color={theme.colors.textTertiary} name="chevron-forward" size={17} />
+        )}
+      </View>
+    </MotionPressable>
   );
-};
+}
 
-interface BottomSheetButtonProps {
+export interface BottomSheetButtonProps {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'destructive';
@@ -240,203 +224,125 @@ interface BottomSheetButtonProps {
   loading?: boolean;
 }
 
-export const BottomSheetButton: React.FC<BottomSheetButtonProps> = ({
+export function BottomSheetButton({
   label,
   onPress,
   variant = 'primary',
   disabled,
   loading,
-}) => {
+}: BottomSheetButtonProps) {
   const { theme } = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const isDisabled = Boolean(disabled || loading);
+  const color = variant === 'destructive' ? theme.colors.error : theme.colors.primary;
 
   return (
-    <TouchableOpacity
+    <MotionPressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
+      disabled={isDisabled}
+      onPress={onPress}
       style={[
         styles.button,
-        variant === 'primary' && styles.buttonPrimary,
-        variant === 'secondary' && styles.buttonSecondary,
-        variant === 'destructive' && styles.buttonDestructive,
-        disabled && styles.buttonDisabled,
+        {
+          backgroundColor: variant === 'primary' ? theme.colors.primary : 'transparent',
+          borderColor: variant === 'secondary' ? theme.colors.border : color,
+        },
       ]}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!(disabled || loading) }}
-      accessibilityLabel={label}
     >
-      <Text
-        style={[
-          styles.buttonText,
-          variant === 'primary' && styles.buttonTextPrimary,
-          variant === 'secondary' && styles.buttonTextSecondary,
-          variant === 'destructive' && styles.buttonTextDestructive,
-        ]}
-      >
-        {loading ? '...' : label}
-      </Text>
-    </TouchableOpacity>
+      {loading ? (
+        <ActivityIndicator color={variant === 'primary' ? theme.colors.textLight : color} />
+      ) : (
+        <Text
+          style={[
+            styles.buttonText,
+            {
+              color:
+                variant === 'primary'
+                  ? theme.colors.textLight
+                  : variant === 'destructive'
+                    ? theme.colors.error
+                    : theme.colors.text,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
+    </MotionPressable>
   );
-};
+}
 
-// Note: theme accepts `any` because the component accesses color keys
-// that are no longer present in the typed Theme, such as `surface`. Resolving them at runtime
-// produces `undefined` (a no-op), but refactoring the theme is out of scope here.
-const createStyles = (
-  theme: import('../../constants/theme').Theme & { colors: Record<string, string> },
-) =>
-  StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
-    },
-    contentWrapper: {
-      width: '100%',
-      alignItems: 'center',
-    },
-    container: {
-      width: '100%',
-      backgroundColor: theme.colors.card,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      paddingBottom: Platform.OS === 'ios' ? 20 : 0,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 20,
-    },
-    handleBar: {
-      width: 40,
-      height: 4,
-      backgroundColor: theme.colors.border,
-      borderRadius: 2,
-      alignSelf: 'center',
-      marginTop: 12,
-      marginBottom: 8,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      flex: 1,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 16,
-      backgroundColor: theme.colors.surface,
-    },
-    content: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      paddingBottom: 80,
-    },
-
-    // Option styles
-    option: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      borderRadius: 12,
-      marginBottom: 8,
-      backgroundColor: theme.colors.surface,
-    },
-    optionSelected: {
-      backgroundColor: theme.colors.primary + '15',
-      borderWidth: 2,
-      borderColor: theme.colors.primary,
-    },
-    optionLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-    },
-    optionIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
-    emojiIcon: {
-      fontSize: 24,
-      lineHeight: 28,
-    },
-    flagImage: {
-      width: 28,
-      height: 28,
-    },
-    optionLabel: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: theme.colors.text,
-      flex: 1,
-    },
-    optionRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    optionValue: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-    },
-
-    // Button styles
-    button: {
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginVertical: 6,
-    },
-    buttonPrimary: {
-      backgroundColor: theme.colors.primary,
-    },
-    buttonSecondary: {
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    buttonDestructive: {
-      backgroundColor: theme.colors.error + '20',
-      borderWidth: 1,
-      borderColor: theme.colors.error,
-    },
-    buttonDisabled: {
-      opacity: 0.5,
-    },
-    buttonText: {
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    buttonTextPrimary: {
-      color: '#FFFFFF',
-    },
-    buttonTextSecondary: {
-      color: theme.colors.text,
-    },
-    buttonTextDestructive: {
-      color: theme.colors.error,
-    },
-  });
+const styles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  contentWrapper: { width: '100%', alignItems: 'center', justifyContent: 'flex-end' },
+  container: {
+    width: '100%',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  tabletContainer: { maxWidth: 600, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  handleBar: {
+    width: 34,
+    height: 3,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 9,
+    marginBottom: 4,
+  },
+  header: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  title: { flex: 1, fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.2 },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: { paddingHorizontal: 14 },
+  contentContainer: { paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 8 : 14 },
+  option: {
+    minHeight: 54,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    marginBottom: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  optionLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
+  optionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  emojiIcon: { fontSize: 21, lineHeight: 24 },
+  flagImage: { width: 25, height: 25, borderRadius: 5 },
+  optionLabel: { flex: 1, fontSize: 14, lineHeight: 19, fontWeight: '500' },
+  optionRight: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  optionValue: { fontSize: 12, lineHeight: 17 },
+  button: {
+    minHeight: 46,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+});
 
 export default BottomSheet;

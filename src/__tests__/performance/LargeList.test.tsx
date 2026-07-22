@@ -4,6 +4,7 @@ import HomeScreen from '../../screens/HomeScreen';
 import * as StorageService from '../../services/storage/storageService';
 import { Password } from '../../models/Password';
 import Logger from '../../utils/logger';
+import { CATEGORY_COLORS } from '../../constants/categories';
 
 // Mock Expo modules
 jest.mock('expo-system-ui', () => ({
@@ -71,6 +72,7 @@ jest.mock('../../services/auth/authService', () => ({
   isAuthenticated: jest.fn().mockReturnValue(true),
   getIsAuthenticated: jest.fn().mockReturnValue(true),
   checkBiometricStatus: jest.fn().mockResolvedValue({ available: false, enabled: false }),
+  isBiometricsAvailable: jest.fn().mockResolvedValue({ available: false, biometryType: null }),
   initDatabase: jest.fn().mockResolvedValue(undefined),
   isMasterPasswordConfigured: jest.fn().mockResolvedValue(true),
   restoreBiometricsState: jest.fn().mockResolvedValue(false),
@@ -111,6 +113,29 @@ describe('Large List Performance Test', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('renders the category-specific icons and colors', () => {
+    (StorageService.getPasswordsPaginated as jest.Mock).mockResolvedValue({
+      passwords: [],
+      total: 0,
+    });
+
+    const { getByTestId } = render(<HomeScreen />);
+    const expectedCategories = [
+      ['favorites', 'star', CATEGORY_COLORS.favorites],
+      ['email', 'mail-outline', CATEGORY_COLORS.email],
+      ['social', 'logo-facebook', CATEGORY_COLORS.social],
+      ['business', 'briefcase-outline', CATEGORY_COLORS.business],
+      ['banking', 'card-outline', CATEGORY_COLORS.banking],
+      ['shopping', 'cart-outline', CATEGORY_COLORS.shopping],
+      ['gaming', 'game-controller-outline', CATEGORY_COLORS.gaming],
+      ['music', 'musical-notes-outline', CATEGORY_COLORS.music],
+    ] as const;
+
+    expectedCategories.forEach(([id, icon, color]) => {
+      expect(getByTestId(`category-icon-${id}`).props).toMatchObject({ name: icon, color });
+    });
   });
 
   it('should handle rendering a large list of passwords (virtualized)', async () => {
@@ -182,7 +207,7 @@ describe('Large List Performance Test', () => {
       expect(getByText('Service 0')).toBeTruthy();
     });
 
-    const searchInput = getByPlaceholderText('Cerca password...');
+    const searchInput = getByPlaceholderText('Cerca password e note');
     const startTime = Date.now();
 
     fireEvent.changeText(searchInput, 'Service 999');

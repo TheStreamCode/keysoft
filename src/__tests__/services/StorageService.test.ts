@@ -34,6 +34,11 @@ describe('StorageService', () => {
     jest.spyOn(Date, 'now').mockReturnValue(mockTimestamp);
 
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (AsyncStorage.multiGet as jest.Mock).mockImplementation(async (keys: string[]) =>
+      Promise.all(
+        keys.map(async (key) => [key, await (AsyncStorage.getItem as jest.Mock)(key)] as const),
+      ),
+    );
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
     (AsyncStorage.clear as jest.Mock).mockResolvedValue(undefined);
     (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);

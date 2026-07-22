@@ -1,5 +1,15 @@
-import React, { createContext, useState, useContext, useCallback, useMemo, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  ReactNode,
+} from 'react';
 import CustomAlert from '../components/CustomAlert';
+import { Toast, ToastVariant } from '../components/ui/toast';
 import { useLanguage } from './LanguageContext';
 
 interface AlertContextType {
@@ -12,6 +22,7 @@ interface AlertContextType {
       style?: 'default' | 'cancel' | 'destructive';
     }[],
   ) => void;
+  notify: (message: string, variant?: ToastVariant) => void;
 }
 
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
@@ -27,6 +38,10 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       style?: 'default' | 'cancel' | 'destructive';
     }[]
   >([]);
+  const [toast, setToast] = useState<{ id: number; message: string; variant: ToastVariant } | null>(
+    null,
+  );
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t } = useLanguage();
 
   const alert = useCallback(
@@ -51,7 +66,23 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setVisible(false);
   }, []);
 
-  const value = useMemo(() => ({ alert }), [alert]);
+  const notify = useCallback((message: string, variant: ToastVariant = 'info') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ id: Date.now(), message, variant });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimeoutRef.current = null;
+    }, 2600);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    },
+    [],
+  );
+
+  const value = useMemo(() => ({ alert, notify }), [alert, notify]);
 
   return (
     <AlertContext.Provider value={value}>
@@ -63,6 +94,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         buttons={buttons}
         onClose={handleClose}
       />
+      {toast ? <Toast key={toast.id} message={toast.message} variant={toast.variant} /> : null}
     </AlertContext.Provider>
   );
 };

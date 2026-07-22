@@ -1,12 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import {
-  createStackNavigator,
-  StackCardInterpolationProps,
-  StackScreenProps,
-} from '@react-navigation/stack';
-import { Easing } from 'react-native';
+import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
 // Screens
@@ -16,8 +11,10 @@ import PasswordDetailScreen from '../screens/PasswordDetailScreen';
 import PasswordGeneratorScreen from '../screens/PasswordGeneratorScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import OpenSourceScreen from '../screens/OpenSourceScreen';
 import NotesScreen from '../screens/NotesScreen';
 import NoteDetailScreen from '../screens/NoteDetailScreen';
+import VaultHealthScreen from '../screens/VaultHealthScreen';
 
 // Tab Navigator
 import TabNavigator from './TabNavigator';
@@ -44,15 +41,17 @@ export type RootStackParamList = {
   PasswordGenerator: { onSelect?: (password: string) => void };
   Settings: undefined;
   PrivacyPolicy: undefined;
+  OpenSource: undefined;
   Notes: undefined;
   NoteDetail: { noteId?: string; mode?: 'create' | 'edit' | 'view' };
+  VaultHealth: undefined;
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Components wrapped with ScreenWrapper and typed with StackScreenProps
 type StackScreenComponent<RouteName extends keyof RootStackParamList> = React.FC<
-  StackScreenProps<RootStackParamList, RouteName>
+  NativeStackScreenProps<RootStackParamList, RouteName>
 >;
 
 const WrappedOnboardingScreen: StackScreenComponent<'Onboarding'> = () => (
@@ -87,6 +86,11 @@ const WrappedPrivacyPolicyScreen: StackScreenComponent<'PrivacyPolicy'> = ({ nav
     <PrivacyPolicyScreen navigation={navigation} />
   </ScreenWrapper>
 );
+const WrappedOpenSourceScreen: StackScreenComponent<'OpenSource'> = ({ navigation }) => (
+  <ScreenWrapper>
+    <OpenSourceScreen navigation={navigation} />
+  </ScreenWrapper>
+);
 const WrappedNotesScreen: StackScreenComponent<'Notes'> = () => (
   <ScreenWrapper>
     <NotesScreen />
@@ -95,6 +99,11 @@ const WrappedNotesScreen: StackScreenComponent<'Notes'> = () => (
 const WrappedNoteDetailScreen: StackScreenComponent<'NoteDetail'> = () => (
   <ScreenWrapper>
     <NoteDetailScreen />
+  </ScreenWrapper>
+);
+const WrappedVaultHealthScreen: StackScreenComponent<'VaultHealth'> = () => (
+  <ScreenWrapper>
+    <VaultHealthScreen />
   </ScreenWrapper>
 );
 
@@ -144,10 +153,6 @@ export const Navigation: React.FC = () => {
     );
   }
 
-  // Theme debug logging
-  Logger.debug('Navigation: Tema corrente:', isDarkMode ? 'scuro' : 'chiaro');
-  Logger.debug('Navigation: Colore di sfondo:', theme.colors.background);
-
   return (
     <>
       <StatusBar
@@ -176,47 +181,8 @@ export const Navigation: React.FC = () => {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            cardStyle: { backgroundColor: theme.colors.background },
-            transitionSpec: {
-              open: {
-                animation: 'timing',
-                config: {
-                  duration: 300,
-                  easing: Easing.out(Easing.poly(4)),
-                },
-              },
-              close: {
-                animation: 'timing',
-                config: {
-                  duration: 250,
-                  easing: Easing.out(Easing.poly(4)),
-                },
-              },
-            },
-            cardStyleInterpolator: ({ current, layouts }: StackCardInterpolationProps) => {
-              return {
-                cardStyle: {
-                  transform: [
-                    {
-                      translateX: current.progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [layouts.screen.width, 0],
-                      }),
-                    },
-                  ],
-                  opacity: current.progress.interpolate({
-                    inputRange: [0, 0.5, 0.9, 1],
-                    outputRange: [0, 0.25, 0.7, 1],
-                  }),
-                },
-                overlayStyle: {
-                  opacity: current.progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.5],
-                  }),
-                },
-              };
-            },
+            contentStyle: { backgroundColor: theme.colors.background },
+            animation: 'slide_from_right',
           }}
         >
           {!isMasterPasswordConfigured ? (
@@ -238,8 +204,10 @@ export const Navigation: React.FC = () => {
               <Stack.Screen name="PasswordGenerator" component={WrappedPasswordGeneratorScreen} />
               <Stack.Screen name="Settings" component={WrappedSettingsScreen} />
               <Stack.Screen name="PrivacyPolicy" component={WrappedPrivacyPolicyScreen} />
+              <Stack.Screen name="OpenSource" component={WrappedOpenSourceScreen} />
               <Stack.Screen name="Notes" component={WrappedNotesScreen} />
               <Stack.Screen name="NoteDetail" component={WrappedNoteDetailScreen} />
+              <Stack.Screen name="VaultHealth" component={WrappedVaultHealthScreen} />
             </>
           )}
         </Stack.Navigator>

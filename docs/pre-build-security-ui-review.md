@@ -1,15 +1,21 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-07-15
+Latest update: 2026-07-22
 
-Release target: Keysoft 2.4, Android versionCode 122.
+Release target: Keysoft 3.0.0, Android versionCode 123, with iOS simulator readiness.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 3.0 Update
+
+The 3.0 target completes the Nocturne redesign across onboarding, PIN unlock, vault, credential and note workflows, generator, settings, shared overlays, and navigation. It adds responsive phone/tablet layouts, semantic light/dark themes, reduced-motion-aware effects, local vault-health analysis, an iOS simulator build profile, and a shared Mikesoft support URL. Alerts, destructive confirmations, loading states, selection sheets, notification history, and transient feedback now use shared dialog, bottom-sheet, and toast primitives. The original Keysoft shield-and-eye artwork remains the canonical app and onboarding identity.
+
+Profile images now use one avatar renderer across unlock, vault, and settings. Native picker files are copied into application-owned storage only when the profile is saved, preventing temporary image URIs from disappearing after reload or login. Password unlock batches native storage reads and performs category migration with at most one encrypted vault write instead of rewriting the vault once per credential. The KS1 envelope and configured Argon2/PBKDF2 derivation costs are unchanged.
 
 ### 2.4 Update
 
@@ -81,9 +87,10 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 24 suites, 162 tests
+- `bun run test`: 28 suites, 171 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
+- `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`
 
 ## Remaining Manual Checks
 
@@ -95,4 +102,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
   - backup export/import
   - cold-start biometric unlock and PIN fallback after biometric invalidation
   - dark mode and language switch
+  - original launcher/adaptive icon and splash rendering
+  - profile-photo persistence across save, reload, lock, and login
+  - dialog, destructive confirmation, bottom-sheet, notification, and toast layering
 - EAS preview build only after local checks pass and explicit upload approval is given.

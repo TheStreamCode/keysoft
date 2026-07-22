@@ -16,39 +16,18 @@ export class WebScrollFix {
     const style = document.createElement('style');
     style.id = 'rn-web-scroll-fix';
     style.textContent = `
-      /* Fix per ScrollView in React Native Web */
-      .rn-scrollable,
-      div[style*="overflow: hidden"] {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        height: 100% !important;
-        max-height: 100vh !important;
+      /* Keep the application root stable without overriding component layout. */
+      html, body, #root {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
       }
 
-      /* Fix per contenuti scrollabili */
-      .scroll-content {
-        min-height: calc(100vh + 200px) !important;
-        padding-bottom: 50px !important; /* Riduciamo il padding */
+      /* Optional scroll containers can opt into a consistent web scrollbar. */
+      .rn-scrollable {
+        -webkit-overflow-scrolling: touch;
       }
 
-      /* Fix generale per scroll su RN Web */
-      .rn-view[style*="overflow: hidden"] {
-        overflow: visible !important;
-      }
-
-      /* Force scroll per SafeAreaView e contenitori */
-      .rn-view[style*="flex: 1"] {
-        height: 100% !important;
-        overflow-y: auto !important;
-      }
-
-      /* Fix specifico per Privacy Policy */
-      div[style*="flex: 1"][style*="backgroundColor"] {
-        max-height: 100vh !important;
-        overflow-y: auto !important;
-      }
-
-      /* Hide scrollbars on Chrome/Safari when desired */
       .rn-scrollable::-webkit-scrollbar {
         width: 8px;
       }
@@ -67,18 +46,18 @@ export class WebScrollFix {
         background: rgba(0,0,0,0.5);
       }
 
-      /* Fix per device touch */
+      /* Preserve native vertical gestures without affecting nested controls. */
       html, body {
-        touch-action: pan-y !important;
+        touch-action: pan-y;
         -webkit-user-select: none;
         -webkit-touch-callout: none;
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* Allow text selection only where needed */
+      /* Allow text selection in copy-oriented content. */
       p, span, div[class*="text"], div[class*="paragraph"] {
-        -webkit-user-select: text !important;
-        user-select: text !important;
+        -webkit-user-select: text;
+        user-select: text;
       }
     `;
 
@@ -101,10 +80,9 @@ export class WebScrollFix {
 }
 
 /**
- * Hook per applicare automaticamente i fix di scroll
+ * Applies the web root and scrolling safeguards once.
  */
 export const useWebScrollFix = () => {
-  // Apply fixes when the component mounts on web
   React.useEffect(() => {
     if (Platform.OS === 'web') {
       WebScrollFix.applyScrollFix();

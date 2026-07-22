@@ -3,9 +3,9 @@
 # Keysoft
 
 [![CI](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg)](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml)
-[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Keysoft is an offline-first password manager for Android, built with Expo, React Native, and TypeScript. It stores vault data locally and protects user content with authenticated encryption.
+Keysoft is an offline-first password manager for Android, with cloud-simulator compatibility for iPhone and iPad, built with Expo, React Native, and TypeScript. It stores vault data locally and protects user content with authenticated encryption.
 
 The application is designed around a local-only operating model: the PIN/master password is never persisted, vault data is encrypted at rest, and the app does not require a backend service to operate.
 
@@ -13,16 +13,16 @@ Keysoft works offline for vault management. Network access is limited to platfor
 
 ## Current Status
 
-| Area                | Status                    |
-| ------------------- | ------------------------- |
-| Platform focus      | Android-first, iOS paused |
-| App version         | 2.4                       |
-| Android versionCode | 122                       |
-| Expo SDK            | 57.0.4                    |
-| React Native        | 0.86.0                    |
-| TypeScript          | 6.0.3, strict mode        |
-| Test suite          | 24 suites, 162 tests      |
-| Health check        | `expo-doctor` 20/20       |
+| Area                | Status                             |
+| ------------------- | ---------------------------------- |
+| Platform focus      | Android release; iOS cloud testing |
+| App version         | 3.0.0                              |
+| Android versionCode | 123                                |
+| Expo SDK            | 57.0.7                             |
+| React Native        | 0.86.0                             |
+| TypeScript          | 6.0.3, strict mode                 |
+| Test suite          | 28 suites, 171 tests               |
+| Health check        | `expo-doctor` 20/20                |
 
 ## Core Capabilities
 
@@ -35,7 +35,17 @@ Keysoft works offline for vault management. Network access is limited to platfor
 - Italian and English localization with system-language detection.
 - Automated i18n checks for Italian/English key parity, placeholder parity, and user-facing fallback regressions.
 - Source-structure regression checks for lowercase directories and shared settings hook placement.
-- Light and dark themes, Android-focused layout, and responsive test coverage.
+- Nocturne light/dark interface with responsive phone/tablet layouts, a dedicated PIN keypad, copy-first credential views, reduced-motion support, and accessible touch targets.
+- Local vault-health analysis for weak, reused, and expired credentials.
+
+## Design And Interaction
+
+- Semantic theme tokens provide automatic light and dark appearances without screen-specific color branching.
+- Responsive content bounds support compact phones, landscape, tablets, and split-view widths while preserving safe areas and 44-point minimum touch targets.
+- Alerts and confirmations use the shared dialog primitive, selection workflows use bottom sheets, and non-blocking feedback uses in-app toasts.
+- Entrance effects animate only opacity and transforms and respect the operating-system reduced-motion preference.
+- The profile photo is previewed locally and persisted only when profile changes are saved; the same avatar and initial fallback are rendered on unlock, vault, and settings screens.
+- The original Keysoft shield-and-eye artwork is the canonical launcher, adaptive, splash, favicon, and onboarding mark.
 
 ## Security Model
 
@@ -60,6 +70,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Security Architecture](docs/security.md)
 - [Development Guide](docs/development.md)
 - [Release Guide](docs/release.md)
+- [iOS Testing Without Apple Hardware](docs/ios-testing.md)
 - [Public Repository Checklist](docs/publication.md)
 - [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
@@ -110,13 +121,15 @@ Build artifacts are produced on expo.dev through EAS:
 ```bash
 bun run build:android:preview
 bun run build:android:production
+bun run build:ios:preview
+bun run build:ios:simulator
 ```
 
 EAS builds upload the project to expo.dev. Start them only after the release checklist is complete and the upload has been explicitly approved.
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. An EAS Workflow (`.eas/workflows/build-android-production.yml`) builds the Android production app-bundle. To keep build-credit usage low, it runs only on a version tag push (`v*`) or manual dispatch — not on every push. iOS is excluded while it is paused, so the missing-iOS-credentials warning does not apply. Trigger a release build by pushing a tag (`git tag v2.4 && git push origin v2.4`) or by running the workflow from the Expo dashboard. Google Play submission is performed manually.
+The repository is linked to EAS Build. The Android production workflow runs for version tags or manual dispatch. iOS is retained as a cloud-simulator test target; App Store publication is intentionally outside the project release workflow.
 
 ## Verification
 
@@ -134,15 +147,18 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 24 suites and 162 tests
+- `bun run test`: passing, 28 suites and 171 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
+- `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing
 
 ## Project Structure
 
 ```text
 src/
   components/        Shared UI components
+    brand/            Canonical in-app brand mark
+    ui/               Dialog, bottom sheet, toast, motion, PIN keypad, and controls
   contexts/          Application state providers
   hooks/             Complex screen and behavior logic
     settings/        Settings workflows extracted from SettingsScreen
@@ -165,11 +181,13 @@ Keysoft is local-first. The user owns their vault data and is responsible for ke
 
 ## Support
 
+Product assistance is available through the shared Mikesoft support page: [mikesoft.it/en/support](https://mikesoft.it/en/support/). Do not include passwords, PINs, encryption keys, or real vault data in support requests.
+
 If Keysoft's local-first security work is useful to you, support continued development through GitHub Sponsors: [github.com/sponsors/TheStreamCode](https://github.com/sponsors/TheStreamCode).
 
 ## License
 
-This project is licensed under the [GNU General Public License version 3.0 only](LICENSE) (`GPL-3.0-only`). See the [first-party copyright and scope record](COPYRIGHT.md) and [TRADEMARKS.md](TRADEMARKS.md) for ownership scope and the separate policy governing the Keysoft and Mikesoft brands.
+This project is licensed under the [Apache License 2.0](LICENSE) (`Apache-2.0`). See the [first-party copyright and scope record](COPYRIGHT.md), [third-party notices](THIRD_PARTY_NOTICES.md), and [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Responsible Disclosure
 

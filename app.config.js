@@ -1,7 +1,8 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '2.4',
+  version: '3.0.0',
+  scheme: 'keysoft',
   orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
   updates: {
@@ -10,14 +11,14 @@ module.exports = {
   runtimeVersion: {
     policy: 'appVersion',
   },
-  icon: './assets/icon.png', // Standard icon with a white background
+  icon: './assets/icon.png', // Original Keysoft shield icon
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#FFFFFF', // White splash-screen background
+    backgroundColor: '#FFFFFF',
     dark: {
       image: './assets/splash-icon.png',
-      backgroundColor: '#FFFFFF', // White background in dark mode as well
+      backgroundColor: '#161826',
     },
   },
   assetBundlePatterns: ['**/*'],
@@ -37,14 +38,24 @@ module.exports = {
       NSFaceIDUsageDescription: 'This app uses Face ID to protect access to your passwords',
       UIRequiresFullScreen: false, // Allows Split View and Slide Over on iPad
     },
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyCollectedDataTypes: [],
+      NSPrivacyAccessedAPITypes: [
+        {
+          NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults',
+          NSPrivacyAccessedAPITypeReasons: ['CA92.1'],
+        },
+      ],
+    },
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/icon.png', // Standard icon
-      backgroundColor: '#FFFFFF', // Neutral white background
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#FFFFFF',
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 122,
+    versionCode: 123,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',
@@ -92,6 +103,8 @@ module.exports = {
     },
   },
   plugins: [
+    'expo-asset',
+    'expo-status-bar',
     'expo-font',
     [
       'expo-build-properties',

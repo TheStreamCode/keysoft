@@ -3,7 +3,7 @@
 This policy concerns brand identity, not copyright licensing. Michael
 Gasperini (Mikesoft) claims ownership of the Keysoft and Mikesoft marks
 identified below. This policy applies only within applicable trademark law; it
-does not condition, limit, or add requirements to GPL-3.0-only copying,
+does not condition, limit, or add requirements to Apache-2.0 copying,
 modification, or redistribution rights.
 
 ## Claimed Brand Identity

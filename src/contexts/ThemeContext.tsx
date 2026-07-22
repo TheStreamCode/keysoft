@@ -27,13 +27,6 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const systemColorScheme = useColorScheme();
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
-  const [theme, setTheme] = useState<Theme>(systemColorScheme === 'dark' ? DarkTheme : LightTheme);
-  const [isDarkMode, setIsDarkMode] = useState(systemColorScheme === 'dark');
-
-  // Log the detected system theme
-  Logger.debug(
-    `🎨 ThemeProvider: Sistema rilevato come '${systemColorScheme}', default a 'system'`,
-  );
 
   // Determine the active theme from the selected mode
   const determineTheme = useCallback(
@@ -46,14 +39,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     [systemColorScheme],
   );
 
-  // Determine whether dark mode is active
-  const determineIsDarkMode = useCallback(
-    (mode: ThemeMode): boolean => {
-      if (mode === 'system') return systemColorScheme === 'dark';
-      return mode === 'dark';
-    },
-    [systemColorScheme],
-  );
+  const theme = useMemo(() => determineTheme(themeMode), [determineTheme, themeMode]);
+  const isDarkMode = themeMode === 'system' ? systemColorScheme === 'dark' : themeMode === 'dark';
 
   // Load theme preferences
   useEffect(() => {
@@ -74,38 +61,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     loadThemePreferences();
   }, []);
 
-  // Update app appearance at the system level
-  const updateAppAppearance = useCallback(async (isDark: boolean) => {
-    try {
-      // Set the app background color at the system level
-      await SystemUI.setBackgroundColorAsync(
-        isDark ? DarkTheme.colors.background : LightTheme.colors.background,
-      );
-
-      Logger.debug(`ThemeContext: Aspetto dell'app aggiornato a ${isDark ? 'scuro' : 'chiaro'}`);
-    } catch (error) {
-      Logger.error("Errore durante l'aggiornamento dell'aspetto dell'app:", error);
-    }
-  }, []);
-
-  // Update the theme when the mode changes
+  // Keep the native launch surface aligned with the active semantic theme.
   useEffect(() => {
-    const newTheme = determineTheme(themeMode);
-    const newIsDarkMode = determineIsDarkMode(themeMode);
-
-    setTheme(newTheme);
-    setIsDarkMode(newIsDarkMode);
-
-    // Update the background color at the system level
-    SystemUI.setBackgroundColorAsync(newTheme.colors.background);
-
-    // Update splash screen and icon properties
-    updateAppAppearance(newIsDarkMode);
-
-    Logger.debug(
-      `ThemeContext: Tema impostato a ${newIsDarkMode ? 'scuro' : 'chiaro'} (modalità: ${themeMode})`,
-    );
-  }, [themeMode, determineTheme, determineIsDarkMode, updateAppAppearance]);
+    Promise.resolve(SystemUI.setBackgroundColorAsync(theme.colors.background)).catch((error) => {
+      Logger.error("Errore durante l'aggiornamento dell'aspetto dell'app:", error);
+    });
+  }, [theme.colors.background]);
 
   // Change the theme mode
   const setThemeMode = useCallback(async (mode: ThemeMode) => {

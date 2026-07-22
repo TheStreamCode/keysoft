@@ -34,6 +34,20 @@ jest.mock('expo-navigation-bar', () => ({
 
 // Mock Expo FileSystem
 jest.mock('expo-file-system', () => ({
+  File: class MockFile {
+    constructor(...parts) {
+      this.uri = parts
+        .map((part) => (typeof part === 'string' ? part : part.uri))
+        .reduce((path, part) => `${path.replace(/\/$/, '')}/${part.replace(/^\//, '')}`);
+      this.exists = true;
+      this.extension = this.uri.match(/\.[a-z0-9]+$/i)?.[0] ?? '';
+    }
+
+    copy() {
+      return Promise.resolve();
+    }
+  },
+  Paths: { document: { uri: 'file:///test-directory' } },
   documentDirectory: 'file:///test-directory/',
   writeAsStringAsync: jest.fn(() => Promise.resolve()),
   readAsStringAsync: jest.fn(() => Promise.resolve('')),
@@ -79,9 +93,23 @@ jest.mock('react-native-argon2', () => ({
 
 // Mock React Native Reanimated
 jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  const React = require('react');
+  const { View } = require('react-native');
+  const enteringBuilder = {
+    duration: jest.fn(() => enteringBuilder),
+    delay: jest.fn(() => enteringBuilder),
+  };
+  const AnimatedView = ({ entering: _entering, exiting: _exiting, ...props }) =>
+    React.createElement(View, props);
+
+  return {
+    __esModule: true,
+    default: { View: AnimatedView },
+    FadeIn: enteringBuilder,
+    FadeInDown: enteringBuilder,
+    FadeInUp: enteringBuilder,
+    FadeOutUp: enteringBuilder,
+  };
 });
 
 // Mock Safe Area Context

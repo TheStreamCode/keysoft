@@ -153,7 +153,7 @@ bun run build:android:preview
 bun run build:android:production
 ```
 
-The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` can build the Android production app-bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. iOS is excluded while paused.
+The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` can build the Android production app-bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. iOS remains available only through the explicitly approved cloud-simulator workflow; App Store publication is outside the project workflow.
 
 Expo Go cannot load custom native modules. Keysoft therefore uses the PBKDF2 KDF fallback in Expo Go and keeps Argon2 for EAS/native builds where `react-native-argon2` is available.
 
@@ -171,11 +171,27 @@ EAS build commands upload the project to expo.dev. Run them only after the relea
 
 ## UI And Accessibility Standards
 
+- Use semantic tokens from `ThemeContext`; do not branch on literal background colors or introduce screen-local light/dark palettes.
+- Keep main content within responsive bounds from `useResponsiveLayout`, including narrow phones, landscape, tablets, and split-view widths.
 - Icon-only controls must have `accessibilityRole`, `accessibilityLabel`, and a stable hit area.
 - Interactive targets should be at least 44x44 points.
-- Custom modals and bottom sheets must expose modal semantics and keep decorative backdrops inaccessible.
+- Use the shared `Dialog` for alerts and confirmations, `BottomSheet` for selection workflows, and `Toast` for non-blocking feedback. Do not add a parallel modal implementation without a platform requirement.
+- Custom modals and bottom sheets must expose modal semantics and keep decorative backdrops inaccessible. Close a bottom sheet before opening a global confirmation dialog.
+- Animate only opacity and transforms, and keep `useReducedMotion` behavior intact.
 - Category filters and segmented choices should expose selected state.
 - User-visible notification content must use localization keys in both Italian and English.
+- Keep profile-photo selection temporary until Save. Native photos must be copied into application-owned storage before their URI is written to preferences.
+
+### Visual Regression Matrix
+
+For a significant UI change, verify at least:
+
+- 390x667 and 390x844 phone viewports in light and dark appearance.
+- 1024x768 tablet/landscape width and a narrow split-view width.
+- Onboarding, PIN unlock, vault, detail/edit, generator, notes, settings, dialogs, bottom sheets, and toasts.
+- Original Keysoft shield artwork on onboarding, launcher/adaptive icon, splash, and web favicon.
+- Avatar pick, preview, Save, reload, logout, and subsequent login.
+- Reduced motion, keyboard avoidance, long Italian/English labels, and icon-only accessibility labels.
 
 ## Git Hygiene
 

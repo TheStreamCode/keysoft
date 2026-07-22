@@ -1,819 +1,480 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Dimensions,
-  Animated,
-  Easing,
-} from 'react-native';
+import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
-import ScreenWrapper from '../components/ScreenWrapper';
-import { useTheme } from '../contexts/ThemeContext';
+import { MotionPressable, Reveal } from '../components/ui/motion';
+import { PinKeypad } from '../components/ui/pin-keypad';
+import { Theme } from '../constants/theme';
+import { useAlert } from '../contexts/AlertContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useAlert } from '../contexts/AlertContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Storage } from '../services';
-import { Theme } from '../constants/theme';
 import Logger from '../utils/logger';
+import { useResponsiveLayout } from '../utils/responsive';
+import { KeysoftMark } from '../components/brand/keysoft-mark';
+import { Dialog } from '../components/ui/dialog';
 
-// Progressive onboarding: una domanda alla volta
-type OnboardingStep =
-  | 'welcome' // Hero con emoji gigante
-  | 'name' // Solo input nome
-  | 'pin' // Solo PIN
-  | 'confirm_pin'; // Solo conferma PIN
+type OnboardingStep = 'welcome' | 'name' | 'pin' | 'confirm_pin';
 
-type _IoniconName = keyof typeof Ionicons.glyphMap;
+const stepNumber: Record<Exclude<OnboardingStep, 'welcome'>, number> = {
+  name: 1,
+  pin: 2,
+  confirm_pin: 3,
+};
 
 const OnboardingScreen: React.FC = () => {
-  const { theme, isDarkMode } = useTheme();
+  const { theme } = useTheme();
   const { setupMasterPassword } = useAuth();
   const { t } = useLanguage();
   const { alert } = useAlert();
+  const layout = useResponsiveLayout();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
-  // Web-specific styles for password reveal button
-  const webStyles =
-    Platform.OS === 'web'
-      ? React.createElement(
-          'style' as any,
-          { type: 'text/css' },
-          `
-      input[type="password"]::-ms-reveal,
-      input[type="password"]::-webkit-password-reveal-button {
-        filter: invert(${isDarkMode ? 100 : 0}%);
-        cursor: pointer;
-      }
-    `,
-        )
-      : null;
-
-  const shouldShowVisibilityToggle = Platform.OS !== 'web';
-
-  // State
-  const [currentStep, setCurrentStep] = React.useState('welcome' as OnboardingStep);
+  const [currentStep, setCurrentStep] = React.useState<OnboardingStep>('welcome');
   const [username, setUsername] = React.useState('');
   const [pin, setPin] = React.useState('');
   const [confirmPin, setConfirmPin] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [isPinVisible, setIsPinVisible] = React.useState(false);
-  const [isConfirmPinVisible, setIsConfirmPinVisible] = React.useState(false);
 
-  // Animations
-  const fadeAnim = React.useRef(new Animated.Value(1)).current;
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
-  const slideAnim = React.useRef(new Animated.Value(0)).current;
-  const isFirstRender = React.useRef(true);
+  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 560);
 
-  // Refs
-  const nameInputRef = React.useRef(null);
-  const pinInputRef = React.useRef(null);
-  const confirmPinInputRef = React.useRef(null);
+  async function handleNext() {
+    Keyboard.dismiss();
 
-  // Slide animation on step change
-  React.useEffect(() => {
-    // Skip animation on first render (welcome screen should appear immediately)
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (currentStep === 'welcome') {
+      setCurrentStep('name');
       return;
     }
 
-    // Reset animation values
-    fadeAnim.setValue(0);
-    slideAnim.setValue(30);
-    scaleAnim.setValue(0.95);
-
-    // Start animations with a small delay to ensure render is complete
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-          easing: Easing.out(Easing.cubic),
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 80,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [currentStep, fadeAnim, scaleAnim, slideAnim]); // ← Rimosso fadeAnim, slideAnim, scaleAnim dalle dipendenze
-
-  const handleNext = async () => {
-    if (currentStep === 'welcome') {
-      setCurrentStep('name');
-    } else if (currentStep === 'name') {
-      const trimmed = username.trim();
-      if (trimmed.length < 2) {
+    if (currentStep === 'name') {
+      if (username.trim().length < 2) {
         alert(t('error'), t('onboarding_name_error'));
         return;
       }
       setCurrentStep('pin');
-    } else if (currentStep === 'pin') {
+      return;
+    }
+
+    if (currentStep === 'pin') {
       if (pin.length !== 6) {
         alert(t('error'), t('pin_length_error_onboarding'));
         return;
       }
-      setCurrentStep('confirm_pin');
-    } else if (currentStep === 'confirm_pin') {
-      if (confirmPin !== pin) {
-        alert(t('error'), t('pin_mismatch_onboarding'));
-        return;
-      }
-
-      try {
-        setIsProcessing(true);
-
-        // Save username
-        const preferences = await Storage.getUserPreferences();
-        await Storage.saveUserPreferences({
-          ...preferences,
-          username: username.trim(),
-        });
-
-        // Setup PIN
-        await setupMasterPassword(pin);
-      } catch (error) {
-        Logger.error('Setup error:', error);
-        alert(t('error'), t('pin_creation_error'));
-        setIsProcessing(false);
-      }
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep === 'name') {
-      setCurrentStep('welcome');
-    } else if (currentStep === 'pin') {
-      setCurrentStep('name');
-    } else if (currentStep === 'confirm_pin') {
-      setCurrentStep('pin');
       setConfirmPin('');
+      setCurrentStep('confirm_pin');
+      return;
     }
-  };
+
+    if (confirmPin !== pin) {
+      alert(t('error'), t('pin_mismatch_onboarding'));
+      setConfirmPin('');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const preferences = await Storage.getUserPreferences();
+      await Storage.saveUserPreferences({
+        ...preferences,
+        username: username.trim(),
+      });
+      await setupMasterPassword(pin);
+    } catch (error) {
+      Logger.error('Onboarding setup error', error);
+      alert(t('error'), t('pin_creation_error'));
+      setIsProcessing(false);
+    }
+  }
+
+  function handleBack() {
+    Keyboard.dismiss();
+    if (currentStep === 'name') setCurrentStep('welcome');
+    if (currentStep === 'pin') setCurrentStep('name');
+    if (currentStep === 'confirm_pin') {
+      setConfirmPin('');
+      setCurrentStep('pin');
+    }
+  }
 
   const canProceed =
-    currentStep === 'welcome'
-      ? true
-      : currentStep === 'name'
-        ? username.trim().length >= 2
-        : currentStep === 'pin'
-          ? pin.length === 6
-          : confirmPin.length === 6;
+    currentStep === 'welcome' ||
+    (currentStep === 'name' && username.trim().length >= 2) ||
+    (currentStep === 'pin' && pin.length === 6) ||
+    (currentStep === 'confirm_pin' && confirmPin.length === 6);
 
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  function renderWelcome() {
+    const features = [
+      { icon: 'shield-checkmark-outline', label: t('onboarding_feature_encryption') },
+      { icon: 'globe-outline', label: t('onboarding_feature_privacy') },
+      { icon: 'finger-print-outline', label: t('onboarding_feature_unlock') },
+    ] as const;
 
-  // Welcome Screen - Hero
-  const renderWelcome = () => {
     return (
-      <Animated.View
-        style={[
-          styles.fullScreenStep,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-          },
-        ]}
-      >
-        <View style={styles.heroContainer}>
-          {/* Giant emoji as hero */}
-          <Text style={styles.heroEmoji}>🔐</Text>
-
-          <Text style={styles.heroTitle}>{t('onboarding_hero_title')}</Text>
-          <Text style={styles.heroDescription}>{t('onboarding_hero_description')}</Text>
-
-          {/* Quick features - minimal */}
-          <View style={styles.quickFeatures}>
-            <View style={styles.featurePill}>
-              <Text style={styles.featurePillEmoji}>🔒</Text>
-              <Text style={styles.featurePillText}>{t('onboarding_feature_offline')}</Text>
-            </View>
-            <View style={styles.featurePill}>
-              <Text style={styles.featurePillEmoji}>⚡</Text>
-              <Text style={styles.featurePillText}>{t('onboarding_feature_zero_cloud')}</Text>
-            </View>
-            <View style={styles.featurePill}>
-              <Text style={styles.featurePillEmoji}>🛡️</Text>
-              <Text style={styles.featurePillText}>AES-256</Text>
-            </View>
-          </View>
-        </View>
-
-        <TouchableOpacity onPress={handleNext} style={styles.bigButton} activeOpacity={0.8}>
-          <Text style={styles.bigButtonText}>{t('onboarding_start')}</Text>
-          <Ionicons name="arrow-forward" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
-
-  // Name Input - Full screen
-  const renderName = () => {
-    return (
-      <Animated.View
-        style={[
-          styles.fullScreenStep,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.stepEmoji}>👋</Text>
-          <Text style={styles.questionText}>{t('onboarding_name_question')}</Text>
-          <Text style={styles.hintText}>{t('onboarding_name_hint')}</Text>
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              ref={nameInputRef}
-              value={username}
-              onChangeText={setUsername}
-              placeholder={t('onboarding_name_placeholder')}
-              placeholderTextColor={theme.colors.textTertiary}
-              style={[styles.bigInput, { paddingRight: 24 }]} // Override paddingRight as there is no icon
-              autoCapitalize="words"
-              returnKeyType="next"
-              onSubmitEditing={handleNext}
-              maxLength={10}
-            />
-          </View>
-
-          {username.length > 0 && (
-            <Text style={styles.charCount}>
-              {username.trim().length >= 2 ? '✓' : ''} {username.length}/10
+      <Reveal key="welcome" style={styles.step}>
+        <View style={styles.welcomeBody}>
+          <Reveal delay={60} style={styles.lockMark}>
+            <KeysoftMark size={82} />
+          </Reveal>
+          <Reveal delay={110}>
+            <Text style={[styles.eyebrow, { color: theme.colors.primary }]}>KEYSOFT</Text>
+            <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
+              {t('onboarding_value_title')}
             </Text>
-          )}
+            <Text style={[styles.heroDescription, { color: theme.colors.textSecondary }]}>
+              {t('onboarding_value_description')}
+            </Text>
+          </Reveal>
 
-          {/* Info Badge */}
-          <View style={styles.infoBadge}>
-            <Text style={styles.infoBadgeEmoji}>💡</Text>
-            <Text style={styles.infoBadgeText}>{t('onboarding_name_guideline')}</Text>
+          <View style={styles.features}>
+            {features.map((feature, index) => (
+              <Reveal key={feature.label} delay={170 + index * 45} style={styles.featureRow}>
+                <Ionicons name={feature.icon} size={17} color={theme.colors.primary} />
+                <Text style={[styles.featureText, { color: theme.colors.text }]}>
+                  {feature.label}
+                </Text>
+              </Reveal>
+            ))}
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={handleNext}
-          style={[styles.floatingButton, !canProceed && styles.floatingButtonDisabled]}
-          disabled={!canProceed}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="arrow-forward" size={28} color="#FFF" />
-        </TouchableOpacity>
-      </Animated.View>
+        <Reveal delay={340}>
+          <MotionPressable
+            accessibilityRole="button"
+            onPress={handleNext}
+            style={[styles.primaryButton, { borderColor: theme.colors.primary }]}
+          >
+            <Text style={[styles.primaryButtonText, { color: theme.colors.primary }]}>
+              {t('onboarding_setup')}
+            </Text>
+            <Ionicons name="arrow-forward" size={17} color={theme.colors.primary} />
+          </MotionPressable>
+          <Text style={[styles.footerHint, { color: theme.colors.textTertiary }]}>
+            {t('onboarding_setup_time')}
+          </Text>
+        </Reveal>
+      </Reveal>
     );
-  };
+  }
 
-  // PIN Input - Full screen
-  const renderPin = () => (
-    <Animated.View
-      style={[
-        styles.fullScreenStep,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
-    >
-      <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color={theme.colors.textSecondary} />
-      </TouchableOpacity>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.stepEmoji}>🔑</Text>
-        <Text style={styles.questionText}>{t('onboarding_pin_question')}</Text>
-        <Text style={styles.hintText}>{t('onboarding_pin_hint')}</Text>
-
-        <View style={styles.inputWrapper}>
-          <TextInput
-            ref={pinInputRef}
-            value={pin}
-            onChangeText={(text: string) => setPin(text.replace(/[^0-9]/g, '').slice(0, 6))}
-            placeholder={t('pin_placeholder_dots')}
-            placeholderTextColor={theme.colors.textTertiary}
-            style={[
-              styles.bigInput,
-              styles.pinInput,
-              !shouldShowVisibilityToggle && styles.pinInputNoIcon,
-            ]}
-            keyboardType="numeric"
-            secureTextEntry={!isPinVisible}
-            maxLength={6}
-            returnKeyType="next"
-            onSubmitEditing={handleNext}
-          />
-          {shouldShowVisibilityToggle && (
-            <TouchableOpacity
-              onPress={() => setIsPinVisible(!isPinVisible)}
-              style={styles.eyeIcon}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={isPinVisible ? 'eye-off' : 'eye'}
-                size={24}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Visual PIN strength */}
-        <View style={styles.pinDots}>
-          {[...Array(6)].map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.pinDot,
-                {
-                  backgroundColor: i < pin.length ? theme.colors.primary : theme.colors.border,
-                  transform: [{ scale: i === pin.length - 1 ? 1.2 : 1 }],
-                },
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* Info Badge */}
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoBadgeEmoji}>⚠️</Text>
-          <Text style={styles.infoBadgeText}>{t('onboarding_pin_warning')}</Text>
-        </View>
+  function renderProgressHeader(step: Exclude<OnboardingStep, 'welcome'>) {
+    return (
+      <View style={styles.progressHeader}>
+        <MotionPressable
+          accessibilityRole="button"
+          accessibilityLabel={t('back')}
+          onPress={handleBack}
+          style={styles.iconButton}
+        >
+          <Ionicons name="arrow-back" size={20} color={theme.colors.textSecondary} />
+        </MotionPressable>
+        <Text style={[styles.progressText, { color: theme.colors.textTertiary }]}>
+          {t('onboarding_step_progress', { current: stepNumber[step], total: 3 })}
+        </Text>
       </View>
+    );
+  }
 
-      <TouchableOpacity
-        onPress={handleNext}
-        style={[styles.floatingButton, !canProceed && styles.floatingButtonDisabled]}
-        disabled={!canProceed}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="arrow-forward" size={28} color="#FFF" />
-      </TouchableOpacity>
-    </Animated.View>
-  );
+  function renderName() {
+    return (
+      <Reveal key="name" style={styles.step}>
+        <View>
+          {renderProgressHeader('name')}
+          <View style={styles.questionBlock}>
+            <View style={[styles.smallMark, { backgroundColor: theme.colors.chipBackground }]}>
+              <Ionicons name="person-outline" size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.questionTitle, { color: theme.colors.text }]}>
+              {t('onboarding_name_question')}
+            </Text>
+            <Text style={[styles.questionHint, { color: theme.colors.textSecondary }]}>
+              {t('onboarding_name_hint')}
+            </Text>
+          </View>
+          <TextInput
+            autoCapitalize="words"
+            autoFocus
+            maxLength={10}
+            onChangeText={setUsername}
+            onSubmitEditing={() => void handleNext()}
+            placeholder={t('onboarding_name_placeholder')}
+            placeholderTextColor={theme.colors.textTertiary}
+            returnKeyType="next"
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: theme.colors.inputBackground,
+                borderColor: theme.colors.inputBorder,
+                color: theme.colors.inputText,
+              },
+            ]}
+            value={username}
+          />
+          <Text style={[styles.inputHint, { color: theme.colors.textTertiary }]}>
+            {t('onboarding_name_guideline')}
+          </Text>
+        </View>
+        {renderContinueButton()}
+      </Reveal>
+    );
+  }
 
-  // Confirm PIN - Full screen
-  const renderConfirmPin = () => {
-    const isMatch = confirmPin.length === 6 && confirmPin === pin;
-    const showFeedback = confirmPin.length === 6;
+  function renderPinStep(isConfirmation: boolean) {
+    const value = isConfirmation ? confirmPin : pin;
+    const setValue = isConfirmation ? setConfirmPin : setPin;
+    const hasMismatch = isConfirmation && confirmPin.length === 6 && confirmPin !== pin;
 
     return (
-      <Animated.View
-        style={[
-          styles.fullScreenStep,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.stepEmoji}>{showFeedback ? (isMatch ? '✅' : '❌') : '🔐'}</Text>
-          <Text style={styles.questionText}>
-            {showFeedback
-              ? isMatch
-                ? t('perfect')
-                : t('pin_mismatch')
-              : t('onboarding_confirm_pin_question')}
-          </Text>
-          <Text style={styles.hintText}>
-            {showFeedback
-              ? isMatch
-                ? t('pin_match')
-                : t('retry')
-              : t('onboarding_confirm_pin_hint')}
-          </Text>
-
-          <View style={[styles.inputWrapper, showFeedback && !isMatch && styles.inputError]}>
-            <TextInput
-              ref={confirmPinInputRef}
-              value={confirmPin}
-              onChangeText={(text: string) =>
-                setConfirmPin(text.replace(/[^0-9]/g, '').slice(0, 6))
-              }
-              placeholder={t('pin_placeholder_dots')}
-              placeholderTextColor={theme.colors.textTertiary}
-              style={[
-                styles.bigInput,
-                styles.pinInput,
-                !shouldShowVisibilityToggle && styles.pinInputNoIcon,
-              ]}
-              keyboardType="numeric"
-              secureTextEntry={!isConfirmPinVisible}
-              maxLength={6}
-              returnKeyType="done"
-              onSubmitEditing={handleNext}
-            />
-            {shouldShowVisibilityToggle && (
-              <TouchableOpacity
-                onPress={() => setIsConfirmPinVisible(!isConfirmPinVisible)}
-                style={styles.eyeIcon}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons
-                  name={isConfirmPinVisible ? 'eye-off' : 'eye'}
-                  size={24}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            )}
+      <Reveal key={isConfirmation ? 'confirm' : 'pin'} style={styles.step}>
+        <View>
+          {renderProgressHeader(isConfirmation ? 'confirm_pin' : 'pin')}
+          <View style={styles.questionBlock}>
+            <View style={[styles.smallMark, { backgroundColor: theme.colors.chipBackground }]}>
+              <Ionicons
+                name={isConfirmation ? 'shield-checkmark-outline' : 'key-outline'}
+                size={22}
+                color={theme.colors.primary}
+              />
+            </View>
+            <Text style={[styles.questionTitle, { color: theme.colors.text }]}>
+              {t(isConfirmation ? 'onboarding_confirm_pin_question' : 'onboarding_pin_question')}
+            </Text>
+            <Text style={[styles.questionHint, { color: theme.colors.textSecondary }]}>
+              {t(isConfirmation ? 'onboarding_confirm_pin_hint' : 'onboarding_pin_hint')}
+            </Text>
           </View>
 
-          {/* Visual PIN strength */}
-          <View style={styles.pinDots}>
-            {[...Array(6)].map((_, i) => (
+          <View
+            style={styles.pinDots}
+            accessibilityLabel={t('pin_digits_entered', { count: value.length })}
+          >
+            {Array.from({ length: 6 }).map((_, index) => (
               <View
-                key={i}
+                key={index}
                 style={[
                   styles.pinDot,
                   {
                     backgroundColor:
-                      i < confirmPin.length
-                        ? showFeedback
-                          ? isMatch
-                            ? theme.colors.success
-                            : theme.colors.error
+                      index < value.length
+                        ? hasMismatch
+                          ? theme.colors.error
                           : theme.colors.primary
-                        : theme.colors.border,
-                    transform: [{ scale: i === confirmPin.length - 1 ? 1.2 : 1 }],
+                        : 'transparent',
+                    borderColor: hasMismatch ? theme.colors.error : theme.colors.border,
                   },
                 ]}
               />
             ))}
           </View>
 
-          {/* Info Badge */}
-          <View style={styles.infoBadge}>
-            <Text style={styles.infoBadgeEmoji}>💡</Text>
-            <Text style={styles.infoBadgeText}>{t('onboarding_confirm_pin_info')}</Text>
-          </View>
-        </View>
+          <PinKeypad
+            backspaceLabel={t('backspace')}
+            biometricLabel={t('use_biometrics')}
+            disabled={isProcessing}
+            onChange={(nextValue) => {
+              if (hasMismatch) setConfirmPin('');
+              setValue(nextValue);
+            }}
+            value={value}
+          />
 
-        <TouchableOpacity
-          onPress={handleNext}
-          style={[
-            styles.floatingButton,
-            !canProceed && styles.floatingButtonDisabled,
-            isProcessing && styles.floatingButtonProcessing,
-          ]}
-          disabled={!canProceed || isProcessing}
-          activeOpacity={0.8}
-        >
-          {isProcessing ? (
-            <ActivityIndicator size="small" color="#FFF" />
-          ) : (
-            <Ionicons name="checkmark" size={32} color="#FFF" />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
-
-  // Render with error boundary
-  try {
-    return (
-      <ScreenWrapper>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          {webStyles}
-          <KeyboardAwareScrollView
-            style={styles.container}
-            contentContainerStyle={styles.scrollContent}
-            enableOnAndroid={true}
-            enableAutomaticScroll={true}
-            extraScrollHeight={20}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <Text
+            style={[
+              styles.pinGuidance,
+              { color: hasMismatch ? theme.colors.error : theme.colors.textTertiary },
+            ]}
           >
-            {currentStep === 'welcome' && renderWelcome()}
-            {currentStep === 'name' && renderName()}
-            {currentStep === 'pin' && renderPin()}
-            {currentStep === 'confirm_pin' && renderConfirmPin()}
-          </KeyboardAwareScrollView>
-
-          {/* Loading Overlay during PIN setup */}
-          {isProcessing && currentStep === 'confirm_pin' && (
-            <View style={styles.loadingOverlay}>
-              <View style={styles.loadingCard}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={styles.loadingText}>{t('securing_app')}</Text>
-                <Text style={styles.loadingSubtext}>{t('please_wait')}</Text>
-              </View>
-            </View>
-          )}
-        </SafeAreaView>
-      </ScreenWrapper>
-    );
-  } catch (error) {
-    Logger.error('🚨 OnboardingScreen render error:', error);
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ fontSize: 18, color: theme.colors.error, marginBottom: 10 }}>
-          {t('error_loading')}
-        </Text>
-        <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>{String(error)}</Text>
-      </View>
+            {hasMismatch
+              ? t('pin_mismatch_onboarding')
+              : t(isConfirmation ? 'onboarding_confirm_pin_info' : 'onboarding_pin_warning')}
+          </Text>
+        </View>
+        {renderContinueButton(isConfirmation)}
+      </Reveal>
     );
   }
+
+  function renderContinueButton(isConfirmation = false) {
+    return (
+      <MotionPressable
+        accessibilityRole="button"
+        disabled={!canProceed || isProcessing}
+        onPress={() => void handleNext()}
+        style={[
+          styles.primaryButton,
+          {
+            borderColor: canProceed ? theme.colors.primary : theme.colors.border,
+            backgroundColor: canProceed ? theme.colors.chipBackground : 'transparent',
+          },
+        ]}
+      >
+        {isProcessing ? (
+          <ActivityIndicator color={theme.colors.primary} size="small" />
+        ) : (
+          <>
+            <Text
+              style={[
+                styles.primaryButtonText,
+                { color: canProceed ? theme.colors.primary : theme.colors.textTertiary },
+              ]}
+            >
+              {t(isConfirmation ? 'onboarding_create_vault' : 'continue')}
+            </Text>
+            <Ionicons
+              name={isConfirmation ? 'checkmark' : 'arrow-forward'}
+              size={17}
+              color={canProceed ? theme.colors.primary : theme.colors.textTertiary}
+            />
+          </>
+        )}
+      </MotionPressable>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContent}
+        enableAutomaticScroll
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.content, { width: contentWidth }]}>
+          {currentStep === 'welcome' && renderWelcome()}
+          {currentStep === 'name' && renderName()}
+          {currentStep === 'pin' && renderPinStep(false)}
+          {currentStep === 'confirm_pin' && renderPinStep(true)}
+        </View>
+      </KeyboardAwareScrollView>
+
+      <Dialog
+        dismissible={false}
+        icon="lock-closed-outline"
+        onClose={() => {}}
+        title={t('securing_app')}
+        visible={isProcessing}
+      >
+        <View style={styles.processingBody}>
+          <ActivityIndicator color={theme.colors.primary} size="large" />
+          <Text style={[styles.processingText, { color: theme.colors.textSecondary }]}>
+            {t('please_wait')}
+          </Text>
+        </View>
+      </Dialog>
+    </SafeAreaView>
+  );
 };
 
-const createStyles = (theme: Theme) => {
-  const { width } = Dimensions.get('window');
-
+function createStyles(theme: Theme) {
   return StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    container: {
-      flex: 1,
-    },
-    scrollContent: {
-      flexGrow: 1,
-    },
-    fullScreenStep: {
-      flex: 1,
-      padding: 24,
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.background,
-    },
-
-    // Welcome/Hero
-    heroContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    heroEmoji: {
-      fontSize: 120,
-      marginBottom: 32,
+    safeArea: { flex: 1 },
+    scrollContent: { flexGrow: 1, alignItems: 'center' },
+    content: { flex: 1, paddingHorizontal: 20, paddingVertical: 20 },
+    step: { flex: 1, minHeight: 620, justifyContent: 'space-between' },
+    welcomeBody: { flex: 1, justifyContent: 'center', paddingBottom: 28 },
+    lockMark: { alignItems: 'center', marginBottom: 30 },
+    eyebrow: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 1.8,
+      textAlign: 'center',
+      marginBottom: 12,
     },
     heroTitle: {
-      fontSize: 32,
-      fontWeight: 'bold',
-      color: theme.colors.text,
+      fontSize: 31,
+      lineHeight: 35,
+      fontWeight: '600',
+      letterSpacing: -0.7,
       textAlign: 'center',
-      marginBottom: 12,
+      maxWidth: 300,
+      alignSelf: 'center',
     },
     heroDescription: {
-      fontSize: 18,
-      color: theme.colors.textSecondary,
+      fontSize: 15,
+      lineHeight: 22,
       textAlign: 'center',
-      lineHeight: 26,
-      marginBottom: 40,
+      maxWidth: 310,
+      alignSelf: 'center',
+      marginTop: 14,
     },
-    quickFeatures: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      marginHorizontal: -6, // Compensazione per lo spacing
-    },
-    featurePill: {
+    features: { marginTop: 34 },
+    featureRow: {
+      minHeight: 46,
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.colors.backgroundLight,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 20,
-      marginHorizontal: 6,
-      marginVertical: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-    featurePillEmoji: {
-      fontSize: 16,
-      marginRight: 6,
-    },
-    featurePillText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.colors.text,
-    },
-
-    // Big CTA Button
-    bigButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.primary,
-      height: 64,
-      borderRadius: 32,
       gap: 12,
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.colors.divider,
     },
-    bigButtonText: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
+    featureText: { fontSize: 13, lineHeight: 18, fontWeight: '500' },
+    primaryButton: {
+      minHeight: 50,
+      borderWidth: 1,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingHorizontal: 18,
     },
-
-    // Input Screens
-    backButton: {
+    primaryButtonText: { fontSize: 14, fontWeight: '600' },
+    footerHint: { fontSize: 11, lineHeight: 15, textAlign: 'center', marginTop: 12 },
+    progressHeader: {
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    progressText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
+    questionBlock: { alignItems: 'center', marginTop: 54, marginBottom: 32 },
+    smallMark: {
       width: 48,
       height: 48,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 20,
+      marginBottom: 18,
     },
-    inputContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    stepEmoji: {
-      fontSize: 80,
-      marginBottom: 24,
-    },
-    questionText: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      textAlign: 'center',
-      marginBottom: 12,
-    },
-    hintText: {
-      fontSize: 16,
-      color: theme.colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: 40,
-    },
-    inputWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: Math.min(width * 0.7, 400),
-      alignSelf: 'center',
-      borderBottomWidth: 3,
-      borderBottomColor: theme.colors.primary,
-    },
-    bigInput: {
-      fontSize: 24,
+    questionTitle: {
+      fontSize: 25,
+      lineHeight: 31,
       fontWeight: '600',
-      color: theme.colors.text,
+      letterSpacing: -0.35,
       textAlign: 'center',
-      // Border moved to wrapper
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      paddingRight: 48, // Make room for eye icon
-      flex: 1,
     },
-    pinInput: {
-      fontSize: 24,
-      letterSpacing: 8,
-      fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    questionHint: { fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8 },
+    textInput: {
+      width: '100%',
+      minHeight: 52,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      fontSize: 16,
+      textAlign: 'center',
     },
-    pinInputNoIcon: {
-      paddingRight: 24,
-    },
-    inputError: {
-      borderBottomColor: theme.colors.error,
-    },
-    charCount: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      marginTop: 12,
-    },
-
-    // PIN Dots
+    inputHint: { fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 10 },
     pinDots: {
       flexDirection: 'row',
-      gap: 8,
-      marginTop: 20,
-    },
-    pinDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      ...(Platform.OS === 'web' ? { transition: 'all 0.2s ease' } : {}),
-    },
-
-    // Info Badge
-    infoBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.backgroundLight,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      marginTop: 24,
-      maxWidth: width * 0.85,
-      gap: 10,
-    },
-    infoBadgeEmoji: {
-      fontSize: 20,
-    },
-    infoBadgeText: {
-      flex: 1,
-      fontSize: 14,
-      fontWeight: '500',
-      color: theme.colors.textSecondary,
-      lineHeight: 20,
-    },
-
-    // Floating Action Button
-    floatingButton: {
-      position: 'absolute',
-      bottom: 40,
-      right: 24,
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: theme.colors.primary,
-      alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
+      gap: 12,
+      marginBottom: 38,
     },
-    floatingButtonDisabled: {
-      backgroundColor: theme.colors.border,
-      opacity: 0.5,
-    },
-    floatingButtonProcessing: {
-      backgroundColor: theme.colors.success,
-    },
-    floatingButtonText: {
-      fontSize: 24,
-      color: '#FFF',
-      fontWeight: 'bold',
-    },
-
-    // Loading Overlay
-    loadingOverlay: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    loadingCard: {
-      backgroundColor: theme.colors.card,
-      borderRadius: 20,
-      padding: 32,
-      alignItems: 'center',
-      minWidth: 200,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    loadingText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.colors.text,
+    pinDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1 },
+    pinGuidance: {
+      minHeight: 44,
+      fontSize: 11,
+      lineHeight: 16,
+      textAlign: 'center',
       marginTop: 16,
-      textAlign: 'center',
+      paddingHorizontal: 16,
     },
-    loadingSubtext: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      marginTop: 8,
-      textAlign: 'center',
-    },
-    eyeIcon: {
-      position: 'absolute',
-      right: 12,
-      // vertically centered in wrapper
-    },
+    processingBody: { alignItems: 'center', paddingVertical: 12 },
+    processingText: { fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' },
   });
-};
+}
 
 export default OnboardingScreen;

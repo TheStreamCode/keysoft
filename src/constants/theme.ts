@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 // === Palette ==============================================================
-// Modern Color Palette (Tailwind-inspired Slate & Blue)
+// Nocturne: one quiet blue accent over cool neutral surfaces.
 const palette = {
   // Brand Colors (Safety Blue)
   primary: {
@@ -10,25 +10,25 @@ const palette = {
     200: '#bfdbfe',
     300: '#93c5fd',
     400: '#60a5fa',
-    500: '#3b82f6', // Main Brand Light
-    600: '#2563eb', // Main Brand Dark
+    500: '#4f8fe8',
+    600: '#2563eb',
     700: '#1d4ed8',
     800: '#1e40af',
     900: '#1e3a8a',
     950: '#172554',
   },
-  // Accent (Teal/Emerald for Security)
+  // Compatibility alias: interactive accents intentionally stay in one blue family.
   accent: {
-    50: '#f0fdfa',
-    100: '#ccfbf1',
-    200: '#99f6e4',
-    300: '#5eead4',
-    400: '#2dd4bf',
-    500: '#14b8a6',
-    600: '#0d9488',
-    700: '#0f766e',
-    800: '#115e59',
-    900: '#134e4a',
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#4f8fe8',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
   },
   // Neutrals (Slate - Cool Gray with Blue undertones)
   slate: {
@@ -72,8 +72,8 @@ const baseFonts = {
 };
 
 const typography = {
-  display: { size: 32, lineHeight: 40, weight: '700' },
-  headline: { size: 24, lineHeight: 32, weight: '600' },
+  display: { size: 34, lineHeight: 40, weight: '700' },
+  headline: { size: 26, lineHeight: 32, weight: '600' },
   title: { size: 20, lineHeight: 28, weight: '600' },
   subtitle: { size: 18, lineHeight: 24, weight: '500' },
   body: { size: 16, lineHeight: 24, weight: '400' },
@@ -85,17 +85,17 @@ const typography = {
 const spacing = {
   xs: 4,
   s: 8,
-  m: 16,
-  l: 24,
-  xl: 32,
-  xxl: 48,
-  xxxl: 64,
+  m: 12,
+  l: 20,
+  xl: 28,
+  xxl: 40,
+  xxxl: 56,
 };
 
 const borderRadius = {
-  small: 8, // Modern standard
-  medium: 16, // Smooth cards
-  large: 24, // Modals
+  small: 4,
+  medium: 8,
+  large: 14,
   pill: 999,
 };
 
@@ -108,7 +108,7 @@ const iconSizes = {
 };
 
 const layout = {
-  contentMaxWidth: 640,
+  contentMaxWidth: 1180,
   horizontalGutter: 24,
   sectionGap: 32,
   cardGap: 16,
@@ -119,8 +119,8 @@ const layout = {
   },
   maxWidths: {
     phone: Infinity,
-    tablet: 1024,
-    tv: 1024,
+    tablet: 1180,
+    tv: 1180,
   },
   gridColumns: {
     phone: 1,
@@ -177,29 +177,29 @@ const zIndex = {
 // === Surfaces Definition (The Core of the Look) ===========================
 
 const darkSurfaces = {
-  level0: palette.slate[900], // #0f172a - Main Bg (Deep Navy)
-  level1: palette.slate[800], // #1e293b - Secondary/Cards
-  level2: '#334155', // #334155 - Slate 700 (Elevated/Modals)
-  level3: '#475569', // #475569 - Slate 600 (High elevation)
-  overlay: 'rgba(15, 23, 42, 0.85)', // Darker overlay
+  level0: '#161826',
+  level1: '#232532',
+  level2: '#292c3b',
+  level3: '#323647',
+  overlay: 'rgba(10, 12, 22, 0.88)',
 };
 
 const lightSurfaces = {
-  level0: palette.slate[50], // #f8fafc - Main Bg (Very light gray, NOT white)
-  level1: '#ffffff', // #ffffff - Cards/Surfaces (Pop against gray)
-  level2: '#ffffff', // Elevated cards usually keep white with shadow
-  level3: '#f1f5f9', // Alternative highlight
-  overlay: 'rgba(15, 23, 42, 0.4)', // Slate overlay
+  level0: '#f5f5f8',
+  level1: '#ffffff',
+  level2: '#f0f1f6',
+  level3: '#e8eaf1',
+  overlay: 'rgba(20, 23, 38, 0.42)',
 };
 
 const gradientsDark = {
-  hero: [palette.slate[900], palette.slate[800]],
-  accent: [palette.primary[600], palette.accent[500]],
+  hero: ['#161826', '#1c1f30'],
+  accent: ['#4f8fe8', '#60a5fa'],
 };
 
 const gradientsLight = {
-  hero: [palette.slate[50], palette.slate[100]],
-  accent: [palette.primary[500], palette.accent[400]],
+  hero: ['#f4f6fa', '#ffffff'],
+  accent: ['#2563eb', '#60a5fa'],
 };
 
 // Modern Shadows (Softer, diffused)
@@ -295,14 +295,14 @@ const createTheme = (mode: 'dark' | 'light') => {
 
     // Backgrounds
     background: surfaces.level0, // Main App Background
-    backgroundMuted: isDark ? palette.slate[800] : palette.slate[100],
-    backgroundLight: isDark ? palette.slate[800] : '#ffffff', // For input fields etc
+    backgroundMuted: isDark ? '#202230' : '#eceef4',
+    backgroundLight: isDark ? '#232532' : '#ffffff',
     backgroundElevated: surfaces.level1, // Cards
 
     // Typography
-    text: isDark ? palette.slate[50] : palette.slate[900], // Main text
-    textSecondary: isDark ? palette.slate[400] : palette.slate[500], // Subtitles
-    textTertiary: isDark ? palette.slate[500] : palette.slate[400], // Hints
+    text: isDark ? '#e9e9ed' : '#171925',
+    textSecondary: isDark ? '#a3a5b2' : '#5d6070',
+    textTertiary: isDark ? '#737684' : '#7a7e8e',
     textLight: '#ffffff',
     textDark: palette.slate[900],
 
@@ -314,13 +314,13 @@ const createTheme = (mode: 'dark' | 'light') => {
 
     // Components
     card: surfaces.level1,
-    border: isDark ? palette.slate[700] : palette.slate[200],
-    divider: isDark ? palette.slate[800] : palette.slate[200],
+    border: isDark ? '#3b3e4b' : '#d7d9e2',
+    divider: isDark ? '#30333f' : '#e1e2e8',
 
     // Inputs
-    inputBackground: isDark ? palette.slate[800] : '#ffffff',
-    inputBorder: isDark ? palette.slate[600] : palette.slate[300],
-    inputText: isDark ? palette.slate[50] : palette.slate[900],
+    inputBackground: isDark ? '#232532' : '#ffffff',
+    inputBorder: isDark ? '#3b3e4b' : '#cfd2dd',
+    inputText: isDark ? '#e9e9ed' : '#171925',
 
     // Alerts/Modals
     alertBackground: isDark ? palette.slate[800] : '#ffffff',
@@ -341,14 +341,14 @@ const createTheme = (mode: 'dark' | 'light') => {
     switchThumbOff: '#ffffff',
 
     // Chips/Tags
-    chipBackground: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
-    chipBorder: isDark ? 'rgba(96, 165, 250, 0.3)' : '#bfdbfe',
+    chipBackground: isDark ? 'rgba(96, 165, 250, 0.12)' : '#eff6ff',
+    chipBorder: isDark ? 'rgba(96, 165, 250, 0.45)' : '#bfdbfe',
     chipText: isDark ? '#dbeafe' : '#1e40af',
     chipSelectedBackground: palette.primary[500],
     chipSelectedText: '#ffffff',
 
     // Lists
-    listItemBackground: isDark ? palette.slate[800] : '#ffffff',
+    listItemBackground: isDark ? '#1c1f30' : '#ffffff',
     listItemSelected: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
 
     // Elevation (Manual override)

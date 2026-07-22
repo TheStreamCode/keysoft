@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 2.4, Android versionCode 122.
+Current release target: Keysoft 3.0.0, Android versionCode 123. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
@@ -11,6 +11,7 @@ Before preparing a release:
 - `bun run test` passes.
 - `bunx expo-doctor` passes.
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export` passes.
+- `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export` passes.
 - Architecture and i18n regression tests are included in the passing test run.
 - Android permissions match `app.config.js` and native Android configuration.
 - No local secrets, keystores, certificates, or environment files are staged or tracked.
@@ -18,6 +19,9 @@ Before preparing a release:
 - Backup import/export still works with encrypted payloads.
 - Biometric login behavior is verified on a physical Android device when possible.
 - Privacy text discloses that `INTERNET` is used for Expo/EAS updates only, not vault sync.
+- Launcher, Android adaptive, splash, web favicon, and onboarding all use the original Keysoft shield-and-eye artwork; no obsolete alternate logo is packaged.
+- Verify Settings > Open source and legal while offline: it identifies Keysoft as Apache-2.0 and displays the complete bundled license. Confirm source, notices, and trademark links.
+- Validate password login, iPad split view, Dynamic Type, VoiceOver, backup import/export, and auto-lock in the iOS cloud simulator. Face ID and other hardware-backed behavior remain outside simulator coverage.
 - Pre-build security/UI review is current and all blocking findings are remediated or explicitly accepted.
 
 ## Versioning
@@ -28,7 +32,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 2.4 Android production release, `app.config.js` uses `version: "2.4"` and `android.versionCode: 122`. Because EAS Update uses the `appVersion` runtime policy, changing the app version keeps the Expo SDK 57 native runtime separate from the 2.3/SDK 56 runtime.
+For the 3.0 release, `app.config.js` uses `version: "3.0.0"`, `android.versionCode: 123`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile auto-increments its store build number remotely. Because EAS Update uses the `appVersion` runtime policy, 3.0 has a distinct native runtime.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
@@ -57,7 +61,23 @@ These commands upload the project to expo.dev. Do not start them until the relea
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. The EAS Workflow `.eas/workflows/build-android-production.yml` builds the Android production app-bundle and runs only on a version tag push (`v*`) or manual dispatch, to keep build-credit usage low. Trigger a release build by pushing the matching tag (for example `git tag v2.4 && git push origin v2.4`) or by running the workflow from the Expo dashboard. iOS is excluded while paused, so the missing-iOS-credentials warning does not apply; build Android only.
+The Android workflow runs for a matching version tag or manual dispatch. It uploads the project to Expo and therefore requires explicit approval before it is run.
+
+## iOS Cloud Simulator Testing
+
+Run the local JavaScript bundle check before using EAS:
+
+```bash
+bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export
+```
+
+For browser-based simulator validation without paid Apple enrollment, follow [iOS Testing Without Apple Hardware](ios-testing.md). After explicit approval for the external upload, create the simulator artifact with:
+
+```powershell
+bun run build:ios:simulator
+```
+
+The artifact can then be tested in Appetize. App Store signing, submission metadata, and publication are intentionally outside the release workflow.
 
 ### Google Play Submission
 
@@ -125,10 +145,14 @@ Before release, manually smoke test on Expo Go and on the EAS preview build:
 - Unlock, auto-lock, logout, cold-start biometric unlock, biometric invalidation fallback, and PIN change after biometrics are enabled.
 - Create, edit, delete, search, and copy password records.
 - Create, edit, delete, and search secure notes.
-- Open and dismiss notification, alert, and bottom-sheet modals.
+- Open and dismiss notification history, alerts, destructive confirmations, loading dialogs, bottom sheets, and toasts. Confirm a dialog opened from a sheet appears above the interface and that canceling restores the expected workflow.
+- Pick a profile photo, save it, reload the app, lock/log out, and confirm the same avatar is visible on unlock, vault, and settings screens. Canceling profile edits must keep the previously saved image.
+- Verify automatic light/dark appearance and responsive layout at compact-phone, tall-phone, landscape/tablet, and narrow split-view sizes without clipped content or full-height compact dialogs.
+- Confirm the original Keysoft shield appears without distortion on onboarding, launcher/adaptive icon, splash, and favicon.
 - Navigate icon-only controls with TalkBack where possible.
 - Confirm touch targets remain comfortable on smaller Android screens.
 - Switch Italian/English/system language and confirm core notification, alert, and settings labels remain localized.
+- Enable reduced motion and confirm transitions remain usable without relying on animation to convey state.
 
 ## Documentation Updates
 

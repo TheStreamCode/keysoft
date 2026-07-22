@@ -28,7 +28,10 @@ jest.mock('../../services/utils/clipboardService', () => ({
 }));
 
 jest.mock('../../services/utils/autoLockService', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
   updateTimeout: jest.fn(),
+  setLockCallback: jest.fn(),
+  cleanup: jest.fn(),
 }));
 
 jest.mock('react-native-keyboard-aware-scroll-view', () => {

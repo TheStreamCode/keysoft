@@ -1,7 +1,6 @@
-import { AppState, Platform } from 'react-native';
-import { Storage } from '../index';
+import { AppState } from 'react-native';
+import * as Storage from '../storage/storageService';
 import NotificationService from './notificationService';
-import * as Notifications from 'expo-notifications';
 import Logger from '../../utils/logger';
 
 /**
@@ -17,10 +16,10 @@ class AutoLockService {
   private appStateSubscription: any = null;
   private warningNotificationId: string | null = null;
   private warningThreshold: number = 15; // Avvisa 15 secondi prima del blocco
+  private initializationPromise: Promise<void> | null = null;
+  private initializationGeneration = 0;
 
-  private constructor() {
-    this.initialize();
-  }
+  private constructor() {}
 
   static getInstance(): AutoLockService {
     if (!AutoLockService.instance) {
@@ -33,15 +32,27 @@ class AutoLockService {
    * Initializes the service by loading user preferences
    * and configuring the listener for app-state changes.
    */
-  private async initialize() {
+  initialize(): Promise<void> {
+    if (!this.initializationPromise) {
+      const generation = ++this.initializationGeneration;
+      this.initializationPromise = this.performInitialization(generation);
+    }
+
+    return this.initializationPromise;
+  }
+
+  private async performInitialization(generation: number): Promise<void> {
     try {
       Logger.debug('AutoLockService: Inizializzazione...');
       const preferences = await Storage.getUserPreferences();
+      if (generation !== this.initializationGeneration) return;
+
       this.autoLockTimeout = preferences?.autoLockTimeout || 0;
       Logger.debug(`AutoLockService: Timeout impostato a ${this.autoLockTimeout} secondi`);
 
       // Initialize the notification service
       await NotificationService.initialize();
+      if (generation !== this.initializationGeneration) return;
 
       // Configure the listener for app-state changes
       this.setupAppStateListener();
@@ -107,20 +118,8 @@ class AutoLockService {
       Logger.debug('AutoLockService: Notifica di avviso cancellata');
     }
 
-    // Per sicurezza, cancelliamo anche tutte le notifiche programmate
-    // This should prevent persistent notifications
-    if (Platform.OS !== 'web') {
-      Notifications.cancelAllScheduledNotificationsAsync()
-        .then(() =>
-          Logger.debug('AutoLockService: Tutte le notifiche programmate sono state cancellate'),
-        )
-        .catch((error) =>
-          Logger.error(
-            'AutoLockService: Errore durante la cancellazione delle notifiche programmate:',
-            error,
-          ),
-        );
-    }
+    // Auto-lock warning scheduling is disabled. NotificationService clears
+    // stale scheduled notifications during native initialization.
   }
 
   /**
@@ -191,6 +190,9 @@ class AutoLockService {
    * Disables the auto-lock service.
    */
   cleanup() {
+    this.initializationGeneration += 1;
+    this.initializationPromise = null;
+
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
       this.appStateSubscription = null;

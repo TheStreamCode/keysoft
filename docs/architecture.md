@@ -37,6 +37,38 @@ src/
 
 Screens own presentation state and user interactions. They should not implement cryptography, persistence rules, or business validation directly. Complex screen workflows should move into hooks or services.
 
+The presentation layer follows the Nocturne system: semantic light/dark theme tokens, compact outlined controls, bounded responsive content, a flat five-slot tab bar, and copy-first read views separated from edit forms. Shared dialog, bottom-sheet, toast, motion, and PIN-keypad primitives live under `src/components/ui`; motion honors the operating-system reduced-motion preference and is limited to opacity and transform effects.
+
+`ProfileAvatar` owns photo rendering and the initial-based fallback across unlock, vault, and settings surfaces. `KeysoftMark` renders the canonical shield-and-eye asset in onboarding, matching the launcher, adaptive, splash, and web artwork configured in `app.config.js`.
+
+### Overlay Model
+
+- `Dialog` handles app alerts, blocking loading states, and confirmations, including destructive actions.
+- `BottomSheet` handles selection lists and contextual workflows that benefit from a mobile sheet.
+- `Toast` handles transient success or informational feedback that must not interrupt the current task.
+- `AlertContext` orchestrates global dialogs and toasts so screens do not fall back to platform-specific `Alert` or `ToastAndroid` UI.
+- When an action inside a bottom sheet requires a confirmation dialog, the sheet closes first. Canceling may reopen it; this avoids competing native modal layers.
+
+All overlays expose modal semantics where appropriate, keep decorative backdrops out of the accessibility tree, and use localized labels for dismiss and action controls.
+
+### Profile Image Lifecycle
+
+The profile editor keeps a selected image as temporary form state. Saving copies a native picked file into application-owned storage, or stores a data URI on web, and then writes the stable reference to user preferences. Canceling leaves the saved avatar unchanged. This prevents temporary picker URIs from disappearing after reload or login.
+
+### Brand Assets
+
+The original Keysoft shield-and-eye artwork is the single app identity:
+
+| Surface          | Source                               |
+| ---------------- | ------------------------------------ |
+| App launcher     | `assets/icon.png`                    |
+| Android adaptive | `assets/adaptive-icon.png`           |
+| Splash           | `assets/splash-icon.png`             |
+| Web favicon      | `assets/favicon.png`                 |
+| Onboarding       | `KeysoftMark` using the splash asset |
+
+Keep these variants visually aligned when changing branding. The Android adaptive icon uses a white background while the splash screen provides separate light and dark backgrounds.
+
 ### Contexts
 
 Contexts expose app-wide state and side effects:
@@ -44,7 +76,7 @@ Contexts expose app-wide state and side effects:
 - `AuthContext`: authentication status and session lifecycle.
 - `LanguageContext`: localization and language selection.
 - `ThemeContext`: visual appearance.
-- `AlertContext`: app-level alert orchestration.
+- `AlertContext`: app-level dialog and toast orchestration.
 
 Localization dictionaries live in `src/locales` and are loaded by `LanguageContext`. User-visible strings must be added to both Italian and English dictionaries.
 
@@ -78,11 +110,11 @@ A top-level error boundary (`src/components/ErrorBoundary.tsx`) wraps the naviga
 
 ## Storage Boundaries
 
-| Storage      | Contents                                                                                      |
-| ------------ | --------------------------------------------------------------------------------------------- |
-| AsyncStorage | Encrypted passwords, encrypted notes, categories, preferences                                 |
-| SecureStore  | Master key verifier metadata; optional biometric vault key protected by device authentication |
-| Memory only  | Active vault key and decrypted vault cache                                                    |
+| Storage      | Contents                                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| AsyncStorage | Encrypted passwords, encrypted notes, categories, preferences, and the saved profile-image reference |
+| SecureStore  | Master key verifier metadata; optional biometric vault key protected by device authentication        |
+| Memory only  | Active vault key and decrypted vault cache                                                           |
 
 The active vault key must never be written to AsyncStorage or logs. The only persistence exception is biometric unlock: when the user enables biometrics from an authenticated session, `StorageService` stores the current vault key in SecureStore with `requireAuthentication` and device-only keychain accessibility. If that SecureStore item is missing, invalidated, or stale, biometric login disables biometrics and the user must log in with PIN before re-enabling it.
 

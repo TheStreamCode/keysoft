@@ -1,4 +1,5 @@
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AlertProvider } from './src/contexts/AlertContext';
@@ -13,18 +14,20 @@ export default function App() {
   useWebScrollFix();
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AlertProvider>
-            <AuthProvider>
-              <ErrorBoundary>
-                <Navigation />
-              </ErrorBoundary>
-            </AuthProvider>
-          </AlertProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AlertProvider>
+              <AuthProvider>
+                <ErrorBoundary>
+                  <Navigation />
+                </ErrorBoundary>
+              </AuthProvider>
+            </AlertProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

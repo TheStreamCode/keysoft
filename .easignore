@@ -22,6 +22,9 @@ TROUBLESHOOTING-BUILD.md
 JAVA-INSTALLATION-GUIDE.md
 *.md
 
+# Local design reference (not runtime source)
+Keysoft Redesign completo/
+
 # Local development files
 .memory/
 .backups/

@@ -1,12 +1,13 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { AppTheme } from '../constants/theme';
 import { useTheme } from '../contexts/ThemeContext';
-import { getMaxContentWidth, isTabletOrLarger } from '../utils/responsive';
+import { useResponsiveLayout } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 import type { RootStackParamList } from './index';
+import { MotionPressable } from '../components/ui/motion';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -55,13 +56,40 @@ const WrappedSettingsScreen: React.FC = () => (
 // Custom TabBar component using React Navigation BottomTabBarProps
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const layout = useResponsiveLayout();
 
   // Define manual tabs - all 4 tabs are now real tab screens
   const tabs = [
-    { name: 'Home', icon: 'home', iconOutline: 'home-outline', routeIndex: 0 },
-    { name: 'PasswordGenerator', icon: 'key', iconOutline: 'key-outline', routeIndex: 1 },
-    { name: 'Notes', icon: 'document-text', iconOutline: 'document-text-outline', routeIndex: 2 },
-    { name: 'Settings', icon: 'settings', iconOutline: 'settings-outline', routeIndex: 3 },
+    {
+      name: 'Home',
+      icon: 'home',
+      iconOutline: 'home-outline',
+      routeIndex: 0,
+      label: t('tab_vault'),
+    },
+    {
+      name: 'PasswordGenerator',
+      icon: 'key',
+      iconOutline: 'key-outline',
+      routeIndex: 1,
+      label: t('tab_generator'),
+    },
+    {
+      name: 'Notes',
+      icon: 'document-text',
+      iconOutline: 'document-text-outline',
+      routeIndex: 2,
+      label: t('tab_notes'),
+    },
+    {
+      name: 'Settings',
+      icon: 'settings',
+      iconOutline: 'settings-outline',
+      routeIndex: 3,
+      label: t('tab_settings'),
+    },
   ];
 
   const handleTabPress = (tab: (typeof tabs)[0]) => {
@@ -94,22 +122,34 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     }
   };
 
+  const handleAdd = () => {
+    const parentNav = navigation.getParent();
+    if (parentNav) {
+      (
+        parentNav as unknown as {
+          navigate: (route: keyof RootStackParamList, params?: unknown) => void;
+        }
+      ).navigate('PasswordDetail', { mode: 'create' });
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.tabBarContainer}>
+    <View
+      style={[
+        styles.tabBarContainer,
+        {
+          paddingBottom: Math.max(insets.bottom, 8),
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.divider,
+        },
+      ]}
+    >
       <View
         style={[
           styles.tabBar,
           {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            borderWidth: 2,
-            borderColor: theme.colors.border,
-            ...AppTheme.shadows.medium,
-            // Limit width on tablet/TV for layout consistency
-            ...(isTabletOrLarger() && {
-              maxWidth: getMaxContentWidth(),
-              width: '95%',
-            }),
+            backgroundColor: theme.colors.background,
+            maxWidth: Math.min(layout.maxContentWidth, 720),
           },
         ]}
       >
@@ -117,45 +157,42 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
           const isFocused = state.index === tab.routeIndex;
           const iconName = isFocused ? tab.icon : tab.iconOutline;
 
-          // Add extra margin to the center icons (PasswordGenerator and Notes)
-          // to separate them from the central "+" button and move them closer to the sides
-          const isMiddleTab = index === 1 || index === 2;
-          const extraMargin = isMiddleTab ? { marginHorizontal: 45 } : {};
-
           return (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleTabPress(tab)}
-              style={[styles.tabItem, extraMargin]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={iconName as any}
-                size={26}
-                color={isFocused ? theme.colors.primary : theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
+            <React.Fragment key={tab.name}>
+              {index === 2 ? (
+                <MotionPressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('add_password')}
+                  onPress={handleAdd}
+                  style={[styles.tabItem, styles.addSlot]}
+                >
+                  <View style={[styles.addButton, { borderColor: theme.colors.primary }]}>
+                    <Ionicons name="add" color={theme.colors.primary} size={22} />
+                  </View>
+                </MotionPressable>
+              ) : null}
+              <MotionPressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={tab.label}
+                onPress={() => handleTabPress(tab)}
+                style={styles.tabItem}
+                hitSlop={4}
+              >
+                <Ionicons
+                  name={iconName as any}
+                  size={23}
+                  color={isFocused ? theme.colors.primary : theme.colors.textSecondary}
+                />
+                {isFocused ? (
+                  <View style={[styles.activeRule, { backgroundColor: theme.colors.primary }]} />
+                ) : null}
+              </MotionPressable>
+            </React.Fragment>
           );
         })}
       </View>
-
-      {/* Pulsante di aggiunta centrale */}
-      <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-        onPress={() => {
-          const parentNav = navigation.getParent<ReturnType<typeof navigation.getParent>>();
-          if (parentNav) {
-            (
-              parentNav as unknown as {
-                navigate: (route: keyof RootStackParamList, params?: unknown) => void;
-              }
-            ).navigate('PasswordDetail', {});
-          }
-        }}
-      >
-        <Ionicons name="add" color={theme.colors.textLight} size={30} />
-      </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -179,42 +216,42 @@ const TabNavigator: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabBarContainer: {
-    position: 'absolute',
-    bottom: 25,
-    left: 0,
-    right: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
   tabBar: {
     flexDirection: 'row',
-    height: 65,
-    width: '95%',
-    paddingHorizontal: 25,
-    justifyContent: 'space-around',
+    minHeight: 56,
+    width: '100%',
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
   tabItem: {
     flex: 1,
+    minWidth: 52,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 4,
+    position: 'relative',
+  },
+  addSlot: {
+    paddingTop: 3,
   },
   addButton: {
-    position: 'absolute',
-    top: Platform.select({ web: 0, default: 15 }), // Aligned on web, slightly higher on mobile
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: AppTheme.colors.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    zIndex: 100,
-    borderWidth: 0,
+    borderWidth: 1,
+  },
+  activeRule: {
+    position: 'absolute',
+    top: 0,
+    width: 24,
+    height: 2,
+    borderRadius: 1,
   },
 });
 

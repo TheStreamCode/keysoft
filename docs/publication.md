@@ -45,38 +45,16 @@ was already committed.
 - Scan repository history for secrets before publication and remediate any
   findings.
 
-## GPL Binary Distribution
+## Apache-2.0 Distribution
 
-Before distributing an Android binary, select and follow a GPLv3 section 6
-object-code distribution method. For the normal store-download case, make the
-Corresponding Source for the exact released version available from the same
-place or through an equally accessible source link at no further charge. Keep
-that exact Corresponding Source publicly accessible at no charge for as long as
-the corresponding binary is distributed under the selected section 6 method.
+Before distributing an Android or iOS binary:
 
-- Create and retain a release tag that identifies the exact source used for the
-  binary.
-- Make the full Corresponding Source available: source files plus the scripts,
-  configuration, and other material needed to generate, install, and run the
-  distributed work.
-- Ship a complete copy of GPLv3 with the binary or make the complete license
-  text accessible inside the distributed app; a store-listing or app-notice URL
-  alone is not sufficient.
-- Include a GPL and Corresponding Source link in the store listing or app legal
-  notice, as appropriate for the distribution channel.
-- Preserve required copyright, license, and dependency notices with the
-  distribution.
-- Before release, verify the dependency license inventory and required notices;
-  do not assume a package-manager dependency is notice-free.
-
-If using a GPLv3 section 6 written-offer method instead, give anyone who
-possesses the binary a written offer to provide the complete Corresponding
-Source on a durable physical medium or from a network server. The offer must be
-valid for at least three years and for as long as spare parts or customer
-support are offered for that product model. Retain the source, offer, and
-release records for the applicable period. Follow the specific section 6
-method's conditions; different rules apply to noncommercial individual
-transfers and peer-to-peer distribution.
+- Create and retain a release tag that identifies the exact source used for the binary.
+- Include the complete Apache-2.0 license in the repository and offline legal screen.
+- Preserve applicable copyright, patent, trademark, attribution, and dependency notices.
+- Review `THIRD_PARTY_NOTICES.md` against the resolved lockfile and packaged native dependencies.
+- Ensure modified third-party files carry any notices required by their licenses.
+- Verify **Settings > Open source and legal** works offline and links to the official repository and trademark policy.
 
 ## GitHub Repository Settings
 

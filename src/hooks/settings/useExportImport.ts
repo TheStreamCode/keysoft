@@ -39,6 +39,18 @@ export const useExportImport = ({
   const [importFileContent, setImportFileContent] = useState('');
   const [showImportPasswordDialog, setShowImportPasswordDialog] = useState(false);
 
+  const showImportPasswordError = useCallback(
+    (message: string) => {
+      setShowImportPasswordDialog(false);
+      setTimeout(() => {
+        alert(t('error'), message, [
+          { text: t('ok'), onPress: () => setShowImportPasswordDialog(true) },
+        ]);
+      }, 0);
+    },
+    [alert, t],
+  );
+
   const processImport = useCallback(
     async (importData: unknown) => {
       try {
@@ -332,7 +344,7 @@ export const useExportImport = ({
       LogBox.ignoreAllLogs();
 
       if (!importPassword || !importFileContent) {
-        alert(t('error'), t('invalid_decryption_password'));
+        showImportPasswordError(t('invalid_decryption_password'));
         return;
       }
 
@@ -348,12 +360,12 @@ export const useExportImport = ({
 
         await processImport(importData);
       } catch (_error) {
-        alert(t('error'), t('invalid_decryption_password'));
+        showImportPasswordError(t('invalid_decryption_password'));
       }
     } catch (_error) {
-      alert(t('error'), t('import_error'));
+      showImportPasswordError(t('import_error'));
     }
-  }, [importPassword, importFileContent, t, alert, processImport]);
+  }, [importPassword, importFileContent, t, processImport, showImportPasswordError]);
 
   return {
     // Export

@@ -1,31 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Platform,
-  ToastAndroid,
-} from 'react-native';
-import Slider from '@react-native-community/slider';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation';
-import { AppTheme } from '../constants/theme';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Crypto } from '../services';
-import { useTheme } from '../contexts/ThemeContext';
+import Slider from '@react-native-community/slider';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { MotionPressable, Reveal } from '../components/ui/motion';
+import { AppTheme } from '../constants/theme';
 import { useAlert } from '../contexts/AlertContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { RootStackParamList } from '../navigation';
+import { Crypto } from '../services';
+import { copyToClipboardWithFeedback } from '../utils/clipboardUtils';
 import Logger from '../utils/logger';
 import {
   calculatePasswordGeneratorStrength,
   PasswordGeneratorStrengthMap,
 } from '../utils/passwordUtils';
-import { copyToClipboardWithFeedback } from '../utils/clipboardUtils';
+import { useResponsiveLayout } from '../utils/responsive';
 
 type PasswordGeneratorScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -37,6 +31,10 @@ const PasswordGeneratorScreen: React.FC = () => {
   const navigation = useNavigation<PasswordGeneratorScreenNavigationProp>();
   const route = useRoute<PasswordGeneratorScreenRouteProp>();
   const { onSelect } = route.params || {};
+  const { theme } = useTheme();
+  const { alert, notify } = useAlert();
+  const { t } = useLanguage();
+  const layout = useResponsiveLayout();
 
   const [password, setPassword] = useState('');
   const [passwordLength, setPasswordLength] = useState(16);
@@ -45,76 +43,57 @@ const PasswordGeneratorScreen: React.FC = () => {
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSymbols, setIncludeSymbols] = useState(true);
   const [excludeSimilarCharacters, setExcludeSimilarCharacters] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(true);
-
-  const { theme } = useTheme();
-  const { alert } = useAlert();
-  const { t } = useLanguage();
 
   const generatePassword = useCallback(() => {
     try {
-      // Ensure at least one option is selected
       if (!includeUppercase && !includeLowercase && !includeNumbers && !includeSymbols) {
         setIncludeLowercase(true);
         return;
       }
 
-      const newPassword = Crypto.generatePassword(passwordLength, {
-        includeUppercase,
-        includeLowercase,
-        includeNumbers,
-        includeSymbols,
-        excludeSimilarCharacters,
-      });
-
-      setPassword(newPassword);
+      setPassword(
+        Crypto.generatePassword(passwordLength, {
+          includeUppercase,
+          includeLowercase,
+          includeNumbers,
+          includeSymbols,
+          excludeSimilarCharacters,
+        }),
+      );
     } catch (error) {
-      Logger.error('Errore durante la generazione della password:', error);
-      // ToastAndroid does not work on web, so use alert instead
-      if (Platform.OS === 'android') {
-        ToastAndroid.show(t('password_generation_error'), ToastAndroid.SHORT);
-      } else {
-        alert(t('error'), t('password_generation_error'));
-      }
+      Logger.error('Unable to generate password', error);
+      notify(t('password_generation_error'), 'error');
     }
   }, [
-    passwordLength,
-    includeUppercase,
+    excludeSimilarCharacters,
     includeLowercase,
     includeNumbers,
     includeSymbols,
-    excludeSimilarCharacters,
+    includeUppercase,
+    passwordLength,
+    notify,
     t,
-    alert,
   ]);
 
   useEffect(() => {
     generatePassword();
   }, [generatePassword]);
 
-  const handleCopyToClipboard = useCallback(async (): Promise<void> => {
-    await copyToClipboardWithFeedback(password, alert, {
-      successTitle: t('copied'),
-      successMessage: t('copied_message'),
-      errorTitle: t('error'),
-      errorMessage: t('copy_error_message'),
-    });
-  }, [alert, password, t]);
+  const handleCopyToClipboard = useCallback(async () => {
+    await copyToClipboardWithFeedback(
+      password,
+      alert,
+      {
+        successTitle: t('copied'),
+        successMessage: t('copied_message'),
+        errorTitle: t('error'),
+        errorMessage: t('copy_error_message'),
+      },
+      notify,
+    );
+  }, [alert, notify, password, t]);
 
-  const handleUsePassword = () => {
-    if (route.params?.onSelect) {
-      route.params.onSelect(password);
-      navigation.goBack();
-    } else {
-      handleCopyToClipboard();
-    }
-  };
-
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(!isPasswordVisible);
-  };
-
-  const passwordStrength = React.useMemo(() => {
+  const passwordStrength = useMemo(() => {
     const labels: PasswordGeneratorStrengthMap = {
       weak: t('weak'),
       medium: t('medium'),
@@ -137,331 +116,251 @@ const PasswordGeneratorScreen: React.FC = () => {
     });
   }, [includeLowercase, includeNumbers, includeSymbols, includeUppercase, passwordLength, t]);
 
-  return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={['top']}
-    >
+  const entropyBits = useMemo(() => {
+    const poolSize =
+      (includeUppercase ? 26 : 0) +
+      (includeLowercase ? 26 : 0) +
+      (includeNumbers ? 10 : 0) +
+      (includeSymbols ? 24 : 0);
+    return poolSize > 0 ? Math.round(passwordLength * Math.log2(poolSize)) : 0;
+  }, [includeLowercase, includeNumbers, includeSymbols, includeUppercase, passwordLength]);
+
+  function handleUsePassword() {
+    if (onSelect) {
+      onSelect(password);
+      navigation.goBack();
+    } else {
+      void handleCopyToClipboard();
+    }
+  }
+
+  function renderSwitchRow(
+    label: string,
+    value: boolean,
+    onValueChange: (nextValue: boolean) => void,
+    isLast = false,
+  ) {
+    return (
       <View
         style={[
-          styles.header,
-          {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            // Removed shadow
-            marginTop: AppTheme.spacing.xs,
-            marginHorizontal: AppTheme.spacing.l,
-            marginBottom: AppTheme.spacing.xs,
-            borderBottomWidth: 0,
+          styles.optionRow,
+          !isLast && {
+            borderBottomColor: theme.colors.divider,
+            borderBottomWidth: StyleSheet.hairlineWidth,
           },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[
-            styles.backButton,
-            { backgroundColor: theme.colors.primary + '15', borderRadius: 20 },
-          ]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
-        <Text
-          style={[
-            styles.title,
-            {
-              color: theme.colors.text,
-              fontWeight: 'bold',
-              fontSize: AppTheme.fonts.sizes.large,
-              flex: 1,
-              textAlign: 'center',
-            },
-          ]}
-        >
-          {t('password_generator')}
-        </Text>
-        <View style={styles.placeholder} />
+        <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{label}</Text>
+        <Switch
+          accessibilityLabel={label}
+          onValueChange={onValueChange}
+          thumbColor={value ? theme.colors.switchThumbOn : theme.colors.switchThumbOff}
+          trackColor={{ false: theme.colors.switchTrackOff, true: theme.colors.switchTrackOn }}
+          value={value}
+        />
       </View>
+    );
+  }
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.passwordContainer}>
-          <View
-            style={[
-              styles.passwordBox,
-              {
-                backgroundColor: theme.colors.card,
-                borderColor: theme.colors.border,
-              },
-            ]}
-          >
-            <Text style={[styles.passwordText, { color: theme.colors.text }]}>
-              {isPasswordVisible ? password : '•'.repeat(password.length)}
-            </Text>
-          </View>
+  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 680);
 
-          <View style={styles.passwordActions}>
-            <TouchableOpacity style={styles.actionButton} onPress={togglePasswordVisibility}>
-              <Ionicons
-                name={isPasswordVisible ? 'eye-off' : 'eye'}
-                size={24}
-                color={theme.colors.primary}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: theme.colors.background,
-                  borderColor: theme.colors.primary,
-                  borderWidth: 1,
-                  borderRadius: AppTheme.borderRadius.medium,
-                  paddingHorizontal: AppTheme.spacing.m,
-                },
-              ]}
-              onPress={generatePassword}
+  return (
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
+      edges={['top']}
+    >
+      <View style={[styles.content, { width: contentWidth }]}>
+        <View style={styles.header}>
+          {onSelect ? (
+            <MotionPressable
+              accessibilityLabel={t('back')}
+              accessibilityRole="button"
+              onPress={() => navigation.goBack()}
+              style={styles.headerButton}
             >
-              <Ionicons name="refresh" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton} onPress={handleCopyToClipboard}>
-              <Ionicons name="copy" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.strengthContainer}>
-            <Text style={[styles.strengthLabel, { color: theme.colors.text }]}>
-              {t('strength')}
-            </Text>
-            <Text style={[styles.strengthValue, { color: passwordStrength.color }]}>
-              {passwordStrength.label}
-            </Text>
-          </View>
+              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+            </MotionPressable>
+          ) : null}
+          <Text style={[styles.title, { color: theme.colors.text }]}>{t('tab_generator')}</Text>
         </View>
 
-        <View
-          style={[
-            styles.optionsContainer,
-            {
-              backgroundColor: theme.colors.card,
-              borderColor: theme.colors.border,
-            },
-          ]}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('options')}</Text>
-
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>
-              {t('password_length')}: {passwordLength}
-            </Text>
-            <View style={styles.sliderContainer}>
-              <Text style={[styles.sliderValue, { color: theme.colors.textSecondary }]}>8</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={8}
-                maximumValue={32}
-                step={1}
-                value={passwordLength}
-                onValueChange={setPasswordLength}
-                minimumTrackTintColor={theme.colors.primary}
-                maximumTrackTintColor={theme.colors.border}
-                thumbTintColor={theme.colors.primary}
-              />
-              <Text style={[styles.sliderValue, { color: theme.colors.textSecondary }]}>32</Text>
+          <Reveal>
+            <View
+              style={[styles.passwordPanel, { backgroundColor: theme.colors.backgroundElevated }]}
+            >
+              <Reveal key={password}>
+                <Text selectable style={[styles.passwordText, { color: theme.colors.primary }]}>
+                  {password}
+                </Text>
+              </Reveal>
+              <View style={[styles.strengthTrack, { backgroundColor: theme.colors.divider }]}>
+                <View style={[styles.strengthFill, { backgroundColor: theme.colors.primary }]} />
+              </View>
+              <Text style={[styles.strengthText, { color: theme.colors.textSecondary }]}>
+                {t('password_strength_entropy', {
+                  strength: passwordStrength.label,
+                  bits: entropyBits,
+                })}
+              </Text>
             </View>
-          </View>
 
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{t('uppercase')}</Text>
-            <Switch
-              value={includeUppercase}
-              onValueChange={setIncludeUppercase}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-              thumbColor={includeUppercase ? theme.colors.primary : '#f4f3f4'}
-            />
-          </View>
+            <View style={styles.actions}>
+              <MotionPressable
+                accessibilityRole="button"
+                onPress={generatePassword}
+                style={[styles.actionButton, { borderColor: theme.colors.primary }]}
+              >
+                <Ionicons name="refresh" size={15} color={theme.colors.primary} />
+                <Text style={[styles.actionText, { color: theme.colors.primary }]}>
+                  {t('regenerate')}
+                </Text>
+              </MotionPressable>
+              <MotionPressable
+                accessibilityRole="button"
+                onPress={() => void handleCopyToClipboard()}
+                style={[styles.actionButton, { borderColor: theme.colors.border }]}
+              >
+                <Ionicons name="copy-outline" size={15} color={theme.colors.textSecondary} />
+                <Text style={[styles.actionText, { color: theme.colors.text }]}>{t('copy')}</Text>
+              </MotionPressable>
+            </View>
+          </Reveal>
 
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{t('lowercase')}</Text>
-            <Switch
-              value={includeLowercase}
-              onValueChange={(value: boolean) => {
-                // Ensure at least one option is selected
-                if (value || includeUppercase || includeNumbers || includeSymbols) {
-                  setIncludeLowercase(value);
-                }
-              }}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-              thumbColor={includeLowercase ? theme.colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{t('numbers')}</Text>
-            <Switch
-              value={includeNumbers}
-              onValueChange={setIncludeNumbers}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-              thumbColor={includeNumbers ? theme.colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{t('symbols')}</Text>
-            <Switch
-              value={includeSymbols}
-              onValueChange={setIncludeSymbols}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-              thumbColor={includeSymbols ? theme.colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.optionItem, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.optionLabel, { color: theme.colors.text }]}>
-              {t('exclude_similar')}
+          <Reveal delay={70} style={styles.options}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textTertiary }]}>
+              {t('options')}
             </Text>
-            <Switch
-              value={excludeSimilarCharacters}
-              onValueChange={setExcludeSimilarCharacters}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-              thumbColor={excludeSimilarCharacters ? theme.colors.primary : '#f4f3f4'}
-            />
-          </View>
-        </View>
-      </ScrollView>
+            <View style={[styles.lengthBlock, { borderBottomColor: theme.colors.divider }]}>
+              <View style={styles.lengthHeading}>
+                <Text style={[styles.optionLabel, { color: theme.colors.text }]}>
+                  {t('password_length')}
+                </Text>
+                <Text style={[styles.lengthValue, { color: theme.colors.primary }]}>
+                  {passwordLength}
+                </Text>
+              </View>
+              <Slider
+                accessibilityLabel={t('password_length')}
+                maximumTrackTintColor={theme.colors.border}
+                maximumValue={32}
+                minimumTrackTintColor={theme.colors.primary}
+                minimumValue={8}
+                onValueChange={setPasswordLength}
+                step={1}
+                style={styles.slider}
+                thumbTintColor={theme.colors.primary}
+                value={passwordLength}
+              />
+              <View style={styles.sliderLabels}>
+                <Text style={[styles.sliderLabel, { color: theme.colors.textTertiary }]}>8</Text>
+                <Text style={[styles.sliderLabel, { color: theme.colors.textTertiary }]}>32</Text>
+              </View>
+            </View>
 
-      {onSelect && (
-        <View style={[styles.footer, { borderTopColor: theme.colors.border }]}>
-          <TouchableOpacity style={styles.useButton} onPress={handleUsePassword}>
-            <Text style={styles.useButtonText}>{t('use_this_password')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            {renderSwitchRow(t('uppercase'), includeUppercase, setIncludeUppercase)}
+            {renderSwitchRow(t('lowercase'), includeLowercase, (value) => {
+              if (value || includeUppercase || includeNumbers || includeSymbols)
+                setIncludeLowercase(value);
+            })}
+            {renderSwitchRow(t('numbers'), includeNumbers, setIncludeNumbers)}
+            {renderSwitchRow(t('symbols'), includeSymbols, setIncludeSymbols)}
+            {renderSwitchRow(
+              t('exclude_similar'),
+              excludeSimilarCharacters,
+              setExcludeSimilarCharacters,
+              true,
+            )}
+          </Reveal>
+
+          {onSelect ? (
+            <MotionPressable
+              accessibilityRole="button"
+              onPress={handleUsePassword}
+              style={[styles.useButton, { borderColor: theme.colors.primary }]}
+            >
+              <Text style={[styles.useButtonText, { color: theme.colors.primary }]}>
+                {t('use_this_password')}
+              </Text>
+            </MotionPressable>
+          ) : null}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
+  safeArea: { flex: 1, alignItems: 'center' },
+  content: { flex: 1 },
+  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center' },
+  headerButton: {
+    width: 42,
+    height: 44,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: AppTheme.spacing.l,
-    paddingVertical: AppTheme.spacing.m,
+    justifyContent: 'center',
+    marginLeft: -8,
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: AppTheme.fonts.sizes.xlarge,
-    fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    padding: AppTheme.spacing.l,
-    paddingBottom: 120, // Spazio extra per la TabBar
-  },
-  passwordContainer: {
-    marginBottom: AppTheme.spacing.xl,
-  },
-  passwordBox: {
-    borderRadius: AppTheme.borderRadius.medium,
-    padding: AppTheme.spacing.l,
-    borderWidth: 1,
-    // Removed shadow
+  title: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
+  scrollContent: { paddingBottom: 24 },
+  passwordPanel: {
+    borderRadius: 8,
+    padding: 14,
+    minHeight: 108,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   passwordText: {
-    fontSize: AppTheme.fonts.sizes.large,
     fontFamily: AppTheme.fonts.secure,
+    fontSize: 16,
+    lineHeight: 23,
+    letterSpacing: 0.6,
     textAlign: 'center',
   },
-  passwordActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: AppTheme.spacing.m,
-  },
+  strengthTrack: { width: '100%', height: 2, marginTop: 16 },
+  strengthFill: { width: '100%', height: 2 },
+  strengthText: { fontSize: 10, lineHeight: 14, marginTop: 7 },
+  actions: { flexDirection: 'row', gap: 7, marginTop: 8 },
   actionButton: {
-    padding: AppTheme.spacing.m,
-    marginHorizontal: AppTheme.spacing.s,
-  },
-  strengthContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: AppTheme.spacing.m,
-  },
-  strengthLabel: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    marginRight: AppTheme.spacing.s,
-  },
-  strengthValue: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
-  optionsContainer: {
-    borderRadius: AppTheme.borderRadius.medium,
-    padding: AppTheme.spacing.l,
+    flex: 1,
+    minHeight: 42,
     borderWidth: 1,
-    // Removed shadow
-  },
-  sectionTitle: {
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
-    marginBottom: AppTheme.spacing.m,
-  },
-  optionItem: {
+    borderRadius: 8,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: AppTheme.spacing.m,
-    borderBottomWidth: 1,
-  },
-  optionLabel: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    flex: 1,
-  },
-  sliderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '60%',
-  },
-  slider: {
-    flex: 1,
-    height: 40,
-  },
-  sliderValue: {
-    fontSize: AppTheme.fonts.sizes.small,
-    width: 25,
-    textAlign: 'center',
-  },
-  footer: {
-    padding: AppTheme.spacing.l,
-    borderTopWidth: 1,
-  },
-  useButton: {
-    backgroundColor: AppTheme.colors.primary,
-    borderRadius: AppTheme.borderRadius.pill,
-    paddingVertical: AppTheme.spacing.m,
     alignItems: 'center',
     justifyContent: 'center',
-    // Removed shadow
+    gap: 7,
   },
-  useButtonText: {
-    color: AppTheme.colors.textLight,
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
+  actionText: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
+  options: { marginTop: 20 },
+  sectionLabel: {
+    fontSize: 9,
+    lineHeight: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
+  lengthBlock: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  lengthHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  optionLabel: { fontSize: 13, lineHeight: 18, fontWeight: '500', flex: 1 },
+  lengthValue: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
+  slider: { width: '100%', height: 34, marginTop: 6 },
+  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -5 },
+  sliderLabel: { fontSize: 9, lineHeight: 12 },
+  optionRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center' },
+  useButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+  },
+  useButtonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
 });
 
 export default PasswordGeneratorScreen;

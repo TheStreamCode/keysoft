@@ -13,6 +13,10 @@ jest.mock('../../contexts/LanguageContext', () => ({
   }),
 }));
 
+jest.mock('../../contexts/AlertContext', () => ({
+  useAlert: () => ({ alert: jest.fn(), notify: jest.fn() }),
+}));
+
 jest.mock('../../services', () => ({
   Auth: {
     initDatabase: jest.fn().mockResolvedValue(undefined),
@@ -53,6 +57,7 @@ jest.mock('../../services/utils/clipboardService', () => ({
 }));
 
 jest.mock('../../services/utils/autoLockService', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
   updateTimeout: jest.fn(),
   setLockCallback: jest.fn(),
   cleanup: jest.fn(),
@@ -106,7 +111,7 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(Auth.loginWithBiometrics).toHaveBeenCalled();
       expect(NotificationService.sendLoginSuccess).toHaveBeenCalled();
-      expect(Storage.getAllPasswords).toHaveBeenCalled();
+      expect(Storage.getAllPasswords).not.toHaveBeenCalled();
       expect(NotificationService.updateSettings).toHaveBeenCalledWith(notificationSettings);
       expect(ClipboardService.updateDefaultTimeout).toHaveBeenCalledWith(120);
       expect(AutoLockService.updateTimeout).toHaveBeenCalledWith(300);

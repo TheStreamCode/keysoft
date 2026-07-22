@@ -1,371 +1,244 @@
-import React, { useState, useCallback, useMemo, useDeferredValue } from 'react';
+import React, { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  TextInput,
   ActivityIndicator,
+  Platform,
+  SectionList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useFocusEffect } from '@react-navigation/core';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation';
-import { AppTheme } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Storage } from '../services';
-import { Note, NOTE_COLORS, NoteColorName } from '../models/Note';
-import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useFocusEffect } from '@react-navigation/core';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { MotionPressable, Reveal } from '../components/ui/motion';
 import { useAlert } from '../contexts/AlertContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { Note, NOTE_COLORS, NoteColorName } from '../models/Note';
+import { RootStackParamList } from '../navigation';
+import { Storage } from '../services';
 import Logger from '../utils/logger';
+import { useResponsiveLayout } from '../utils/responsive';
 
 type NotesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Notes'>;
-
-const NOTES_PER_PAGE = 20;
 
 const NotesScreen: React.FC = () => {
   const navigation = useNavigation<NotesScreenNavigationProp>();
   const { theme, isDarkMode } = useTheme();
-  const { t } = useLanguage();
+  const { t, effectiveLanguage } = useLanguage();
   const { alert } = useAlert();
-
+  const layout = useResponsiveLayout();
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // React 19 native deferred value: keeps the input responsive while the
-  // (potentially heavy) filtering runs at a lower priority. No manual debounce.
   const deferredQuery = useDeferredValue(searchQuery);
-
-  const filteredNotes = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    if (!q) return notes;
-    return notes.filter(
-      (note) => note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q),
-    );
-  }, [notes, deferredQuery]);
-
-  const displayedNotes = useMemo(
-    () => filteredNotes.slice(0, currentPage * NOTES_PER_PAGE),
-    [filteredNotes, currentPage],
-  );
 
   const loadNotes = useCallback(async () => {
     try {
       setIsLoading(true);
-      const loadedNotes = await Storage.getNotes();
-      setNotes(loadedNotes);
-      setCurrentPage(1);
+      setNotes(await Storage.getNotes());
     } catch (error) {
-      Logger.error('Errore durante il caricamento delle note:', error);
+      Logger.error('Unable to load notes', error);
       alert(t('error'), t('notes_load_error'));
     } finally {
       setIsLoading(false);
     }
-  }, [t, alert]);
+  }, [alert, t]);
 
   useFocusEffect(
     useCallback(() => {
-      loadNotes();
+      void loadNotes();
     }, [loadNotes]),
   );
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  }, []);
+  const filteredNotes = useMemo(() => {
+    const query = deferredQuery.trim().toLowerCase();
+    if (!query) return notes;
+    return notes.filter(
+      (note) => note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query),
+    );
+  }, [deferredQuery, notes]);
 
-  const loadMoreNotes = useCallback(() => {
-    setCurrentPage((page) => (page * NOTES_PER_PAGE < filteredNotes.length ? page + 1 : page));
-  }, [filteredNotes.length]);
+  const sections = useMemo(() => {
+    const pinned = filteredNotes.filter((note) => note.isPinned);
+    const recent = filteredNotes.filter((note) => !note.isPinned);
+    return [
+      ...(pinned.length ? [{ title: t('pinned'), data: pinned }] : []),
+      ...(recent.length ? [{ title: t('recent'), data: recent }] : []),
+    ];
+  }, [filteredNotes, t]);
 
-  const handleNotePress = useCallback(
-    (noteId: string) => {
-      navigation.navigate('NoteDetail', { noteId, mode: 'view' });
-    },
-    [navigation],
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(effectiveLanguage === 'it' ? 'it-IT' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+    [effectiveLanguage],
   );
 
-  const handleNewNote = useCallback(() => {
-    navigation.navigate('NoteDetail', { mode: 'create' });
-  }, [navigation]);
-
-  const renderNoteItem = useCallback(
+  const renderNote = useCallback(
     ({ item }: { item: Note }) => {
-      const contentPreview =
-        item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content;
-
       const colorName = (item.color as NoteColorName) || 'default';
-      const noteColor = isDarkMode ? NOTE_COLORS.dark[colorName] : NOTE_COLORS.light[colorName];
+      const resolvedColor = isDarkMode ? NOTE_COLORS.dark[colorName] : NOTE_COLORS.light[colorName];
+      const dotColor = colorName === 'default' ? theme.colors.primary : resolvedColor;
 
       return (
-        <TouchableOpacity
-          style={[
-            styles.noteCard,
-            {
-              backgroundColor: theme.colors.backgroundElevated,
-              borderLeftWidth: 6,
-              borderLeftColor: noteColor,
-              borderRadius: AppTheme.borderRadius.large,
-            },
-            // Removed shadow
-          ]}
-          accessibilityRole="button"
+        <MotionPressable
           accessibilityLabel={item.title}
-          onPress={() => handleNotePress(item.id)}
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('NoteDetail', { noteId: item.id, mode: 'view' })}
+          style={[styles.noteRow, { borderBottomColor: theme.colors.divider }]}
         >
-          <View style={styles.noteHeader}>
-            <Text style={[styles.noteTitle, { color: theme.colors.text }]} numberOfLines={1}>
-              {item.title}
+          <View style={[styles.noteDot, { backgroundColor: dotColor }]} />
+          <View style={styles.noteCopy}>
+            <View style={styles.noteTitleRow}>
+              <Text numberOfLines={1} style={[styles.noteTitle, { color: theme.colors.text }]}>
+                {item.title}
+              </Text>
+              {item.isPinned ? (
+                <Ionicons name="pin-outline" size={13} color={theme.colors.primary} />
+              ) : null}
+            </View>
+            <Text numberOfLines={2} style={[styles.notePreview, { color: theme.colors.textSecondary }]}>
+              {item.content}
             </Text>
-            {item.isPinned && (
-              <View
-                style={[
-                  styles.iconBadge,
-                  {
-                    backgroundColor: isDarkMode ? '#FFFFFF20' : theme.colors.primary + '20',
-                    borderColor: isDarkMode ? '#FFFFFF' : theme.colors.primary,
-                  },
-                ]}
-              >
-                <Text style={styles.badgeEmoji}>📌</Text>
-              </View>
-            )}
+            <Text style={[styles.noteDate, { color: theme.colors.textTertiary }]}>
+              {dateFormatter.format(item.updatedAt)}
+            </Text>
           </View>
-
-          <Text
-            style={[styles.noteContent, { color: theme.colors.textSecondary }]}
-            numberOfLines={3}
-          >
-            {contentPreview}
-          </Text>
-
-          <Text style={[styles.noteDate, { color: theme.colors.textSecondary }]}>
-            {new Date(item.updatedAt).toLocaleDateString()}
-          </Text>
-        </TouchableOpacity>
+        </MotionPressable>
       );
     },
-    [theme, isDarkMode, handleNotePress],
+    [dateFormatter, isDarkMode, navigation, theme],
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="document-text-outline" size={80} color={theme.colors.textSecondary} />
-      <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-        {searchQuery ? t('no_notes_found') : t('no_notes_yet')}
-      </Text>
-      {!searchQuery && (
-        <TouchableOpacity
-          style={[styles.emptyButton, { backgroundColor: theme.colors.primary }]}
-          onPress={handleNewNote}
-        >
-          <Text style={[styles.emptyButtonText, { color: theme.colors.textLight }]}>
-            {t('create_first_note')}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 680);
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            // Removed shadow
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[
-            styles.backButton,
-            { backgroundColor: theme.colors.primary + '15', borderRadius: 20 },
-          ]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('personal_notes')}</Text>
-        <TouchableOpacity
-          onPress={handleNewNote}
-          style={[styles.addButton, { backgroundColor: theme.colors.primary, borderRadius: 20 }]}
-        >
-          <Ionicons name="add" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </View>
+      <View style={[styles.content, { width: contentWidth }]}>
+        <Reveal style={styles.header}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{t('tab_notes')}</Text>
+          <MotionPressable
+            accessibilityLabel={t('new_note')}
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('NoteDetail', { mode: 'create' })}
+            style={[styles.addButton, { borderColor: theme.colors.primary }]}
+          >
+            <Ionicons name="add" size={21} color={theme.colors.primary} />
+          </MotionPressable>
+        </Reveal>
 
-      <View
-        style={[
-          styles.searchContainer,
-          {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            // Removed shadow
-          },
-        ]}
-      >
-        <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder={t('search_notes')}
-          placeholderTextColor={theme.colors.textSecondary}
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {searchQuery !== '' && (
-          <TouchableOpacity onPress={() => handleSearch('')}>
-            <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+        <Reveal delay={45}>
+          <View
+            style={[
+              styles.search,
+              {
+                backgroundColor: theme.colors.inputBackground,
+                borderColor: theme.colors.inputBorder,
+              },
+            ]}
+          >
+            <Ionicons name="search-outline" size={17} color={theme.colors.textTertiary} />
+            <TextInput
+              accessibilityLabel={t('search_notes')}
+              onChangeText={setSearchQuery}
+              placeholder={t('search_notes')}
+              placeholderTextColor={theme.colors.textTertiary}
+              style={[styles.searchInput, { color: theme.colors.text }]}
+              value={searchQuery}
+            />
+            {searchQuery ? (
+              <MotionPressable
+                accessibilityLabel={t('clear_search')}
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={17} color={theme.colors.textTertiary} />
+              </MotionPressable>
+            ) : null}
+          </View>
+        </Reveal>
+
+        {isLoading ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator color={theme.colors.primary} size="large" />
+          </View>
+        ) : (
+          <SectionList
+            contentContainerStyle={sections.length ? styles.listContent : styles.emptyListContent}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <View style={[styles.emptyIcon, { backgroundColor: theme.colors.chipBackground }]}>
+                  <Ionicons name="document-text-outline" size={25} color={theme.colors.primary} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+                  {searchQuery ? t('no_notes_found') : t('no_notes_yet')}
+                </Text>
+                {!searchQuery ? (
+                  <MotionPressable
+                    onPress={() => navigation.navigate('NoteDetail', { mode: 'create' })}
+                    style={[styles.emptyButton, { borderColor: theme.colors.primary }]}
+                  >
+                    <Text style={[styles.emptyButtonText, { color: theme.colors.primary }]}>
+                      {t('create_first_note')}
+                    </Text>
+                  </MotionPressable>
+                ) : null}
+              </View>
+            }
+            removeClippedSubviews={Platform.OS === 'android'}
+            renderItem={renderNote}
+            renderSectionHeader={({ section }) => (
+              <Text style={[styles.sectionLabel, { color: theme.colors.textTertiary }]}>
+                {section.title}
+              </Text>
+            )}
+            sections={sections}
+            showsVerticalScrollIndicator={false}
+            stickySectionHeadersEnabled={false}
+          />
         )}
       </View>
-
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={displayedNotes}
-          renderItem={renderNoteItem}
-          keyExtractor={(item: Note) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={10}
-          updateCellsBatchingPeriod={100}
-          ListEmptyComponent={renderEmptyState}
-          onEndReached={loadMoreNotes}
-          onEndReachedThreshold={0.5}
-        />
-      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: AppTheme.spacing.l,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: AppTheme.spacing.l,
-    paddingVertical: AppTheme.spacing.m,
-    marginTop: AppTheme.spacing.xs,
-    marginBottom: AppTheme.spacing.m,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: AppTheme.fonts.sizes.xlarge,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: AppTheme.spacing.m,
-    paddingVertical: AppTheme.spacing.s,
-    marginBottom: AppTheme.spacing.m,
-    gap: AppTheme.spacing.s,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: AppTheme.fonts.sizes.medium,
-    paddingVertical: AppTheme.spacing.xs,
-  },
-  listContent: {
-    paddingBottom: 100,
-  },
-  noteCard: {
-    padding: AppTheme.spacing.m,
-    marginBottom: AppTheme.spacing.m,
-  },
-  noteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: AppTheme.spacing.s,
-  },
-  iconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: AppTheme.spacing.s,
-  },
-  badgeEmoji: {
-    fontSize: 14,
-  },
-  noteTitle: {
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  noteContent: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    marginBottom: AppTheme.spacing.s,
-    lineHeight: 20,
-  },
-  noteDate: {
-    fontSize: AppTheme.fonts.sizes.small,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: AppTheme.spacing.xxl,
-  },
-  emptyText: {
-    fontSize: AppTheme.fonts.sizes.large,
-    marginTop: AppTheme.spacing.l,
-    marginBottom: AppTheme.spacing.xl,
-    textAlign: 'center',
-  },
-  emptyButton: {
-    paddingHorizontal: AppTheme.spacing.xl,
-    paddingVertical: AppTheme.spacing.m,
-    borderRadius: AppTheme.borderRadius.pill,
-    // Removed shadow
-  },
-  emptyButtonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
+  safeArea: { flex: 1, alignItems: 'center' },
+  content: { flex: 1 },
+  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
+  addButton: { width: 38, height: 38, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  search: { minHeight: 42, borderWidth: 1, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingLeft: 10, marginBottom: 8 },
+  searchInput: { flex: 1, minHeight: 40, paddingHorizontal: 8, paddingVertical: 8, fontSize: 13 },
+  clearButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  listContent: { paddingBottom: 20 },
+  emptyListContent: { flexGrow: 1 },
+  sectionLabel: { fontSize: 9, lineHeight: 13, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 9, marginBottom: 2 },
+  noteRow: { minHeight: 82, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 10 },
+  noteDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, marginRight: 10 },
+  noteCopy: { flex: 1, minWidth: 0 },
+  noteTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  noteTitle: { maxWidth: '88%', fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  notePreview: { fontSize: 11, lineHeight: 15, marginTop: 3 },
+  noteDate: { fontSize: 9, lineHeight: 13, marginTop: 3 },
+  centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
+  emptyIcon: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
+  emptyButton: { minHeight: 42, borderWidth: 1, borderRadius: 8, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  emptyButtonText: { fontSize: 12, fontWeight: '600' },
 });
 
 export default NotesScreen;

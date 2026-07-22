@@ -178,15 +178,29 @@ const loadDataFromStorage = async (): Promise<void> => {
     decryptionErrors.passwords = false;
     decryptionErrors.notes = false;
 
-    // Load Master Key Info
-    const masterKeyInfoJson = await SecureStore.getItemAsync(STORAGE_KEYS.MASTER_KEY_INFO_SECURE);
-    if (masterKeyInfoJson) {
-      cache.masterKeyInfo = JSON.parse(masterKeyInfoJson);
-      Logger.debug('StorageService: Master key info loaded');
+    // Reuse secure metadata already loaded during startup instead of reading
+    // SecureStore again for every unlock.
+    if (!cache.masterKeyInfo) {
+      const masterKeyInfoJson = await SecureStore.getItemAsync(STORAGE_KEYS.MASTER_KEY_INFO_SECURE);
+      if (masterKeyInfoJson) {
+        cache.masterKeyInfo = JSON.parse(masterKeyInfoJson);
+        Logger.debug('StorageService: Master key info loaded');
+      }
     }
 
-    // Load User Preferences
-    const userPreferencesJson = await AsyncStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
+    // While locked, encrypted vault blobs are not useful. Once a verified key is
+    // available, fetch all AsyncStorage records in one native round trip.
+    const requestedKeys = encryptionKey
+      ? [
+          STORAGE_KEYS.USER_PREFERENCES,
+          STORAGE_KEYS.PASSWORDS,
+          STORAGE_KEYS.CATEGORIES,
+          STORAGE_KEYS.NOTES,
+        ]
+      : [STORAGE_KEYS.USER_PREFERENCES, STORAGE_KEYS.CATEGORIES];
+    const storedEntries = new Map(await AsyncStorage.multiGet(requestedKeys));
+
+    const userPreferencesJson = storedEntries.get(STORAGE_KEYS.USER_PREFERENCES);
     if (userPreferencesJson) {
       const storedPrefs = JSON.parse(userPreferencesJson);
       cache.userPreferences = { ...defaultUserPreferences, ...storedPrefs };
@@ -196,13 +210,20 @@ const loadDataFromStorage = async (): Promise<void> => {
       Logger.debug('StorageService: User preferences loaded');
     }
 
-    // Load Passwords
-    const passwordsJson = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORDS);
+    const categoriesJson = storedEntries.get(STORAGE_KEYS.CATEGORIES);
+    if (categoriesJson) {
+      cache.categories = JSON.parse(categoriesJson);
+    }
+
+    if (!encryptionKey) {
+      return;
+    }
+
+    let shouldPersistPasswords = false;
+    const passwordsJson = storedEntries.get(STORAGE_KEYS.PASSWORDS);
     if (passwordsJson) {
-      if (encryptionKey && !passwordsJson.trim().startsWith('[')) {
+      if (!passwordsJson.trim().startsWith('[')) {
         try {
-          // Decrypt if key is set and data doesn't look like a JSON array
-          // Note: We await CryptoService.decrypt in case it becomes async or is mocked as async
           const decrypted = await CryptoService.decrypt(passwordsJson, encryptionKey);
           cache.passwords = JSON.parse(decrypted);
           Logger.debug(`StorageService: Loaded ${cache.passwords.length} passwords (decrypted)`);
@@ -212,33 +233,28 @@ const loadDataFromStorage = async (): Promise<void> => {
           cache.passwords = [];
         }
       } else if (passwordsJson.trim().startsWith('[')) {
-        // Plain text (legacy or dev)
         cache.passwords = JSON.parse(passwordsJson);
         Logger.debug(`StorageService: Loaded ${cache.passwords.length} passwords (plain)`);
-        if (encryptionKey) {
-          const encryptedPasswords = await CryptoService.encrypt(
-            JSON.stringify(cache.passwords),
-            encryptionKey,
-          );
-          await AsyncStorage.setItem(STORAGE_KEYS.PASSWORDS, encryptedPasswords);
-          Logger.info('StorageService: Legacy plaintext passwords migrated to encrypted storage');
-        }
-      } else {
-        // Encrypted but no key
-        Logger.debug('StorageService: Passwords are encrypted and no key set. Skipping load.');
+        shouldPersistPasswords = true;
       }
     }
 
-    // Load Categories
-    const categoriesJson = await AsyncStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    if (categoriesJson) {
-      cache.categories = JSON.parse(categoriesJson);
+    if (!decryptionErrors.passwords && migratePasswordCategories(cache.passwords)) {
+      shouldPersistPasswords = true;
     }
 
-    // Load Notes
-    const notesJson = await AsyncStorage.getItem(STORAGE_KEYS.NOTES);
+    if (shouldPersistPasswords && !decryptionErrors.passwords) {
+      const encryptedPasswords = await CryptoService.encrypt(
+        JSON.stringify(cache.passwords),
+        encryptionKey,
+      );
+      await AsyncStorage.setItem(STORAGE_KEYS.PASSWORDS, encryptedPasswords);
+      Logger.info('StorageService: Password storage migrated in one atomic write');
+    }
+
+    const notesJson = storedEntries.get(STORAGE_KEYS.NOTES);
     if (notesJson) {
-      if (encryptionKey && !notesJson.trim().startsWith('[')) {
+      if (!notesJson.trim().startsWith('[')) {
         try {
           const decrypted = await CryptoService.decrypt(notesJson, encryptionKey);
           cache.notes = JSON.parse(decrypted);
@@ -249,14 +265,12 @@ const loadDataFromStorage = async (): Promise<void> => {
         }
       } else if (notesJson.trim().startsWith('[')) {
         cache.notes = JSON.parse(notesJson);
-        if (encryptionKey) {
-          const encryptedNotes = await CryptoService.encrypt(
-            JSON.stringify(cache.notes),
-            encryptionKey,
-          );
-          await AsyncStorage.setItem(STORAGE_KEYS.NOTES, encryptedNotes);
-          Logger.info('StorageService: Legacy plaintext notes migrated to encrypted storage');
-        }
+        const encryptedNotes = await CryptoService.encrypt(
+          JSON.stringify(cache.notes),
+          encryptionKey,
+        );
+        await AsyncStorage.setItem(STORAGE_KEYS.NOTES, encryptedNotes);
+        Logger.info('StorageService: Legacy plaintext notes migrated to encrypted storage');
       }
     }
   } catch (error) {
@@ -375,7 +389,7 @@ export const getPassword = async (id: string): Promise<Password | null> => {
 };
 
 export const getAllPasswords = async (): Promise<Password[]> => {
-  return migrateCategories([...cache.passwords]);
+  return [...cache.passwords];
 };
 
 export const getPasswordsPaginated = async (
@@ -403,9 +417,7 @@ export const getPasswordsPaginated = async (
 
   const total = filtered.length;
   const sliced = filtered.slice(offset, offset + limit);
-  const migrated = migrateCategories(sliced);
-
-  return { passwords: migrated, total };
+  return { passwords: sliced, total };
 };
 
 export const deletePassword = async (id: string): Promise<void> => {
@@ -596,29 +608,24 @@ export const clearPreferences = async (): Promise<void> => {
 
 // --- Helpers ---
 
-const migrateCategories = (passwords: Password[]): Password[] => {
+const migratePasswordCategories = (passwords: Password[]): boolean => {
   const categoryMapping: Record<string, string> = {
     login: 'email',
     browse: 'shopping',
     card: 'gaming',
   };
 
-  return passwords.map((password) => {
+  let hasChanges = false;
+
+  for (const password of passwords) {
     const mappedCategory = password.category ? categoryMapping[password.category] : undefined;
     if (!mappedCategory) {
-      return password;
+      continue;
     }
 
-    const updatedPassword: Password = {
-      ...password,
-      category: mappedCategory,
-    };
+    password.category = mappedCategory;
+    hasChanges = true;
+  }
 
-    // Background save
-    savePassword(updatedPassword).catch((error) =>
-      Logger.warn('StorageService: Error migrating category', error),
-    );
-
-    return updatedPassword;
-  });
+  return hasChanges;
 };

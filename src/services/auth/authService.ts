@@ -71,14 +71,18 @@ async function deriveMasterKey(
   masterPassword: string,
   mkInfo: UserMasterKey,
 ): Promise<string | null> {
+  const startedAt = Date.now();
   try {
-    return await CryptoService.deriveKey(
+    const key = await CryptoService.deriveKey(
       masterPassword,
       mkInfo.salt,
       mkInfo.iterations,
       mkInfo.memory,
     );
+    Logger.debug(`AuthService: KDF completed in ${Date.now() - startedAt}ms`);
+    return key;
   } catch (error) {
+    Logger.debug(`AuthService: KDF failed after ${Date.now() - startedAt}ms`);
     const reason = getKdfFailureReason(error);
     setAuthFailure(
       reason,
@@ -288,6 +292,7 @@ export const verifyMasterPassword = async (masterPassword: string): Promise<bool
  * Authenticates with the master password.
  */
 export const loginWithMasterPassword = async (masterPassword: string): Promise<boolean> => {
+  const loginStartedAt = Date.now();
   try {
     clearAuthFailure();
     const mkInfo = await StorageService.getMasterKeyInfo();
@@ -308,7 +313,11 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
     if (isValid) {
       StorageService.setEncryptionKey(derivedKey);
       try {
+        const storageStartedAt = Date.now();
         await StorageService.initDatabase();
+        Logger.debug(
+          `AuthService: encrypted vault load completed in ${Date.now() - storageStartedAt}ms`,
+        );
       } catch (error) {
         StorageService.setEncryptionKey('');
         setAuthFailure('init_database_failed', 'Database initialization failed after login');
@@ -321,6 +330,8 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
       // Transparently migrate legacy/heavy KDFs to the lighter OWASP Argon2id
       // parameters now that the vault is unlocked. Best-effort: never fails login.
       await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
+
+      Logger.debug(`AuthService: password login completed in ${Date.now() - loginStartedAt}ms`);
 
       return true;
     }

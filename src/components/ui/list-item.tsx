@@ -123,9 +123,9 @@ const createStyles = (theme: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      minHeight: 52,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      minHeight: 48,
     },
     cardContainer: {
       backgroundColor: theme.colors.surface,
@@ -150,7 +150,7 @@ const createStyles = (theme: any) =>
       minWidth: 0, // Important for text truncation
     },
     iconContainer: {
-      marginRight: 12,
+      marginRight: 10,
     },
     cardIconContainer: {
       width: 40,
@@ -164,7 +164,8 @@ const createStyles = (theme: any) =>
       minWidth: 0, // Important for text truncation
     },
     title: {
-      fontSize: 16,
+      fontSize: 13,
+      lineHeight: 18,
       fontWeight: '500',
       color: theme.colors.text,
     },
@@ -173,7 +174,8 @@ const createStyles = (theme: any) =>
       color: theme.colors.text,
     },
     description: {
-      fontSize: 14,
+      fontSize: 10,
+      lineHeight: 14,
       color: theme.colors.textSecondary,
       marginTop: 2,
     },
@@ -181,7 +183,7 @@ const createStyles = (theme: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      marginLeft: 12,
+      marginLeft: 8,
       flexShrink: 0, // Prevent shrinking
     },
   });

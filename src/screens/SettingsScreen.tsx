@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Modal,
   ActivityIndicator,
   Image,
   TextInput,
@@ -41,6 +40,9 @@ import {
 } from '../hooks/settings/useNotificationSettings';
 import { useProfileForm } from '../hooks/settings/useProfileForm';
 import { useExportImport } from '../hooks/settings/useExportImport';
+import { MotionPressable, Reveal } from '../components/ui/motion';
+import { ProfileAvatar } from '../components/ProfileAvatar';
+import { Dialog } from '../components/ui/dialog';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -98,7 +100,7 @@ const SettingsScreen: React.FC = () => {
 
   const { logout, updateMasterPassword, enableBiometrics } = useAuth();
   const { theme, isDarkMode, setThemeMode, themeMode } = useTheme();
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language, effectiveLanguage, setLanguage } = useLanguage();
   const { alert } = useAlert();
 
   // PIN management hook (replaces 9 useState calls plus handleChangePin)
@@ -250,11 +252,37 @@ const SettingsScreen: React.FC = () => {
     showOptions: showNotificationOptions,
     setShowOptions: setShowNotificationOptions,
     settings: notificationSettings,
+    setSettings: setNotificationSettings,
     toggleNotification: handleToggleNotification,
   } = notifications;
 
+  const handleToggleSecurityReminders = useCallback(
+    async (value: boolean) => {
+      if (!preferences) return;
+
+      const updatedSettings = {
+        ...notificationSettings,
+        [NotificationType.PASSWORD_EXPIRY]: value,
+        [NotificationType.WEAK_PASSWORD]: value,
+        [NotificationType.DUPLICATE_PASSWORD]: value,
+      };
+      const updatedPreferences = { ...preferences, notificationSettings: updatedSettings };
+
+      try {
+        setNotificationSettings(updatedSettings);
+        setPreferences(updatedPreferences);
+        await Storage.saveUserPreferences(updatedPreferences);
+      } catch (error) {
+        Logger.error('Unable to update security reminders', error);
+        alert(t('error'), t('notification_update_error'));
+        await loadPreferences();
+      }
+    },
+    [alert, loadPreferences, notificationSettings, preferences, setNotificationSettings, t],
+  );
+
   // Profile form hook (replaces showProfileModal/tempUsername/profileError, selectedImage, and image picker handlers).
-  const profileForm = useProfileForm({ preferences, setPreferences, setIsSaving, t, alert });
+  const profileForm = useProfileForm({ preferences, setPreferences, setIsSaving, t });
   const {
     showModal: showProfileModal,
     tempUsername,
@@ -516,7 +544,7 @@ const SettingsScreen: React.FC = () => {
       >
         <BottomSheetOption
           icon="camera"
-          iconColor="#FF6B6B"
+          iconColor={theme.colors.primary}
           label={t('take_photo')}
           onPress={() => {
             setShowImageSourceModal(false);
@@ -525,7 +553,7 @@ const SettingsScreen: React.FC = () => {
         />
         <BottomSheetOption
           icon="image"
-          iconColor="#4ECDC4"
+          iconColor={theme.colors.primary}
           label={t('choose_from_gallery')}
           onPress={() => {
             setShowImageSourceModal(false);
@@ -583,6 +611,11 @@ const SettingsScreen: React.FC = () => {
         return isDarkMode ? t('theme_dark') : t('theme_light');
     }
   };
+
+  const securityRemindersEnabled =
+    notificationSettings[NotificationType.PASSWORD_EXPIRY] &&
+    notificationSettings[NotificationType.WEAK_PASSWORD] &&
+    notificationSettings[NotificationType.DUPLICATE_PASSWORD];
 
   if (isLoading) {
     return (
@@ -681,38 +714,276 @@ const SettingsScreen: React.FC = () => {
         style={[
           styles.header,
           {
-            backgroundColor: theme.colors.backgroundElevated,
-            borderRadius: AppTheme.borderRadius.large,
-            // Removed shadow for flatter design
-            marginTop: AppTheme.spacing.xs,
-            marginHorizontal: AppTheme.spacing.l,
-            marginBottom: AppTheme.spacing.xs,
+            backgroundColor: theme.colors.background,
           },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[styles.backButton, { backgroundColor: theme.colors.primary + '15' }]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
         <Text
           style={[
             styles.title,
             {
               color: theme.colors.text,
-              fontSize: AppTheme.fonts.sizes.large,
-              fontWeight: 'bold',
+              fontSize: 23,
+              fontWeight: '600',
             },
           ]}
         >
           {t('settings')}
         </Text>
-        <View style={styles.placeholder} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
+        style={styles.compactScrollView}
+        contentContainerStyle={styles.compactScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Reveal>
+          <MotionPressable
+            accessibilityLabel={t('edit_profile')}
+            accessibilityRole="button"
+            onPress={openProfileModal}
+            style={[styles.compactProfile, { backgroundColor: theme.colors.backgroundElevated }]}
+          >
+            <ProfileAvatar
+              name={preferences?.username || t('user')}
+              size={44}
+              testID="settings-profile-avatar"
+              uri={preferences?.avatar}
+            />
+            <View style={styles.compactProfileCopy}>
+              <Text style={[styles.compactProfileName, { color: theme.colors.text }]}>
+                {preferences?.username || t('user')}
+              </Text>
+              <Text style={[styles.compactProfileMeta, { color: theme.colors.textTertiary }]}>
+                {t('edit_profile')}
+              </Text>
+            </View>
+            <Text style={[styles.compactEditText, { color: theme.colors.primary }]}>
+              {t('edit')}
+            </Text>
+          </MotionPressable>
+        </Reveal>
+
+        <Reveal delay={35}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('security')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              leftIcon="key-outline"
+              title={t('change_pin')}
+              onPress={() => setShowChangePinModal(true)}
+              rightIcon="chevron-forward"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="finger-print-outline"
+              title={t('biometrics')}
+              rightIcon={
+                <UISwitch
+                  accessibilityLabel={t('biometrics')}
+                  onValueChange={handleToggleBiometrics}
+                  value={preferences?.biometricsEnabled || false}
+                />
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="eye-off-outline"
+              title={t('screenshot_protection')}
+              rightIcon={
+                <UISwitch
+                  accessibilityLabel={t('screenshot_protection')}
+                  onValueChange={handleToggleScreenshotProtection}
+                  value={preferences?.screenshotProtectionEnabled || false}
+                />
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="lock-closed-outline"
+              title={t('auto_lock')}
+              onPress={() => setShowAutoLockOptions(true)}
+              rightIcon={
+                <View style={styles.compactValueRow}>
+                  <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
+                    {getAutoLockTimeoutText()}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                </View>
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="clipboard-outline"
+              title={t('clipboard_timeout')}
+              onPress={() => setShowClipboardOptions(true)}
+              rightIcon={
+                <View style={styles.compactValueRow}>
+                  <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
+                    {preferences?.clipboardClearTimeout === 0
+                      ? t('clipboard_never')
+                      : preferences?.clipboardClearTimeout === 60
+                        ? t('clipboard_1min')
+                        : preferences?.clipboardClearTimeout === 300
+                          ? t('clipboard_5min')
+                          : `${Math.floor((preferences?.clipboardClearTimeout || 0) / 60)} min`}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                </View>
+              }
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal delay={70}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('general')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              leftIcon={themeMode === 'light' ? 'sunny-outline' : 'moon-outline'}
+              title={t('theme')}
+              onPress={() => setShowThemeOptions(true)}
+              rightIcon={
+                <View style={styles.compactValueRow}>
+                  <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
+                    {getThemeText()}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                </View>
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="language-outline"
+              title={t('language')}
+              onPress={() => setShowLanguageOptions(true)}
+              rightIcon={
+                <View style={styles.compactValueRow}>
+                  <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
+                    {language === 'system'
+                      ? t('language_system')
+                      : language === 'it'
+                        ? t('language_italian')
+                        : t('language_english')}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                </View>
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="notifications-outline"
+              title={t('security_reminders')}
+              rightIcon={
+                <UISwitch
+                  accessibilityLabel={t('security_reminders')}
+                  onValueChange={(value) => void handleToggleSecurityReminders(value)}
+                  value={securityRemindersEnabled}
+                />
+              }
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal delay={105}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('data')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              leftIcon="download-outline"
+              title={t('export_data')}
+              onPress={handleExportPasswords}
+              rightIcon="chevron-forward"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="push-outline"
+              title={t('import_data')}
+              onPress={handleImportPasswords}
+              rightIcon="chevron-forward"
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal delay={140}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('information')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              leftIcon="information-circle-outline"
+              title={t('version')}
+              rightIcon={
+                <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
+                  {Constants.expoConfig?.version || packageJson.version}
+                </Text>
+              }
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="shield-checkmark-outline"
+              title={t('vault_health_title')}
+              onPress={() => navigation.navigate('VaultHealth')}
+              rightIcon="chevron-forward"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="help-circle-outline"
+              title={t('support')}
+              onPress={() => Linking.openURL(`https://mikesoft.it/${effectiveLanguage}/support/`)}
+              rightIcon="open-outline"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="document-text-outline"
+              title={t('privacy_policy')}
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+              rightIcon="chevron-forward"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              leftIcon="code-slash-outline"
+              title={t('open_source')}
+              onPress={() => navigation.navigate('OpenSource')}
+              rightIcon="chevron-forward"
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+
+        <Reveal delay={175}>
+          <Text style={[styles.compactSectionLabel, { color: theme.colors.textTertiary }]}>
+            {t('account')}
+          </Text>
+          <View style={styles.compactGroup}>
+            <ListItem
+              iconColor={theme.colors.error}
+              leftIcon="log-out-outline"
+              title={t('logout')}
+              onPress={handleLogout}
+              rightIcon="chevron-forward"
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
+            />
+            <ListItem
+              iconColor={theme.colors.error}
+              leftIcon="trash-outline"
+              title={t('reset_app')}
+              onPress={() => setShowResetModal(true)}
+              rightIcon="chevron-forward"
+              style={styles.compactRow}
+            />
+          </View>
+        </Reveal>
+      </ScrollView>
+
+      <ScrollView
+        style={styles.legacyScrollView}
         contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 100 }]}
       >
         <View
@@ -741,16 +1012,11 @@ const SettingsScreen: React.FC = () => {
             description={t('edit_profile')}
             onPress={openProfileModal}
             leftIcon={
-              <View style={styles.profileAvatarContainer}>
-                {preferences?.avatar ? (
-                  <Image source={{ uri: preferences.avatar }} style={styles.profileAvatar} />
-                ) : (
-                  <Image
-                    source={require('../../assets/images/avatar-user.png')}
-                    style={styles.profileAvatar}
-                  />
-                )}
-              </View>
+              <ProfileAvatar
+                name={preferences?.username || t('user')}
+                size={46}
+                uri={preferences?.avatar}
+              />
             }
             rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
           />
@@ -1166,9 +1432,20 @@ const SettingsScreen: React.FC = () => {
 
           <ListItem
             title={t('support')}
-            description={'keysoft@mikesoft.it'}
-            // Explicitly ensuring no onPress action is defined to comply with Google Play Policy
-            onPress={undefined}
+            description={t('support_description')}
+            onPress={() => Linking.openURL(`https://mikesoft.it/${effectiveLanguage}/support/`)}
+            rightIcon={<Ionicons name="open-outline" size={20} color={theme.colors.text} />}
+            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
+          />
+
+          <ListItem
+            title={t('vault_health_title')}
+            description={t('vault_health_description')}
+            onPress={() => navigation.navigate('VaultHealth')}
+            leftIcon={
+              <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
+            }
+            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
             style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           />
 
@@ -1179,6 +1456,12 @@ const SettingsScreen: React.FC = () => {
             rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
             style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           />
+          <ListItem
+            title={t('open_source')}
+            description={t('open_source_description')}
+            onPress={() => navigation.navigate('OpenSource')}
+            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
+          />
         </View>
       </ScrollView>
 
@@ -1188,7 +1471,7 @@ const SettingsScreen: React.FC = () => {
         onClose={closeChangePinModal}
         title={t('change_pin_title')}
       >
-        <View style={{ paddingHorizontal: AppTheme.spacing.l }}>
+        <View>
           <Text
             style={[
               styles.pinRequirement,
@@ -1323,23 +1606,18 @@ const SettingsScreen: React.FC = () => {
         onClose={closeProfileModal}
         title={t('edit_profile_title')}
       >
-        <View style={{ paddingHorizontal: AppTheme.spacing.l }}>
-          <TouchableOpacity
+        <View>
+          <MotionPressable
+            accessibilityLabel={t('tap_to_change_image')}
+            accessibilityRole="button"
+            onPress={openImageSourceModal}
             style={[
               styles.avatarContainer,
               { alignItems: 'center', marginBottom: AppTheme.spacing.l },
             ]}
-            onPress={openImageSourceModal}
           >
             <View style={styles.editAvatarContainer}>
-              {selectedImage ? (
-                <Image source={{ uri: selectedImage }} style={styles.profileAvatar} />
-              ) : (
-                <Image
-                  source={require('../../assets/images/avatar-user.png')}
-                  style={styles.profileAvatar}
-                />
-              )}
+              <ProfileAvatar name={tempUsername} size={80} uri={selectedImage || undefined} />
               <View style={styles.cameraIconContainer}>
                 <Ionicons name="camera" size={18} color={theme.colors.textLight} />
               </View>
@@ -1352,7 +1630,7 @@ const SettingsScreen: React.FC = () => {
             >
               {t('tap_to_change_image')}
             </Text>
-          </TouchableOpacity>
+          </MotionPressable>
 
           <View
             style={[
@@ -1416,7 +1694,7 @@ const SettingsScreen: React.FC = () => {
         onClose={() => setShowExportDialog(false)}
         title={t('export_passwords_title')}
       >
-        <View style={{ paddingHorizontal: AppTheme.spacing.l }}>
+        <View>
           <Text
             style={[
               styles.modalText,
@@ -1480,7 +1758,7 @@ const SettingsScreen: React.FC = () => {
         onClose={() => setShowImportPasswordDialog(false)}
         title={t('import_encrypted')}
       >
-        <View style={{ paddingHorizontal: AppTheme.spacing.l }}>
+        <View>
           <Text
             style={[
               styles.modalText,
@@ -1532,7 +1810,7 @@ const SettingsScreen: React.FC = () => {
       >
         <BottomSheetOption
           icon="sunny"
-          iconColor="#FFA500"
+          iconColor={theme.colors.primary}
           label={t('theme_light')}
           selected={themeMode === 'light'}
           onPress={() => {
@@ -1542,7 +1820,7 @@ const SettingsScreen: React.FC = () => {
         />
         <BottomSheetOption
           icon="moon"
-          iconColor="#4169E1"
+          iconColor={theme.colors.primary}
           label={t('theme_dark')}
           selected={themeMode === 'dark'}
           onPress={() => {
@@ -1552,7 +1830,7 @@ const SettingsScreen: React.FC = () => {
         />
         <BottomSheetOption
           icon="settings"
-          iconColor="#9B59B6"
+          iconColor={theme.colors.primary}
           label={t('theme_auto')}
           selected={themeMode === 'system'}
           onPress={() => {
@@ -1618,148 +1896,70 @@ const SettingsScreen: React.FC = () => {
         />
       </BottomSheet>
 
-      {/* Modal Reset App */}
-      <Modal
-        visible={showResetModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {
+      <Dialog
+        actions={[
+          {
+            label: t('cancel'),
+            variant: 'secondary',
+            onPress: () => {
+              setShowResetModal(false);
+              setResetConfirmText('');
+            },
+          },
+          {
+            label: t('reset_app'),
+            variant: 'destructive',
+            disabled: resetConfirmText.toLowerCase() !== 'reset',
+            onPress: handleResetApp,
+          },
+        ]}
+        description={t('reset_app_warning')}
+        icon="trash-outline"
+        onClose={() => {
           setShowResetModal(false);
           setResetConfirmText('');
         }}
+        title={t('reset_app')}
+        tone="destructive"
+        visible={showResetModal}
       >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-            <Text
-              style={[
-                styles.modalTitle,
-                {
-                  color: theme.colors.text,
-                  fontSize: AppTheme.fonts.sizes.large,
-                  fontWeight: 'bold',
-                  marginBottom: AppTheme.spacing.m,
-                },
-              ]}
-            >
-              {t('reset_app')}
-            </Text>
-
-            <Text
-              style={[
-                styles.modalDescription,
-                {
-                  color: theme.colors.textSecondary,
-                  marginBottom: AppTheme.spacing.l,
-                },
-              ]}
-            >
-              {t('reset_app_warning')}
-            </Text>
-
-            <Text
-              style={[
-                styles.modalDescription,
-                {
-                  color: theme.colors.text,
-                  marginBottom: AppTheme.spacing.m,
-                  fontWeight: '600',
-                },
-              ]}
-            >
-              {t('reset_app_confirm_prompt')}
-            </Text>
-
-            <View
-              style={[
-                styles.inputContainer,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.backgroundLight,
-                  marginBottom: AppTheme.spacing.l,
-                },
-              ]}
-            >
-              <TextInput
-                style={[styles.modalInput, { color: theme.colors.text }]}
-                placeholder={t('reset_placeholder')}
-                placeholderTextColor={theme.colors.text + '80'}
-                value={resetConfirmText}
-                onChangeText={setResetConfirmText}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  {
-                    backgroundColor: theme.colors.error,
-                    flex: 1,
-                    marginRight: AppTheme.spacing.s,
-                  },
-                ]}
-                onPress={handleResetApp}
-                disabled={resetConfirmText.toLowerCase() !== 'reset'}
-              >
-                <Text
-                  style={[
-                    styles.modalButtonText,
-                    {
-                      color: '#FFFFFF',
-                      opacity: resetConfirmText.toLowerCase() !== 'reset' ? 0.5 : 1,
-                    },
-                  ]}
-                >
-                  {t('reset_app')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  {
-                    backgroundColor: theme.colors.backgroundLight,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    flex: 1,
-                    marginLeft: AppTheme.spacing.s,
-                  },
-                ]}
-                onPress={() => {
-                  setShowResetModal(false);
-                  setResetConfirmText('');
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>
-                  {t('cancel')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        <Text
+          style={[
+            styles.modalDescription,
+            { color: theme.colors.text, fontWeight: '600', marginBottom: 10, marginTop: 16 },
+          ]}
+        >
+          {t('reset_app_confirm_prompt')}
+        </Text>
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              borderColor: theme.colors.inputBorder,
+              backgroundColor: theme.colors.inputBackground,
+            },
+          ]}
+        >
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setResetConfirmText}
+            placeholder={t('reset_placeholder')}
+            placeholderTextColor={theme.colors.textTertiary}
+            style={[styles.modalInput, { color: theme.colors.inputText }]}
+            value={resetConfirmText}
+          />
         </View>
-      </Modal>
+      </Dialog>
 
-      {/* Loading Modal durante il cambio PIN */}
-      <Modal
+      <Dialog
+        description={t('please_wait')}
+        dismissible={false}
+        iconElement={<ActivityIndicator color={theme.colors.primary} size="small" />}
+        onClose={() => {}}
+        title={t('updating_pin')}
         visible={isChangingPin}
-        transparent={true}
-        animationType="fade"
-        statusBarTranslucent={true}
-      >
-        <View style={styles.loadingOverlay}>
-          <View style={[styles.loadingCard, { backgroundColor: theme.colors.backgroundElevated }]}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-              {t('updating_pin')}
-            </Text>
-            <Text style={[styles.loadingSubtext, { color: theme.colors.textSecondary }]}>
-              {t('please_wait')}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      />
     </SafeAreaView>
   );
 };
@@ -1777,16 +1977,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: AppTheme.spacing.l,
-    paddingVertical: AppTheme.spacing.m,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    minHeight: 58,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   backButton: {
     padding: 8,
     borderRadius: 20,
   },
   title: {
-    flex: 1,
-    textAlign: 'center',
+    textAlign: 'left',
+    letterSpacing: -0.35,
   },
   placeholder: {
     width: 40,
@@ -1794,6 +1998,51 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  legacyScrollView: {
+    display: 'none',
+  },
+  compactScrollView: { flex: 1 },
+  compactScrollContent: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    paddingHorizontal: 14,
+    paddingBottom: 24,
+  },
+  compactProfile: {
+    minHeight: 66,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  compactAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  compactAvatarText: { fontSize: 13, fontWeight: '700' },
+  compactProfileCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
+  compactProfileName: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  compactProfileMeta: { fontSize: 10, lineHeight: 14, marginTop: 1 },
+  compactEditText: { fontSize: 11, lineHeight: 15, fontWeight: '600' },
+  compactSectionLabel: {
+    fontSize: 9,
+    lineHeight: 13,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginTop: 12,
+    marginBottom: 2,
+  },
+  compactGroup: { overflow: 'hidden' },
+  compactRow: { borderBottomWidth: StyleSheet.hairlineWidth },
+  compactValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  compactValue: { fontSize: 10, lineHeight: 14 },
   scrollViewContent: {
     padding: AppTheme.spacing.l,
   },
@@ -2081,14 +2330,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, // Ridotto da 18 a 16
     padding: 4, // Ridotto da 6 a 4
     zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    ...AppTheme.shadows.small,
   },
   profileAvatar: {
     width: '100%',

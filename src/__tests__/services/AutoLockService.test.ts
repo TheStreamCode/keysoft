@@ -2,12 +2,11 @@ import AutoLockService from '../../services/utils/autoLockService';
 
 // Mock dependencies
 jest.mock('../../services/storage/storageService', () => ({
-  StorageService: {
-    getUserPreferences: jest.fn(() => Promise.resolve({ autoLockTimeout: 60 })),
-  },
+  getUserPreferences: jest.fn(() => Promise.resolve({ autoLockTimeout: 60 })),
 }));
 
 jest.mock('../../services/utils/notificationService', () => ({
+  __esModule: true,
   default: {
     initialize: jest.fn(() => Promise.resolve()),
     cancelNotification: jest.fn(),
@@ -32,6 +31,12 @@ describe('AutoLockService', () => {
       AutoLockService.setLockCallback(callback);
       // Callback is stored internally — verified via behavior in timeout tests
       expect(callback).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('initialize', () => {
+    it('starts explicitly instead of during module import', async () => {
+      await expect(AutoLockService.initialize()).resolves.toBeUndefined();
     });
   });
 

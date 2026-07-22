@@ -6,9 +6,30 @@ All notable project changes are documented here.
 
 ### Changed
 
-- Relicensed Keysoft under the GNU General Public License version 3 only (`GPL-3.0-only`). Added a separate trademark policy for the Keysoft and Mikesoft brands.
+- Completed the Nocturne redesign across onboarding, PIN unlock, vault, credential view/edit, password generator, notes, note detail, settings, and bottom navigation. The new UI uses compact semantic surfaces, responsive content bounds, light/dark palettes, accessible touch targets, reduced-motion-aware entrance transitions, and copy-first credential details.
+- Added category-specific colored icons beside every Home vault filter label, including a theme-aware icon for the aggregate view.
+- Unified alerts, destructive confirmations, selection sheets, notification history, loading dialogs, and transient feedback under shared Nocturne dialog, bottom-sheet, and toast primitives.
+- Restored the original Keysoft shield-and-eye artwork and reused it consistently for launcher, adaptive, splash, web, and onboarding branding.
+- Replaced the unlock text field with a dedicated PIN keypad that starts verification immediately after the sixth digit while retaining biometric access and sanitized failure feedback.
+- Prepared Keysoft 3.0 for Android, iPhone, and iPad with responsive light/dark UI, native-stack navigation, a local vault-health view, and shared Mikesoft support links.
+- Reduced password-login work by batching storage reads and replacing per-password category migration writes with a single encrypted vault write.
+- Relicensed Keysoft under the Apache License 2.0 (`Apache-2.0`) and retained a separate trademark policy for the Keysoft and Mikesoft brands.
 - Upgraded to Expo SDK 57 and React Native 0.86. Aligned Expo modules, React Native native dependencies, Jest Expo, and ESLint config through `expo install --fix`; moved Android build settings to supported SDK 57 fields and added tested optional hardware manifest declarations. `expo-doctor` passes 20/20 checks and the Android export completes locally.
-- Prepared Keysoft 2.4 with Android versionCode 122 so the SDK 57 native build has a distinct `appVersion` runtime from the 2.3/SDK 56 release.
+- Set application version 3.0.0 and Android versionCode 123; EAS production builds use remote build-number auto-increment.
+
+### Fixed
+
+- Removed invalid nested credential actions on web and corrected post-save/delete navigation so the vault refreshes without deprecated or unhandled routes.
+- Fixed profile photos disappearing from the unlock, vault, and settings avatars by rendering one shared avatar component and persisting selected image files only when profile changes are saved.
+- Removed broad React Native Web CSS overrides that forced every clipped surface to viewport height, restoring compact dialogs and correct nested scrolling.
+
+### Documentation
+
+- Updated the public overview, architecture, development standards, release checklist, and pre-build review for the completed redesign, shared overlays, persistent profile avatar, responsive light/dark behavior, and canonical app-icon assets.
+
+### Tests
+
+- Suite: 28 suites, 171 tests.
 
 ## [2.3] - 2026-07-10
 
