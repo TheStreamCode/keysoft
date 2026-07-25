@@ -63,7 +63,7 @@
     "react-native-argon2": "^4.0.0",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
-    "react-native-reanimated": "4.5.0",
+    "react-native-reanimated": "4.5.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-web": "^0.21.2",
