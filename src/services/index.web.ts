@@ -1,10 +1,35 @@
-// Web-specific services index: use mock services only to avoid native modules
+// Web-specific services index: use mock services only to avoid native modules.
+//
+// SECURITY — DEVELOPMENT TARGET ONLY. These mocks do not encrypt anything. On web
+// `AsyncStorage` is `localStorage`, and `storageServiceMock.savePassword` writes
+// `JSON.stringify(passwords)` verbatim, so the vault sits in cleartext. Worse, the
+// mock reports encryption as active: `isEncryptionKeySet()` returns true once a key
+// is set even though the key is never used, and `reEncryptAllData` logs
+// "re-encryption complete" after merely reassigning a variable.
+//
+// A production web build would therefore ship a password manager that claims to be
+// encrypted and is not. The guard below makes that build fail instead of shipping
+// silently. Remove it only once the web target uses real WebCrypto-backed services.
 import CryptoServiceMock from './crypto/cryptoServiceMock';
 import StorageServiceMock, {
   MAX_PASSWORDS_LIMIT as MOCK_LIMIT,
 } from './storage/storageServiceMock';
 import AuthServiceMock from './auth/authServiceMock';
 import Logger from '../utils/logger';
+
+if (process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'keysoft: the web target uses unencrypted mock services and must not be built for ' +
+      'production. It stores the vault in cleartext in localStorage while reporting ' +
+      'encryption as enabled. Use the iOS or Android build, or implement real WebCrypto ' +
+      'services before removing this guard.',
+  );
+}
+
+Logger.warn(
+  'keysoft (web): running on unencrypted mock services — the vault is stored in cleartext. ' +
+    'Development use only.',
+);
 
 export const Crypto = CryptoServiceMock;
 export const Storage = StorageServiceMock;

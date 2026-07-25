@@ -237,6 +237,10 @@ const StorageServiceMock = {
   },
 
   reEncryptAllData: async (newKey: string): Promise<void> => {
+    // SECURITY: this re-encrypts nothing. It reassigns the key variable and logs
+    // "complete", so a caller cannot distinguish it from a real rotation. Nothing
+    // in this mock ever encrypts: `savePassword` writes JSON verbatim. See the
+    // production guard in `src/services/index.web.ts`.
     // For mock, we just update the encryption key
     // In a real implementation, this would re-encrypt all stored data
     Logger.debug('StorageServiceMock: Re-encrypting data with new key...');
