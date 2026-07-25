@@ -18,5 +18,5 @@
 
 ## Contribution License
 
-- [ ] I certify that I have the rights to submit this contribution and provide it under GPL-3.0-only.
+- [ ] I certify that I have the rights to submit this contribution and provide it under Apache-2.0.
 - [ ] I disclosed any included third-party material and its applicable license.

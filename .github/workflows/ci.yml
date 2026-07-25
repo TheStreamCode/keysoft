@@ -26,8 +26,12 @@ jobs:
         with:
           bun-version: 'latest'
 
+      # Dependabot edits package.json but cannot regenerate bun.lock, so a frozen
+      # install fails on every one of its pull requests -- which is the sole reason
+      # they are all red. Typecheck, lint and test still run either way; only the
+      # lockfile constraint is relaxed, and only for that actor.
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       - name: Typecheck
         run: bun run typecheck
