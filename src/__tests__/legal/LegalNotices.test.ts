@@ -45,27 +45,55 @@ describe('Apache legal notices', () => {
 
   it('keeps the in-app privacy notice aligned with current app behavior', () => {
     const privacyScreen = readRepositoryFile('src/screens/PrivacyPolicyScreen.tsx');
+    const settingsScreen = readRepositoryFile('src/screens/SettingsScreen.tsx');
+    const contactConstants = readRepositoryFile('src/constants/contact.ts');
     const italian = readRepositoryFile('src/locales/it.ts');
     const english = readRepositoryFile('src/locales/en.ts');
 
-    expect(privacyScreen).toContain('keysoft@mikesoft.it');
-    expect(privacyScreen).not.toContain("const email = 'info@mikesoft.it'");
+    // The contact details are defined once. Asserting that a screen merely mentions the
+    // address would keep passing with a stale copy of it hardcoded in the markup, so the
+    // constants are checked instead and every other file must go through them.
+    expect(contactConstants).toContain("SUPPORT_EMAIL = 'keysoft@mikesoft.it'");
+    expect(contactConstants).toContain("WEBSITE_HOST = 'www.mikesoft.it'");
+    expect(privacyScreen).toContain("from '../constants/contact'");
+    expect(settingsScreen).toContain("import { SUPPORT_EMAIL } from '../constants/contact'");
+    for (const source of [privacyScreen, settingsScreen, italian, english]) {
+      expect(source).not.toMatch(/mikesoft\.it/);
+    }
+
     expect(privacyScreen).not.toContain('new Date()');
-    expect(privacyScreen).toContain("t('privacy_section12_5_title')");
-    expect(privacyScreen).toContain("t('privacy_section12_6_title')");
+    expect(privacyScreen).toContain("t('privacy_section13_5_title')");
+    expect(privacyScreen).toContain("t('privacy_section13_6_title')");
+
+    // Section 9 covers data deletion and must stay present: the policy published on
+    // mikesoft.it carries it. Google Play only mandates a deletion path for apps that
+    // create accounts, which Keysoft does not, so this disclosure is voluntary and easy
+    // to drop by accident.
+    expect(privacyScreen).toContain("t('privacy_section9_title')");
+    expect(privacyScreen).toContain("t('privacy_section9_method3_text')");
 
     for (const translations of [italian, english]) {
       expect(translations).toContain('Expo Updates');
       expect(translations).toContain('Argon2id');
       expect(translations).toContain('PBKDF2');
-      expect(translations).toContain('3.0.1');
+
+      // The document revision is deliberately decoupled from the app build, so that
+      // shipping a release does not require editing the policy. Keep it that way.
+      const documentVersion = /privacy_version_text:\s*'([^']*)'/.exec(translations)?.[1];
+      expect(documentVersion).toBeTruthy();
+      expect(documentVersion).not.toMatch(/\d+\.\d+\.\d+/);
+
+      // Section numbering is rendered by PrivacyPolicyScreen from the order of its
+      // heading list, which is what keeps inserting a section from renumbering both
+      // locales; a number written back into a title would be printed twice.
+      expect(translations).not.toMatch(/privacy_section[0-9_]*_title:\s*['"]\d/);
     }
 
     expect(italian).toContain('token casuali');
     expect(italian).toContain('metriche di prestazione');
-    expect(italian).toContain('22 luglio 2026');
+    expect(italian).toContain('25 luglio 2026');
     expect(english).toContain('randomized tokens');
     expect(english).toContain('performance metrics');
-    expect(english).toContain('July 22, 2026');
+    expect(english).toContain('July 25, 2026');
   });
 });

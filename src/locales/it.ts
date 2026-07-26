@@ -35,7 +35,8 @@ export const it = {
   vault_health_empty_title: 'Nessuna segnalazione in questa vista',
   vault_health_empty_body: 'Keysoft non ha trovato credenziali corrispondenti al filtro.',
   vault_health_description: 'Controlla localmente credenziali deboli, riutilizzate e scadute.',
-  support_description: 'Assistenza per tutti i prodotti Mikesoft',
+  support_description: 'Scrivici a {email}',
+  support_email_copied: 'Indirizzo email copiato negli appunti.',
   invalid_pin: 'PIN non valido',
   auth_error: "Si è verificato un errore durante l'autenticazione",
   please_wait: 'Attendere prego...',
@@ -169,7 +170,7 @@ export const it = {
   language: 'Lingua',
   privacy_policy_data_collection:
     "Gli indirizzi email inseriti come parte di una credenziale restano nel vault locale e non sono accessibili allo sviluppatore. I backup sono creati solo su iniziativa dell'utente.",
-  privacy_section3_3_title: '3.3 Sicurezza Dati e Email',
+  privacy_section3_3_title: 'Sicurezza Dati e Email',
   privacy_policy_data_security:
     "I segreti del vault sono crittografati in archivio. Un backup esportato è crittografato quando l'utente sceglie di proteggerlo con una password; Keysoft non invia i backup a server esterni.",
   notification_types: 'Tipi di notifiche',
@@ -560,16 +561,16 @@ export const it = {
   // Privacy Policy
   back: 'Indietro',
   privacy_title: 'Privacy Policy - Keysoft',
-  privacy_last_updated: 'Ultimo aggiornamento: 22 luglio 2026',
-  privacy_section1_title: '1. Titolare del Trattamento',
+  privacy_last_updated: 'Ultimo aggiornamento: 25 luglio 2026',
+  privacy_section1_title: 'Titolare del Trattamento',
   privacy_section1_text: 'Il Titolare del trattamento dei dati personali è:',
   privacy_controller_by: 'di Michael Gasperini',
   privacy_vat: 'P.IVA: 02693140465',
-  privacy_section2_title: "2. Natura dell'Applicazione",
+  privacy_section2_title: "Natura dell'Applicazione",
   privacy_section2_text:
     'Keysoft è un gestore di password per Android. Il codice è predisposto anche per test su simulatori cloud iPhone e iPad, ma Keysoft non è pubblicato su Apple App Store. L\'applicazione è progettata con un approccio "privacy by design" e "offline first": i segreti del vault rimangono sul dispositivo dell\'utente.',
-  privacy_section3_title: '3. Categorie di Dati Trattati',
-  privacy_section3_1_title: '3.1 Dati memorizzati localmente',
+  privacy_section3_title: 'Categorie di Dati Trattati',
+  privacy_section3_1_title: 'Dati memorizzati localmente',
   privacy_section3_1_text: "L'applicazione memorizza esclusivamente sul dispositivo dell'utente:",
   privacy_section3_1_bullet1: '• Nome utente personalizzato (facoltativo)',
   privacy_section3_1_bullet2: '• Password e credenziali di accesso ai servizi web',
@@ -580,17 +581,17 @@ export const it = {
   privacy_section3_1_bullet5:
     '• Preferenza di autenticazione biometrica e, solo se abilitata, chiave vault protetta da SecureStore del dispositivo',
   privacy_section3_1_bullet6: '• Categorie e note associate alle password',
-  privacy_section3_2_title: '3.2 Dati tecnici',
+  privacy_section3_2_title: 'Dati tecnici',
   privacy_section3_2_text: "L'applicazione può accedere a:",
   privacy_section3_2_bullet1: '• Sensore biometrico del dispositivo (solo per autenticazione)',
   privacy_section3_2_bullet2:
     '• Appunti del sistema (per copiare password, con cancellazione automatica)',
   privacy_section3_2_bullet3: '• Notifiche locali (per avvisi di sicurezza)',
   privacy_section3_2_bullet4: "• Stato dell'applicazione (per il blocco automatico)",
-  privacy_section4_title: '4. Base Giuridica del Trattamento',
+  privacy_section4_title: 'Base Giuridica del Trattamento',
   privacy_section4_text:
     "Il trattamento dei dati personali si basa sul consenso dell'interessato (Art. 6, comma 1, lett. a) GDPR) e sull'esecuzione del contratto di utilizzo dell'applicazione (Art. 6, comma 1, lett. b) GDPR).",
-  privacy_section5_title: '5. Finalità del Trattamento',
+  privacy_section5_title: 'Finalità del Trattamento',
   privacy_section5_text: 'I dati personali sono trattati esclusivamente per:',
   privacy_section5_bullet1: '• Fornire il servizio di gestione sicura delle password',
   privacy_section5_bullet2: "• Garantire l'autenticazione dell'utente",
@@ -598,13 +599,13 @@ export const it = {
   privacy_section5_bullet4:
     '• Implementare misure di sicurezza (blocco automatico, protezione screenshot)',
   privacy_section5_bullet5: '• Inviare notifiche di sicurezza locali',
-  privacy_section6_title: '6. Condivisione e Trasferimento dei Dati',
+  privacy_section6_title: 'Condivisione e Trasferimento dei Dati',
   privacy_section6_caps: 'I SEGRETI DEL VAULT NON VENGONO TRASMESSI DA KEYSOFT',
   privacy_section6_text:
     '. Password, credenziali e note sono memorizzate ed elaborate localmente. La connettività di rete è usata esclusivamente da Expo Updates per verificare e scaricare aggiornamenti compatibili.',
   privacy_section6_text2:
     "Per questo scopo Expo Updates può ricevere sistema operativo/piattaforma, token casuali per determinare il download degli aggiornamenti, versione dell'app/build e del runtime e normali dati tecnici della richiesta o del servizio, come indirizzo IP, intestazioni, errori, metriche di prestazione e interazioni con gli aggiornamenti. Non riceve i segreti del vault.",
-  privacy_section7_title: '7. Conservazione dei Dati',
+  privacy_section7_title: 'Conservazione dei Dati',
   privacy_section7_text:
     "I dati personali sono conservati sul dispositivo dell'utente fino a quando:",
   privacy_section7_bullet1: "• L'utente disinstalla l'applicazione",
@@ -612,7 +613,7 @@ export const it = {
   privacy_section7_bullet3: "• L'utente resetta i dati del dispositivo",
   privacy_section7_text2:
     "Non esistono backup automatici su server esterni. La responsabilità del backup dei dati spetta esclusivamente all'utente.",
-  privacy_section8_title: "8. Diritti dell'Interessato",
+  privacy_section8_title: "Diritti dell'Interessato",
   privacy_section8_text: "Ai sensi del GDPR, l'utente ha diritto a:",
   privacy_rights_access: 'Accesso',
   privacy_rights_access_desc: "visualizzare tutti i dati tramite l'interfaccia dell'app",
@@ -626,70 +627,88 @@ export const it = {
   privacy_rights_objection: 'Opposizione',
   privacy_rights_objection_desc: "interrompere l'uso dell'applicazione",
   privacy_contact_text: 'Per questioni relative alla privacy, contattare: ',
-  privacy_section9_title: '9. Misure di Sicurezza',
-  privacy_section9_text: "L'applicazione implementa elevate misure di sicurezza:",
-  privacy_section9_bullet1:
+  privacy_section9_title: 'Cancellazione dei Dati',
+  privacy_section9_text: 'Puoi eliminare i tuoi dati in uno dei seguenti modi:',
+  privacy_section9_method1_title: 'Metodo 1: Reset App (Consigliato)',
+  privacy_section9_method1_text:
+    "Apri Impostazioni → Account → Reset App: l'operazione elimina password, note, categorie, preferenze e le chiavi salvate nell'archivio sicuro del dispositivo.",
+  privacy_section9_method1_warning:
+    '⚠️ Nota: questa operazione è irreversibile. Assicurati di aver esportato eventuali password importanti prima di procedere.',
+  privacy_section9_method2_title: "Metodo 2: Disinstallazione dell'App",
+  privacy_section9_method2_text:
+    "La disinstallazione dell'app rimuove il database locale dal dispositivo.",
+  privacy_section9_method3_title:
+    'Metodo 3: Cancellazione dei dati dalle impostazioni del dispositivo',
+  privacy_section9_method3_text:
+    "Su Android apri le impostazioni di sistema, seleziona Keysoft nell'elenco delle app e usa l'opzione di cancellazione dei dati (il nome esatto varia secondo la versione di Android e il produttore del dispositivo). Su iOS il sistema non offre un'opzione equivalente: per eliminare i dati locali è necessario rimuovere l'app.",
+  privacy_section9_backup_warning:
+    'Prima di eliminare i dati, ti consigliamo vivamente di esportare le tue password se intendi conservarle.',
+  privacy_section9_post_deletion:
+    'Una volta eliminati i dati non sarà possibile recuperarli in alcun modo, poiché non ne esiste copia su nostri server.',
+  privacy_section10_title: 'Misure di Sicurezza',
+  privacy_section10_text: "L'applicazione implementa elevate misure di sicurezza:",
+  privacy_section10_bullet1:
     '• Formato KS1 con crittografia AES-256-CBC e integrità HMAC-SHA256 per i dati sensibili',
-  privacy_section9_bullet2:
+  privacy_section10_bullet2:
     '• Derivazione della chiave con Argon2id nelle build native e fallback PBKDF2 dove Argon2id non è disponibile',
-  privacy_section9_bullet3: '• Autenticazione biometrica (quando disponibile)',
-  privacy_section9_bullet4: "• Blocco automatico dell'applicazione",
-  privacy_section9_bullet5: '• Protezione da screenshot e registrazione schermo',
-  privacy_section10_title: '10. Trattamento Dati di Minori',
-  privacy_section10_text:
-    "L'applicazione non è destinata a minori di 16 anni. Non raccogliamo consapevolmente dati personali di minori di 16 anni. Se un genitore o tutore scopre che il proprio figlio minore di 16 anni ha fornito dati personali, può contattarci per la loro rimozione.",
-  privacy_section11_title: '11. Servizi di Terze Parti',
+  privacy_section10_bullet3: '• Autenticazione biometrica (quando disponibile)',
+  privacy_section10_bullet4: "• Blocco automatico dell'applicazione",
+  privacy_section10_bullet5: '• Protezione da screenshot e registrazione schermo',
+  privacy_section11_title: 'Trattamento Dati di Minori',
   privacy_section11_text:
+    "L'applicazione non è destinata a minori di 16 anni. Non raccogliamo consapevolmente dati personali di minori di 16 anni. Se un genitore o tutore scopre che il proprio figlio minore di 16 anni ha fornito dati personali, può contattarci per la loro rimozione.",
+  privacy_section12_title: 'Servizi di Terze Parti',
+  privacy_section12_text:
     "Keysoft NON utilizza servizi di analisi di terze parti, reti pubblicitarie o strumenti di tracciamento. L'applicazione non integra:",
-  privacy_section11_bullet1: '• Google Analytics o servizi di analisi similari',
-  privacy_section11_bullet2: '• SDK pubblicitari (AdMob, Facebook Ads, ecc.)',
-  privacy_section11_bullet3: '• Strumenti di crash reporting (Firebase Crashlytics, Sentry, ecc.)',
-  privacy_section11_bullet4: '• Servizi di notifiche push',
-  privacy_section11_bullet5: '• SDK di social media',
-  privacy_section11_bullet6: '• Servizi di archiviazione cloud',
-  privacy_section11_text2:
+  privacy_section12_bullet1: '• Google Analytics o servizi di analisi similari',
+  privacy_section12_bullet2: '• SDK pubblicitari (AdMob, Facebook Ads, ecc.)',
+  privacy_section12_bullet3: '• Strumenti di crash reporting (Firebase Crashlytics, Sentry, ecc.)',
+  privacy_section12_bullet4: '• Servizi di notifiche push',
+  privacy_section12_bullet5: '• SDK di social media',
+  privacy_section12_bullet6: '• Servizi di archiviazione cloud',
+  privacy_section12_text2:
     'Tutte le notifiche sono SOLO LOCALI e generate direttamente dal dispositivo. Nessun dato viene inviato a servizi di notifica esterni.',
-  privacy_section12_title: "12. Permessi e Funzionalità dell'Applicazione",
-  privacy_section12_text: 'Keysoft può usare i seguenti permessi e servizi del dispositivo:',
-  privacy_section12_1_title: '12.1 Autenticazione Biometrica (Opzionale)',
-  privacy_section12_1_text:
+  privacy_section13_title: "Permessi e Funzionalità dell'Applicazione",
+  privacy_section13_text: 'Keysoft può usare i seguenti permessi e servizi del dispositivo:',
+  privacy_section13_1_title: 'Autenticazione Biometrica (Opzionale)',
+  privacy_section13_1_text:
     'Necessario per: Accedere tramite impronta digitale o altra autenticazione biometrica supportata da una build installata. Utilizzo dei dati: Keysoft non salva dati biometrici, PIN o Master Password. Se abiliti la biometria, la chiave del vault viene salvata in SecureStore con autenticazione richiesta e resta vincolata al dispositivo. Il sistema operativo gestisce i dati biometrici.',
-  privacy_section12_2_title: '12.2 Notifiche (Opzionale)',
-  privacy_section12_2_text:
+  privacy_section13_2_title: 'Notifiche (Opzionale)',
+  privacy_section13_2_text:
     'Necessario per: Visualizzare avvisi di sicurezza locali (password deboli, avvisi di blocco automatico, promemoria backup). Utilizzo dei dati: Tutte le notifiche sono generate e visualizzate localmente. Nessun dato viene inviato a server esterni.',
-  privacy_section12_3_title: '12.3 Accesso al File System (Opzionale)',
-  privacy_section12_3_text:
+  privacy_section13_3_title: 'Accesso al File System (Opzionale)',
+  privacy_section13_3_text:
     "Necessario per: Importare/esportare file di backup delle password. Utilizzo dei dati: L'app accede solo ai file che l'utente seleziona esplicitamente. I file esportati sono crittografati se l'utente sceglie di proteggerli con password.",
-  privacy_section12_4_title: '12.4 Prevenzione Screenshot (Opzionale)',
-  privacy_section12_4_text:
+  privacy_section13_4_title: 'Prevenzione Screenshot (Opzionale)',
+  privacy_section13_4_text:
     "Funzionalità usata per proteggere informazioni sensibili da screenshot e registrazioni dello schermo. Non accede né memorizza dati; chiede al sistema operativo di non catturare il contenuto quando l'app è attiva.",
-  privacy_section12_5_title: '12.5 Fotocamera e Selettore Foto (Opzionale)',
-  privacy_section12_5_text:
+  privacy_section13_5_title: 'Fotocamera e Selettore Foto (Opzionale)',
+  privacy_section13_5_text:
     "Necessario per: Scegliere un'immagine del profilo tramite fotocamera o selettore foto di sistema. Utilizzo dei dati: Keysoft accede solo all'immagine scelta esplicitamente, la salva localmente come avatar e non la trasmette a server esterni.",
-  privacy_section12_6_title: '12.6 Appunti di Sistema (Opzionale)',
-  privacy_section12_6_text:
+  privacy_section13_6_title: 'Appunti di Sistema (Opzionale)',
+  privacy_section13_6_text:
     "Necessario per: Copiare una password negli appunti. Utilizzo dei dati: il valore viene copiato su richiesta dell'utente e Keysoft tenta di cancellarlo automaticamente dopo il tempo configurato. L'app non legge gli appunti di altre applicazioni.",
   privacy_network_permission: 'Permesso di Rete:',
   privacy_network_permission_text:
     ' Keysoft funziona offline per la gestione del vault. Il permesso Internet è usato solo per servizi di piattaforma come aggiornamenti Expo/EAS e non per sincronizzare, caricare o inviare password, note, PIN, master password o chiavi di cifratura.',
-  privacy_section13_title: "13. Responsabilità dell'Utente",
-  privacy_section13_text:
-    "Data la natura offline e locale dell'applicazione, l'utente è l'unico responsabile per:",
-  privacy_section13_bullet1:
-    '• Effettuare backup dei dati memorizzati (tramite funzione di esportazione)',
-  privacy_section13_bullet2: '• Conservare in modo sicuro il PIN/Password principale',
-  privacy_section13_bullet3: '• Sicurezza fisica del dispositivo',
-  privacy_section13_bullet4:
-    '• Perdita dei dati in caso di smarrimento, danneggiamento o reset del dispositivo',
-  privacy_section13_bullet5: '• Conservazione sicura dei file di backup esportati',
-  privacy_important: 'Importante:',
-  privacy_section13_important_text:
-    ' Lo sviluppatore non può recuperare dati persi o dimenticati, poiché non esiste alcuna copia su server esterni.',
-  privacy_section14_title: '14. Cookie e Tecnologie di Tracciamento',
+  privacy_section14_title: "Responsabilità dell'Utente",
   privacy_section14_text:
-    "Keysoft NON utilizza cookie, web beacon, pixel o altre tecnologie di tracciamento. L'applicazione non raccoglie dati di telemetria, analytics o statistiche di utilizzo.",
-  privacy_section15_title: '15. Conformità GDPR',
+    "Data la natura offline e locale dell'applicazione, l'utente è l'unico responsabile per:",
+  privacy_section14_bullet1:
+    '• Effettuare backup dei dati memorizzati (tramite funzione di esportazione)',
+  privacy_section14_bullet2: '• Conservare in modo sicuro il PIN/Password principale',
+  privacy_section14_bullet3: '• Sicurezza fisica del dispositivo',
+  privacy_section14_bullet4:
+    '• Perdita dei dati in caso di smarrimento, danneggiamento o reset del dispositivo',
+  privacy_section14_bullet5: '• Conservazione sicura dei file di backup esportati',
+  privacy_important: 'Importante:',
+  privacy_section14_important_text:
+    ' Lo sviluppatore non può recuperare dati persi o dimenticati, poiché non esiste alcuna copia su server esterni.',
+  privacy_section15_title: 'Cookie e Tecnologie di Tracciamento',
   privacy_section15_text:
+    "Keysoft NON utilizza cookie, web beacon, pixel o altre tecnologie di tracciamento. L'applicazione non raccoglie dati di telemetria, analytics o statistiche di utilizzo.",
+  privacy_section16_title: 'Conformità GDPR',
+  privacy_section16_text:
     'Questa applicazione è progettata secondo i principi del Regolamento Generale sulla Protezione dei Dati (UE) 2016/679:',
   privacy_gdpr_design: 'Privacy by Design',
   privacy_gdpr_design_desc: 'Architettura senza raccolta dati esterni',
@@ -701,21 +720,21 @@ export const it = {
   privacy_gdpr_control_desc: 'Controllo totale su tutti i dati',
   privacy_gdpr_profiling: 'Nessuna Profilazione',
   privacy_gdpr_profiling_desc: 'Nessuna decisione automatizzata o profilazione',
-  privacy_section16_title: '16. Diritto di Reclamo',
-  privacy_section16_text:
+  privacy_section17_title: 'Diritto di Reclamo',
+  privacy_section17_text:
     "Gli utenti hanno il diritto di presentare un reclamo all'autorità di controllo se ritengono che i loro diritti sulla protezione dei dati siano stati violati.",
-  privacy_section16_text2: "In Italia, l'autorità di controllo è:",
+  privacy_section17_text2: "In Italia, l'autorità di controllo è:",
   privacy_authority_name: 'Garante per la Protezione dei Dati Personali',
   privacy_authority_address: 'Piazza Venezia, 11 - 00187 Roma',
-  privacy_section17_title: '17. Modifiche alla Privacy Policy',
-  privacy_section17_text:
-    "Ci riserviamo il diritto di modificare questa Privacy Policy. Le modifiche sostanziali saranno comunicate tramite aggiornamento dell'applicazione con apposita notifica. L'uso continuato dell'applicazione dopo le modifiche costituisce accettazione della Privacy Policy aggiornata.",
-  privacy_section17_text2:
-    "Gli utenti possono sempre consultare la versione della Privacy Policy all'interno dell'applicazione nella sezione Impostazioni.",
-  privacy_section18_title: '18. Contatti',
+  privacy_section18_title: 'Modifiche alla Privacy Policy',
   privacy_section18_text:
+    "Ci riserviamo il diritto di modificare questa Privacy Policy. Le modifiche sostanziali saranno comunicate tramite aggiornamento dell'applicazione con apposita notifica. L'uso continuato dell'applicazione dopo le modifiche costituisce accettazione della Privacy Policy aggiornata.",
+  privacy_section18_text2:
+    "Gli utenti possono sempre consultare la versione della Privacy Policy all'interno dell'applicazione nella sezione Impostazioni.",
+  privacy_section19_title: 'Contatti',
+  privacy_section19_text:
     'Per qualsiasi domanda relativa a questa Privacy Policy o al trattamento dei dati personali:',
-  privacy_version_text: 'Versione documento: 3.0 - Keysoft 3.0.1',
+  privacy_version_text: 'Versione documento: 3.1',
 
   // Notes
   personal_notes: 'Note Personali',

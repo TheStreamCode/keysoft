@@ -59,7 +59,8 @@ const NotesScreen: React.FC = () => {
     const query = deferredQuery.trim().toLowerCase();
     if (!query) return notes;
     return notes.filter(
-      (note) => note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query),
+      (note) =>
+        note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query),
     );
   }, [deferredQuery, notes]);
 
@@ -105,7 +106,10 @@ const NotesScreen: React.FC = () => {
                 <Ionicons name="pin-outline" size={13} color={theme.colors.primary} />
               ) : null}
             </View>
-            <Text numberOfLines={2} style={[styles.notePreview, { color: theme.colors.textSecondary }]}>
+            <Text
+              numberOfLines={2}
+              style={[styles.notePreview, { color: theme.colors.textSecondary }]}
+            >
               {item.content}
             </Text>
             <Text style={[styles.noteDate, { color: theme.colors.textTertiary }]}>
@@ -217,16 +221,49 @@ const NotesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, alignItems: 'center' },
   content: { flex: 1 },
-  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
-  addButton: { width: 38, height: 38, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  search: { minHeight: 42, borderWidth: 1, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingLeft: 10, marginBottom: 8 },
+  addButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  search: {
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 10,
+    marginBottom: 8,
+  },
   searchInput: { flex: 1, minHeight: 40, paddingHorizontal: 8, paddingVertical: 8, fontSize: 13 },
   clearButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingBottom: 20 },
   emptyListContent: { flexGrow: 1 },
-  sectionLabel: { fontSize: 9, lineHeight: 13, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 9, marginBottom: 2 },
-  noteRow: { minHeight: 82, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 10 },
+  sectionLabel: {
+    fontSize: 9,
+    lineHeight: 13,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginTop: 9,
+    marginBottom: 2,
+  },
+  noteRow: {
+    minHeight: 82,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    paddingVertical: 10,
+  },
   noteDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, marginRight: 10 },
   noteCopy: { flex: 1, minWidth: 0 },
   noteTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -235,9 +272,24 @@ const styles = StyleSheet.create({
   noteDate: { fontSize: 9, lineHeight: 13, marginTop: 3 },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
-  emptyIcon: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
-  emptyButton: { minHeight: 42, borderWidth: 1, borderRadius: 8, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  emptyButton: {
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
   emptyButtonText: { fontSize: 12, fontWeight: '600' },
 });
 

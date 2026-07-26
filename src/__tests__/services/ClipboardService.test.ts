@@ -58,6 +58,24 @@ describe('ClipboardService', () => {
     });
   });
 
+  describe('copyPlainText', () => {
+    it('should copy text without scheduling an auto-clear', async () => {
+      await ClipboardService.copyPlainText('keysoft@mikesoft.it');
+
+      expect(mockSetStringAsync).toHaveBeenCalledWith('keysoft@mikesoft.it');
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it('should drop a pending auto-clear, since the secret is no longer on the clipboard', async () => {
+      await ClipboardService.copyToClipboard('secret-password');
+      expect(jest.getTimerCount()).toBe(1);
+
+      await ClipboardService.copyPlainText('keysoft@mikesoft.it');
+
+      expect(jest.getTimerCount()).toBe(0);
+    });
+  });
+
   describe('clearTimeout', () => {
     it('should clear a specific timer without error', () => {
       expect(() => ClipboardService.clearTimeout('test-id')).not.toThrow();

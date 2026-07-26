@@ -103,6 +103,32 @@ export class ClipboardService {
   }
 
   /**
+   * Copies text that is not a secret and leaves it on the clipboard.
+   *
+   * The auto-clear timer exists to bound the exposure of passwords; wiping something
+   * like a support address a minute after the user asked for it would only destroy
+   * their clipboard content (on iOS the timer clears blindly, because the clipboard
+   * cannot be read back for comparison).
+   * @param text The text to copy.
+   * @returns A Promise that resolves when the text has been copied.
+   */
+  static async copyPlainText(text: string): Promise<void> {
+    try {
+      Logger.debug('ClipboardService: Copia testo non sensibile senza cancellazione automatica');
+
+      // Overwriting the clipboard already removes whatever secret was on it, so the
+      // pending timers have nothing left to clear: dropping them keeps this text from
+      // being wiped when a previous password timeout expires.
+      this.clearAllTimeouts();
+
+      await Clipboard.setStringAsync(text);
+    } catch (error) {
+      Logger.error('Errore durante la copia nella clipboard:', error);
+      throw new Error('Impossibile copiare nella clipboard');
+    }
+  }
+
+  /**
    * Clears one auto-clear timer.
    * @param identifier The identifier of the timer to clear.
    */

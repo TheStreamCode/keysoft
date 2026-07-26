@@ -16,15 +16,15 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                             |
 | ------------------- | ---------------------------------- |
 | Platform focus      | Android release; iOS cloud testing |
-| App version         | 3.0.2                              |
-| Android versionCode | 126 (EAS production target)        |
+| App version         | 3.1.0                              |
+| Android versionCode | 127 (EAS production target)        |
 | Expo SDK            | 57.0.8                             |
 | React Native        | 0.86.0                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 29 suites, 180 tests               |
+| Test suite          | 29 suites, 182 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
-Production build numbers are managed remotely by EAS. `app.config.js` is aligned to Android versionCode 126 for local manifest visibility. Before the Keysoft 3.0.2 production build, the EAS remote baseline is set to 125 so the production profile auto-increments the store build to 126.
+Production build numbers are managed remotely by EAS. `app.config.js` is aligned to Android versionCode 127 for local manifest visibility. The EAS remote baseline is published build 126, so the production profile auto-increments the store build for Keysoft 3.1.0 to 127.
 
 ## Core Capabilities
 
@@ -76,7 +76,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Public Repository Checklist](docs/publication.md)
 - [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
-- [Keysoft 3.0.2 Release Notes](docs/releases/3.0.2.md)
+- [Keysoft 3.1.0 Release Notes](docs/releases/3.1.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Requirements
@@ -183,7 +183,7 @@ Keysoft is local-first. The user owns their vault data and is responsible for ke
 
 ## Support
 
-Product assistance is available through the shared Mikesoft support page: [mikesoft.it/en/support](https://mikesoft.it/en/support/). Do not include passwords, PINs, encryption keys, or real vault data in support requests.
+Product assistance is available over email at [keysoft@mikesoft.it](mailto:keysoft@mikesoft.it). Settings > Support opens a pre-addressed message and copies the address to the clipboard when the device has no mail client registered. Do not include passwords, PINs, encryption keys, or real vault data in support requests.
 
 If Keysoft's local-first security work is useful to you, support continued development through GitHub Sponsors: [github.com/sponsors/TheStreamCode](https://github.com/sponsors/TheStreamCode).
 

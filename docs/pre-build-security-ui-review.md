@@ -1,15 +1,23 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-07-22
+Latest update: 2026-07-26
 
-Release target: Keysoft 3.0.2, Android versionCode 126 through EAS remote auto-increment, with iOS simulator readiness.
+Release target: Keysoft 3.1.0, Android versionCode 127 through EAS remote auto-increment, with iOS simulator readiness.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 3.1.0 Update
+
+The 3.1.0 target moves product support from the shared Mikesoft web page to email. Settings starts a `mailto:` intent for `keysoft@mikesoft.it` and copies the address when the intent is refused. The previous `Linking.canOpenURL` gate was removed after confirming against the Android package-visibility documentation that starting a URL intent needs no `<queries>` declaration while `canOpenURL` resolves through `queryIntentActivities` and reports false on Android 11 and later without one; the gate therefore made the clipboard fallback the only reachable path on current devices.
+
+The support address is copied through a clipboard path that schedules no auto-clear and drops any pending one, because the clipboard has already been overwritten. Passwords keep the existing auto-clear timer unchanged. This removes the case where the iOS timer, which clears without reading the clipboard back, wiped the address or unrelated content copied afterwards. Clipboard failures now surface as an error toast instead of an unhandled rejection.
+
+The privacy notice gains a data-deletion section documenting in-app reset, uninstall, and device-settings deletion with accurate per-platform wording, and its revision is tracked as document version 3.1 independently of the build number. Section numbering is generated from the screen's heading order, so the numbers shown to the user are unchanged while both dictionaries stop carrying them. No permission, vault format, key-derivation, or network behavior changes are introduced by this release.
 
 ### 3.0.2 Update
 

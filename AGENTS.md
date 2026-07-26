@@ -48,6 +48,7 @@
 - Keep the active vault key in memory by default. The only allowed persistence exception is SecureStore-backed biometric unlock via `StorageService.saveBiometricKey/getBiometricKey/deleteBiometricKey`, with device authentication required and no logging.
 - Update or delete the biometric SecureStore key when biometrics are disabled or the PIN changes.
 - Do not log secrets. Use `Logger` with sanitized messages.
+- Copy secrets with `ClipboardService.copyToClipboard`, which schedules the auto-clear. Use `ClipboardService.copyPlainText` only for non-secret text such as a contact address; never route a password through it.
 - Local secrets live in `.secrets/` and must never be committed.
 
 ## Internationalization

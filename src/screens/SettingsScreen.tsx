@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation';
 import { AppTheme } from '../constants/theme';
+import { SUPPORT_EMAIL } from '../constants/contact';
 import { Ionicons } from '@expo/vector-icons';
 import { Storage, Auth } from '../services';
 import Logger from '../utils/logger';
@@ -27,6 +28,7 @@ import ScreenCaptureService from '../services/utils/screenCaptureService';
 import { useAlert } from '../contexts/AlertContext';
 import AutoLockService from '../services/utils/autoLockService';
 import ClipboardService from '../services/utils/clipboardService';
+import { copyPlainTextWithFeedback } from '../utils/clipboardUtils';
 import NotificationService, { NotificationType } from '../services/utils/notificationService';
 import Constants from 'expo-constants';
 import { ListItem } from '../components/ui/list-item';
@@ -100,8 +102,27 @@ const SettingsScreen: React.FC = () => {
 
   const { logout, updateMasterPassword, enableBiometrics } = useAuth();
   const { theme, isDarkMode, setThemeMode, themeMode } = useTheme();
-  const { t, language, effectiveLanguage, setLanguage } = useLanguage();
-  const { alert } = useAlert();
+  const { t, language, setLanguage } = useLanguage();
+  const { alert, notify } = useAlert();
+
+  // Support is handled over email rather than a web page, and not every device has a
+  // mail client registered, so the address goes to the clipboard when the intent fails.
+  // The mailto is opened without asking canOpenURL first: opening a URL is a plain
+  // startActivity, which needs no <queries> entry in the manifest, while canOpenURL goes
+  // through queryIntentActivities and therefore reports false (or rejects) on Android 11+
+  // unless the mailto scheme is declared there.
+  const handleSupportPress = useCallback(async () => {
+    try {
+      await Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+      return;
+    } catch (error) {
+      Logger.warn('SettingsScreen: unable to open the mail client', error);
+    }
+    await copyPlainTextWithFeedback(SUPPORT_EMAIL, notify, {
+      successMessage: t('support_email_copied'),
+      errorMessage: t('copy_error_message'),
+    });
+  }, [notify, t]);
 
   // PIN management hook (replaces 9 useState calls plus handleChangePin)
   const pin = usePinManagement({ updateMasterPassword, t, alert });
@@ -936,8 +957,8 @@ const SettingsScreen: React.FC = () => {
             <ListItem
               leftIcon="help-circle-outline"
               title={t('support')}
-              onPress={() => Linking.openURL(`https://mikesoft.it/${effectiveLanguage}/support/`)}
-              rightIcon="open-outline"
+              onPress={handleSupportPress}
+              rightIcon="mail-outline"
               style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
             <ListItem
@@ -1448,9 +1469,9 @@ const SettingsScreen: React.FC = () => {
 
           <ListItem
             title={t('support')}
-            description={t('support_description')}
-            onPress={() => Linking.openURL(`https://mikesoft.it/${effectiveLanguage}/support/`)}
-            rightIcon={<Ionicons name="open-outline" size={20} color={theme.colors.text} />}
+            description={t('support_description', { email: SUPPORT_EMAIL })}
+            onPress={handleSupportPress}
+            rightIcon={<Ionicons name="mail-outline" size={20} color={theme.colors.text} />}
             style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           />
 

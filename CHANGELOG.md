@@ -4,6 +4,36 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-07-26
+
+### Changed
+
+- Product support now runs over email instead of the shared Mikesoft support page. Settings opens a pre-addressed `mailto:` message to `keysoft@mikesoft.it` and falls back to copying the address when no mail client handles the intent.
+- Defined the support address and the Mikesoft site once in `src/constants/contact.ts`. Screens and translated strings no longer keep their own copies of either value.
+- Documented data deletion as privacy-policy section 9 (in-app reset, uninstall, device settings) and renumbered the following sections. The instructions now name the real Settings path and describe actual Android and iOS behavior instead of development builds and simulators.
+- Tracked the privacy notice as document version 3.1, decoupled from the application build number, so shipping a release no longer requires editing the policy.
+- Generated the privacy-section numbering in `PrivacyPolicyScreen` from its heading order, so inserting a section no longer renumbers every translated title in both dictionaries.
+
+### Fixed
+
+- Copied the support address through a clipboard path without the password auto-clear timer, so the address is no longer wiped about a minute after the user asked for it. On iOS that timer clears the clipboard unconditionally, which also destroyed unrelated content copied in the meantime.
+- Stopped gating the mail client behind `Linking.canOpenURL`. Starting a URL intent needs no `<queries>` declaration, while `canOpenURL` resolves through `queryIntentActivities` and therefore reports false (or rejects) on Android 11 and later unless the `mailto` scheme is declared, which left the clipboard fallback as the only reachable path.
+- Reported clipboard failures in Settings and in the privacy notice as an error toast instead of leaving an unhandled promise rejection.
+
+### Release
+
+- Set application version 3.1.0 and aligned the local Android manifest value to versionCode 127. EAS production builds keep the remote version source and auto-increment from published build 126.
+- Aligned `expo-updates` with the patch version required by Expo SDK 57 so `expo-doctor` passes 20 of 20 checks again.
+
+### Documentation
+
+- Updated the public overview, architecture notes, release guide, pre-build review, contributor guide, citation metadata, third-party inventory, and 3.1.0 release notes for the email support path, the data-deletion policy section, and the current verification results.
+
+### Tests
+
+- Added ClipboardService coverage for the non-secret copy path: no auto-clear is scheduled, and a pending clear is dropped once the clipboard no longer holds a secret.
+- Tightened the legal regression test. Contact details are asserted against the shared constants instead of markup that could hold a stale copy, the document version is checked in isolation rather than by scanning a whole dictionary, and translated titles must not carry section numbers.
+
 ## [3.0.2] - 2026-07-22
 
 ### Android
