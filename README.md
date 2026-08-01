@@ -16,15 +16,15 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Area                | Status                             |
 | ------------------- | ---------------------------------- |
 | Platform focus      | Android release; iOS cloud testing |
-| App version         | 3.1.0                              |
-| Android versionCode | 128 (next EAS production build)    |
+| App version         | 3.3.0                              |
+| Android versionCode | 129 (EAS production target)        |
 | Expo SDK            | 57.0.9                             |
 | React Native        | 0.86.2                             |
 | TypeScript          | 6.0.3, strict mode                 |
 | Test suite          | 29 suites, 189 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
-Production build numbers are managed remotely by EAS. The latest completed production artifact is Keysoft 3.1.0 build 127, and the production profile will auto-increment the next store build to 128. `app.config.js` retains versionCode 127 only for local manifest visibility; with `appVersionSource: "remote"`, it does not control the EAS build number.
+Production build numbers are managed remotely by EAS. The latest completed but unsubmitted artifact is Keysoft 3.1.0 build 128, and the 3.3.0 production build will auto-increment the remote value to 129. `app.config.js` mirrors versionCode 129 for local manifest visibility; with `appVersionSource: "remote"`, EAS remains authoritative for the build number.
 
 ## Core Capabilities
 
@@ -76,7 +76,7 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 - [Public Repository Checklist](docs/publication.md)
 - [First-Party Copyright And Scope Record](COPYRIGHT.md)
 - [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
-- [Keysoft 3.1.0 Release Notes](docs/releases/3.1.0.md)
+- [Keysoft 3.3.0 Release Notes](docs/releases/3.3.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Requirements

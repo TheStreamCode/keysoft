@@ -4,9 +4,11 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-08-01
+
 ### Release
 
-- Prepared the Keysoft 3.1.0 Android production rebuild from the completed EAS build 127 baseline; remote auto-increment targets versionCode 128 while the local manifest value remains informational.
+- Set the application version to 3.3.0 and aligned the local Android manifest value to versionCode 129. The completed 3.1.0 build 128 was not submitted; EAS remote auto-increment targets build 129 for this production release.
 
 ### Security
 

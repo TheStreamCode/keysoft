@@ -3,7 +3,7 @@
 Original review date: 2026-06-17
 Latest update: 2026-08-01
 
-Production rebuild target: Keysoft 3.1.0, Android versionCode 128 through EAS remote auto-increment, with iOS simulator readiness. The latest completed production baseline is build 127.
+Production target: Keysoft 3.3.0, Android versionCode 129 through EAS remote auto-increment, with iOS simulator readiness. The latest completed baseline is the unsubmitted Keysoft 3.1.0 build 128.
 
 ## Executive Summary
 
@@ -16,6 +16,10 @@ The release-blocking privacy/config mismatch and the main accessibility issues w
 The whole repository was re-reviewed for security, architecture, performance, maintainability, dependencies, documentation, and GitHub automation. Storage writes now persist before updating decrypted caches, reset is scoped to Keysoft-owned records, KDF and backup inputs are bounded, production error logs omit diagnostic objects, backup secrets and temporary files are cleaned up, and verifier checks use the constant-time helper. The fully rendered hidden Settings tree and other unused source/configuration files were removed without changing the visible interface.
 
 Expo SDK 57 dependencies were aligned to compatible patches, four unused direct dependencies were removed, explicit configuration dependencies were declared, and the critical transitive `shell-quote` advisory was patched. The remaining Bun audit findings are lower-severity transitive dependencies in the Expo/Jest/ESLint toolchain and require supported upstream upgrades rather than forced incompatible majors. CI now uses deterministic tool versions, frozen installs, full-SHA action pins, least permissions, formatting, coverage tests, Expo health checks, and a critical vulnerability gate.
+
+### 3.3.0 Update
+
+The 3.3.0 release packages the repository-wide security, storage, dependency, test, documentation, and automation improvements documented in the 2026-08-01 review. It does not change the visible design, icons, assets, vault format, permissions, or local-only operating model. The previously completed 3.1.0 build 128 was not submitted to Google Play; 3.3.0 build 129 is the intended production artifact.
 
 ### 3.1.0 Update
 
