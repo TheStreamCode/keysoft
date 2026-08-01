@@ -4,6 +4,49 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- The password generator now applies "exclude similar characters" to every selected
+  character set. The one character guaranteed per set was previously picked from the
+  unfiltered alphabet, so a generated password could still contain `i`, `l`, `1`, `L`,
+  `o`, `0`, or `O` after the user excluded them — a digits-only password, for example,
+  could still be handed back containing `0` or `1`.
+- The password generator no longer returns more characters than requested when the
+  requested length is shorter than the number of selected character sets. The in-app
+  slider starts at 8, so this was only reachable through direct API use.
+
+### Removed
+
+- `src/components/ui/divider.tsx`. The component had no importers anywhere in the
+  application or the test suite, and its only styling was a Tailwind class left over from
+  a NativeWind setup the project no longer uses.
+- The unused `JSX.IntrinsicElements` augmentation in `nativewind-env.d.ts`, which declared
+  a `style` intrinsic element as `any`. No JSX `<style>` element exists in the codebase and
+  the declaration only weakened type checking globally.
+
+### Tooling
+
+- Added `.codex/` to the ignored local agent-state directories, so a future Codex session
+  cannot leave working state staged by accident, and folded the redundant trailing
+  `.claude/settings.local.json` rule into the `.claude/` entry that already covered it.
+
+### Documentation
+
+- Documented the accepted cryptographic and operational trade-offs in `docs/security.md`
+  under a new "Known Limitations" section: the shared AES/HMAC key, the PBKDF2-SHA1 backup
+  KDF, the six-digit master PIN keyspace, the absence of unlock throttling, opt-in
+  screenshot protection, transition-based auto-lock, Android 13+ clipboard previews, and
+  the trust placed in the over-the-air update channel. No cryptographic behavior changed.
+- Clarified in `nativewind-env.d.ts` that the `className` augmentations exist for
+  react-native-web CSS hooks, not for NativeWind or Tailwind, neither of which is a
+  dependency.
+
+### Tests
+
+- Added regression coverage for the password generator, which previously had none:
+  character-set exclusion, requested length, short-length behavior, empty option set, and
+  alphabet containment.
+
 ## [3.3.0] - 2026-08-01
 
 ### Release

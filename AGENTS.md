@@ -56,6 +56,9 @@
 - Local secrets live in `.secrets/` and must never be committed.
 - The project requires no local environment variables. Keep `.env.example` non-secret, never put credentials in `EXPO_PUBLIC_*`, and use EAS/GitHub secret stores for automation credentials.
 - Treat imported files and KDF metadata as untrusted. Preserve backup/file-size and KDF-cost bounds when changing validation or crypto code.
+- Password generation must apply every enabled option to every character set. The set that guarantees one character per class is the easy place to reintroduce an excluded character; keep it filtered and keep `src/__tests__/services/CryptoService.test.ts` generator coverage green.
+- Read `docs/security.md` "Known Limitations" before touching crypto. The shared AES/HMAC key and the PBKDF2 backup KDF are known, documented trade-offs, **not** bugs to fix in place: changing either silently makes every existing vault and every exported `KS1-PW1` backup undecryptable. Any change there needs a new format version plus a migration that runs in an authenticated session.
+- Do not alter the KS1/KS1-PW1 payload layout, the storage keys in `storageService.ts`, or the default KDF parameters of an existing vault. Vaults carry their own KDF parameters, so new capabilities (a longer master password, for instance) can be added without breaking old data — prefer that route.
 - Persist encrypted storage mutations before updating decrypted caches. Reset only Keysoft-owned keys; do not use `AsyncStorage.clear()`.
 - Clear backup passwords/ciphertext from UI state and remove temporary export files after sharing.
 
@@ -102,7 +105,7 @@
 - `README.md` is the public project overview and setup guide.
 - `CHANGELOG.md` tracks notable release and unreleased changes.
 - `docs/architecture.md` documents system structure and data flow.
-- `docs/security.md` documents the cryptographic and storage model.
+- `docs/security.md` documents the cryptographic and storage model, plus the accepted trade-offs under "Known Limitations".
 - `docs/development.md` documents local workflow, coding standards, and verification.
 - `docs/release.md` documents release readiness, Android permissions, and security checks.
 - Update `README.md`, `CHANGELOG.md`, and the relevant `docs/` file for significant changes.

@@ -492,32 +492,39 @@ export const generatePassword = (length: number, options: PasswordGeneratorOptio
   const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
   const similar = 'il1Lo0O';
 
-  let chars = '';
-  if (options.includeLowercase) chars += lowercase;
-  if (options.includeUppercase) chars += uppercase;
-  if (options.includeNumbers) chars += numbers;
-  if (options.includeSymbols) chars += symbols;
+  // Apply the "exclude similar characters" option to every alphabet, so the
+  // characters guaranteed below cannot reintroduce a look-alike the user excluded.
+  const applyExclusions = (source: string): string =>
+    options.excludeSimilarCharacters
+      ? source
+          .split('')
+          .filter((char) => !similar.includes(char))
+          .join('')
+      : source;
 
-  if (options.excludeSimilarCharacters) {
-    chars = chars
-      .split('')
-      .filter((char) => !similar.includes(char))
-      .join('');
-  }
+  const selectedAlphabets: string[] = [];
+  if (options.includeLowercase) selectedAlphabets.push(applyExclusions(lowercase));
+  if (options.includeUppercase) selectedAlphabets.push(applyExclusions(uppercase));
+  if (options.includeNumbers) selectedAlphabets.push(applyExclusions(numbers));
+  if (options.includeSymbols) selectedAlphabets.push(applyExclusions(symbols));
+
+  // An alphabet can in principle be emptied by the exclusion filter; picking from
+  // it would throw, so only non-empty alphabets can guarantee a character.
+  const minimumChars = selectedAlphabets.filter((alphabet) => alphabet.length > 0);
+  const chars = minimumChars.join('');
 
   if (chars.length === 0) return '';
-
-  const minimumChars: string[] = [];
-  if (options.includeLowercase) minimumChars.push(lowercase);
-  if (options.includeUppercase) minimumChars.push(uppercase);
-  if (options.includeNumbers) minimumChars.push(numbers);
-  if (options.includeSymbols) minimumChars.push(symbols);
 
   function pickChar(source: string): string {
     return source.charAt(randomInt(source.length));
   }
 
-  let password = minimumChars.map((source) => pickChar(source)).join('');
+  // Never emit more characters than requested: when the requested length is shorter
+  // than the number of selected alphabets, only the first ones can be guaranteed.
+  let password = minimumChars
+    .slice(0, Math.max(0, length))
+    .map((source) => pickChar(source))
+    .join('');
 
   for (let i = password.length; i < length; i++) {
     password += chars.charAt(randomInt(chars.length));

@@ -197,4 +197,66 @@ describe('CryptoService', () => {
       }
     });
   });
+
+  describe('generatePassword', () => {
+    const SIMILAR_CHARACTERS = 'il1Lo0O';
+    const allOptions = {
+      includeLowercase: true,
+      includeUppercase: true,
+      includeNumbers: true,
+      includeSymbols: true,
+    };
+
+    it('returns an empty string when no character set is selected', () => {
+      expect(
+        CryptoService.generatePassword(16, {
+          includeLowercase: false,
+          includeUppercase: false,
+          includeNumbers: false,
+          includeSymbols: false,
+        }),
+      ).toBe('');
+    });
+
+    it('honors the requested length', () => {
+      expect(CryptoService.generatePassword(16, allOptions)).toHaveLength(16);
+      expect(CryptoService.generatePassword(8, { includeLowercase: true })).toHaveLength(8);
+    });
+
+    it('never emits more characters than requested when the length is very short', () => {
+      // Four character sets are selected but only two characters are requested.
+      expect(CryptoService.generatePassword(2, allOptions)).toHaveLength(2);
+    });
+
+    it('excludes look-alike characters from every selected set, including the guaranteed ones', () => {
+      const generated = CryptoService.generatePassword(16, {
+        ...allOptions,
+        excludeSimilarCharacters: true,
+      });
+
+      expect(generated).toHaveLength(16);
+      for (const character of SIMILAR_CHARACTERS) {
+        expect(generated).not.toContain(character);
+      }
+    });
+
+    it('excludes look-alike characters when a single set would otherwise guarantee one', () => {
+      // Regression: the guaranteed character used to be picked from the unfiltered
+      // alphabet, so a digits-only password could still contain "0" or "1".
+      const generated = CryptoService.generatePassword(10, {
+        includeNumbers: true,
+        excludeSimilarCharacters: true,
+      });
+
+      expect(generated).toHaveLength(10);
+      expect(generated).not.toContain('0');
+      expect(generated).not.toContain('1');
+      expect(generated).toMatch(/^[2-9]+$/);
+    });
+
+    it('only emits characters from the selected sets', () => {
+      const generated = CryptoService.generatePassword(24, { includeNumbers: true });
+      expect(generated).toMatch(/^[0-9]+$/);
+    });
+  });
 });

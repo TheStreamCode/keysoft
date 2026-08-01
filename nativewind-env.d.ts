@@ -1,5 +1,9 @@
-// Type augmentations for NativeWind className support
-// Expo SDK 54+ uses babel-preset-expo for className → style transformation
+// Type augmentations that allow `className` on React Native components.
+//
+// Keysoft does NOT use NativeWind or Tailwind (the file name is historical). The
+// prop is consumed only by react-native-web, which forwards `className` to the
+// rendered DOM node so `src/utils/webScrollFix.ts` can style scroll containers
+// with plain CSS. On Android and iOS the prop is inert.
 
 import 'react-native';
 
@@ -30,11 +34,5 @@ declare module 'react-native' {
   }
   interface PressableProps {
     className?: string;
-  }
-}
-
-declare namespace JSX {
-  interface IntrinsicElements {
-    style: any;
   }
 }

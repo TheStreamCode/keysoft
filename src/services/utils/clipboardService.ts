@@ -43,7 +43,11 @@ export class ClipboardService {
       // Clear any existing timer with the same identifier
       this.clearTimeout(identifier);
 
-      // Copy the text to the clipboard
+      // Copy the text to the clipboard.
+      // NOTE: on Android 13+ the system shows a clipboard preview containing the
+      // copied value. Suppressing it needs the ClipData "is sensitive" extra, which
+      // the expo-clipboard version bundled with Expo SDK 57 does not expose through
+      // `SetStringOptions`. See docs/security.md ("Known Limitations").
       await Clipboard.setStringAsync(text);
 
       // When the timeout is greater than the warning threshold, schedule a warning timer

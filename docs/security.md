@@ -71,6 +71,18 @@ Vault data uses the KS1 format:
 
 Decryption verifies the MAC before trusting plaintext output.
 
+### Key separation
+
+KS1 derives a single 256-bit key and uses that same value both as the AES-256-CBC
+encryption key and as the HMAC-SHA256 authentication key. Standard practice is to split
+the KDF output into two independent subkeys (for example with HKDF). No practical attack
+on AES-CBC + HMAC-SHA256 under a shared key is known, and encrypt-then-MAC still provides
+integrity, but the construction does not follow the key-separation principle.
+
+Changing this is a vault-format break: every existing vault and every previously exported
+`KS1-PW1` backup would stop decrypting. It must not be changed without an explicit,
+versioned migration that re-encrypts vault data during an authenticated session.
+
 ## Backup Encryption
 
 Encrypted backup payloads use `KS1-PW1`.
@@ -82,6 +94,17 @@ The payload contains:
 - `data`: KS1 ciphertext.
 
 The export password is never used directly as a KS1 key. It is first passed through a KDF to derive a valid encryption key.
+
+That KDF is PBKDF2 at 100,000 iterations with the `crypto-js` default hash (HMAC-SHA1),
+recorded in the payload as `memory = 0`. It is therefore materially weaker than the
+Argon2id used to unlock the vault itself, and it offers no memory hardness against
+GPU or ASIC cracking of an exported file. Users should treat an encrypted export as
+only as strong as the export password they choose, and should pick a long passphrase
+rather than a short one. Backups are the one vault artifact that can leave the device,
+so this is the weakest link in the current design.
+
+The KDF identifier is part of the `KS1-PW1` payload, so a stronger KDF can only be
+introduced as a new payload version that still reads `KS1-PW1` files.
 
 Backup imports are limited to 10 MiB and validate collection sizes and field lengths before any object reaches storage. Export passwords and imported ciphertext are removed from UI state on close, while temporary export files are deleted after sharing completes.
 
@@ -140,6 +163,40 @@ Production error logs contain only the sanitized message. Error objects and stru
 ## Local Secrets
 
 Operational secrets belong in `.secrets/`, which is ignored by git. Keystores, credentials, environment files, certificates, and signing material must never be committed. Keep Android signing files locally or in the platform-provided secret store used by EAS/Play Console.
+
+## Known Limitations
+
+These are accepted, documented properties of the current design rather than defects to be
+silently patched. Each one is a deliberate trade-off; changing any of them requires a
+security-design review, and the first two additionally require a versioned data migration.
+
+- **Shared encryption/authentication key.** See "Key separation" above.
+- **Backup KDF is PBKDF2-SHA1, not Argon2id.** See "Backup Encryption" above.
+- **The master secret is a 6-digit PIN.** The onboarding and unlock flows accept exactly
+  six digits, so the keyspace is 10^6. Argon2id makes each guess expensive, but an
+  attacker who extracts both the SecureStore metadata (salt and verifier) and the
+  encrypted AsyncStorage vault from a compromised or rooted device can mount an offline
+  search. Supporting a longer or alphanumeric master password would raise this ceiling
+  and can be added without breaking existing vaults, because each vault already stores
+  its own KDF parameters.
+- **No failed-attempt throttling or lockout.** Unlock attempts are limited only by the
+  cost of Argon2id; there is no attempt counter, backoff, or wipe-after-N-failures.
+- **Screenshot protection is opt-in.** `screenshotProtectionEnabled` defaults to `false`,
+  so by default vault screens can be screenshotted and appear in the Android recents
+  preview. The setting is exposed in Settings.
+- **Auto-lock is transition-based.** The vault locks when the app returns to the
+  foreground after spending longer than the configured timeout in the background. There is
+  no idle timer while the app stays in the foreground, so a session left open on an
+  unattended unlocked device stays unlocked.
+- **Clipboard previews on Android 13+.** Copied secrets are cleared automatically after
+  the configured timeout, but the system clipboard preview can still display the value at
+  copy time. Suppressing it requires the ClipData "is sensitive" extra, which the
+  `expo-clipboard` version bundled with Expo SDK 57 does not expose through
+  `SetStringOptions`. Re-evaluate when upgrading `expo-clipboard`.
+- **Over-the-air updates are trusted.** `expo-updates` can replace application JavaScript
+  after install. The update channel is therefore part of the trusted computing base: an
+  attacker controlling it could ship code that reads an unlocked vault. Vault data itself
+  is never transmitted.
 
 ## Security Verification
 
