@@ -8,7 +8,7 @@ All notable project changes are documented here.
 
 ### Release
 
-- Set the application version to 3.3.0 and aligned the local Android manifest value to versionCode 129. The completed 3.1.0 build 128 was not submitted; EAS remote auto-increment targets build 129 for this production release.
+- Published Keysoft 3.3.0 on Google Play and aligned the application and local Android manifest metadata with versionCode 129. EAS remote versioning remains authoritative for future production builds.
 
 ### Security
 

@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current production target: Keysoft 3.3.0, Android versionCode 129 through EAS remote auto-increment. The latest completed artifact is the unsubmitted Keysoft 3.1.0 build 128. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current production release: Keysoft 3.3.0, Android versionCode 129, published on Google Play. EAS remote versioning remains authoritative for future Android builds. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
@@ -37,7 +37,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the current 3.3.0 production release, `app.config.js` uses `version: "3.3.0"`, `android.versionCode: 129`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source, whose latest completed baseline is the unsubmitted build 128, so `autoIncrement` produces store build 129. The local value mirrors the target for manifest visibility but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.0.
+For the current 3.3.0 production release, `app.config.js` uses `version: "3.3.0"`, `android.versionCode: 129`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The published Android release uses build 129. The local value mirrors the release for manifest visibility but does not control future EAS production builds. Because EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.0.
 
 Read the current remote value with `bunx eas-cli build:version:get --platform android` instead of assuming the baseline.
 
@@ -93,6 +93,11 @@ Google Play submission is currently performed manually (upload the app-bundle in
 ```bash
 bun run submit:android:production
 ```
+
+The production EAS workflow normally runs for every matching version tag. When
+backfilling a GitHub tag for an artifact that is already built and published,
+put `[eas skip]` in the tagged commit message to prevent a duplicate cloud
+build.
 
 Release validation for the KDF path must be performed on an EAS/native build. Expo Go uses the PBKDF2 fallback because it cannot load the Argon2 native module.
 

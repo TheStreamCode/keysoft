@@ -24,7 +24,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Test suite          | 29 suites, 189 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
-Production build numbers are managed remotely by EAS. The latest completed but unsubmitted artifact is Keysoft 3.1.0 build 128, and the 3.3.0 production build will auto-increment the remote value to 129. `app.config.js` mirrors versionCode 129 for local manifest visibility; with `appVersionSource: "remote"`, EAS remains authoritative for the build number.
+Keysoft 3.3.0 is published on [Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Production build numbers are managed remotely by EAS; the 3.3.0 release uses Android versionCode 129. `app.config.js` mirrors that value for local manifest visibility, while `appVersionSource: "remote"` keeps EAS authoritative for future build numbers.
 
 ## Core Capabilities
 

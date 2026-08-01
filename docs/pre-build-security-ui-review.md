@@ -3,7 +3,7 @@
 Original review date: 2026-06-17
 Latest update: 2026-08-01
 
-Production target: Keysoft 3.3.0, Android versionCode 129 through EAS remote auto-increment, with iOS simulator readiness. The latest completed baseline is the unsubmitted Keysoft 3.1.0 build 128.
+Published production release: Keysoft 3.3.0, Android versionCode 129, with iOS simulator readiness retained outside the App Store release scope.
 
 ## Executive Summary
 
@@ -19,7 +19,7 @@ Expo SDK 57 dependencies were aligned to compatible patches, four unused direct 
 
 ### 3.3.0 Update
 
-The 3.3.0 release packages the repository-wide security, storage, dependency, test, documentation, and automation improvements documented in the 2026-08-01 review. It does not change the visible design, icons, assets, vault format, permissions, or local-only operating model. The previously completed 3.1.0 build 128 was not submitted to Google Play; 3.3.0 build 129 is the intended production artifact.
+The 3.3.0 release packages the repository-wide security, storage, dependency, test, documentation, and automation improvements documented in the 2026-08-01 review. It does not change the visible design, icons, assets, vault format, permissions, or local-only operating model. Keysoft 3.3.0 build 129 is published on Google Play.
 
 ### 3.1.0 Update
 
