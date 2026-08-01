@@ -21,7 +21,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Expo SDK            | 57.0.9                             |
 | React Native        | 0.86.2                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 29 suites, 189 tests               |
+| Test suite          | 29 suites, 195 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
 Keysoft 3.3.0 is published on [Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Production build numbers are managed remotely by EAS; the 3.3.0 release uses Android versionCode 129. `app.config.js` mirrors that value for local manifest visibility, while `appVersionSource: "remote"` keeps EAS authoritative for future build numbers.
@@ -157,7 +157,7 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test:ci`: passing, 29 suites and 189 tests
+- `bun run test:ci`: passing, 29 suites and 195 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing
