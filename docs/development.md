@@ -2,11 +2,15 @@
 
 ## Environment
 
+Use Bun 1.3.14 and Node.js 22.13 or newer. The package-manager version is pinned in `package.json` and CI.
+
 Install dependencies:
 
 ```bash
 bun install
 ```
+
+Keysoft requires no environment variables for local development. `.env.example` records that boundary; `.env*`, `.secrets/`, signing files, and generated native projects stay untracked. Never put credentials in `EXPO_PUBLIC_*` variables because they are bundled into the application. Use EAS secrets and GitHub Actions secrets for external automation credentials.
 
 Start Expo for Expo Go:
 
@@ -37,11 +41,10 @@ bun run web
 Run all checks:
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bunx expo-doctor
+bun run verify
 ```
+
+The aggregate command runs formatting checks, TypeScript, ESLint, coverage-enabled Jest tests, and `expo-doctor`. Use `bun run deps:audit` separately to inspect dependency advisories; CI blocks critical findings.
 
 Before requesting an EAS preview build, also validate the Android bundle export:
 
@@ -136,9 +139,11 @@ bunx expo install --fix
 Then verify:
 
 ```bash
-bun install
-bunx expo-doctor
+bun install --frozen-lockfile
+bun run verify
 ```
+
+Keep Expo-native packages on the versions selected by `expo install`. Major upgrades of Expo, React Native, React, Jest, ESLint, or TypeScript require a coordinated migration and must not be forced through transitive overrides. Remove a direct dependency only after confirming it has no source, configuration, script, or native-plugin consumer and completing the full verification plus Android export.
 
 If `expo-doctor` reports duplicate native modules after a valid dependency update, regenerate `node_modules` and reinstall from the lockfile.
 
@@ -215,4 +220,6 @@ For a significant UI change, verify at least:
 - Do not commit local secrets.
 - Do not commit generated temporary extraction folders.
 - Keep unrelated worktree changes separate.
+- Keep GitHub Actions at minimum permissions and pin third-party actions to full commit SHAs.
+- Keep `bun.lock` committed and use frozen installs outside intentional dependency updates.
 - Run `git diff --check` before handing off changes.

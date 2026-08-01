@@ -41,8 +41,8 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 export function randomInt(maxExclusive: number): number {
-  if (!Number.isFinite(maxExclusive) || maxExclusive <= 0) {
-    throw new Error('randomInt: maxExclusive must be a positive number');
+  if (!Number.isSafeInteger(maxExclusive) || maxExclusive <= 0 || maxExclusive > MAX_UINT32) {
+    throw new Error('randomInt: maxExclusive must be an integer between 1 and 2^32');
   }
 
   const limit = Math.floor(MAX_UINT32 / maxExclusive) * maxExclusive;

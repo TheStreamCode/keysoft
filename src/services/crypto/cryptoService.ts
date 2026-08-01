@@ -15,8 +15,7 @@ import { TimeoutError, withTimeout, KDF_TIMEOUT_MS } from '../../utils/withTimeo
 declare const require: any;
 
 let argon2id:
-  | ((password: string, salt: string, options: Record<string, number>) => Promise<any>)
-  | null = null;
+  ((password: string, salt: string, options: Record<string, number>) => Promise<any>) | null = null;
 
 function loadArgon2(): void {
   if (isExpoGo()) {
@@ -52,6 +51,10 @@ export const ARGON2_MEMORY_KB = 19456;
 
 // PBKDF2 iteration count used only on Expo Go (no native Argon2 available).
 const PBKDF2_ITERATIONS = 100_000;
+const MAX_PBKDF2_ITERATIONS = 1_000_000;
+const MAX_ARGON2_ITERATIONS = 10;
+const MIN_ARGON2_MEMORY_KB = 8 * 1024;
+const MAX_ARGON2_MEMORY_KB = 256 * 1024;
 
 /**
  * Whether the native Argon2 KDF is available (false on Expo Go). Used to decide
@@ -121,6 +124,28 @@ export class KdfError extends Error {
   }
 }
 
+function validateKdfParameters(iterations: number, memory: number): void {
+  if (!Number.isSafeInteger(iterations) || !Number.isSafeInteger(memory) || memory < 0) {
+    throw new KdfError('KDF_FAILED', 'Invalid KDF parameters');
+  }
+
+  if (memory === 0) {
+    if (iterations < 0 || iterations > MAX_PBKDF2_ITERATIONS) {
+      throw new KdfError('KDF_FAILED', 'Invalid PBKDF2 iteration count');
+    }
+    return;
+  }
+
+  if (
+    iterations < 1 ||
+    iterations > MAX_ARGON2_ITERATIONS ||
+    memory < MIN_ARGON2_MEMORY_KB ||
+    memory > MAX_ARGON2_MEMORY_KB
+  ) {
+    throw new KdfError('KDF_FAILED', 'Invalid Argon2 parameters');
+  }
+}
+
 export interface MasterKeyInfoWithDerivedKey {
   masterKeyInfo: UserMasterKey;
   derivedKey: string;
@@ -162,6 +187,8 @@ export const deriveKey = async (
   memory: number = ARGON2_MEMORY_KB,
 ): Promise<string> => {
   try {
+    validateKdfParameters(iterations, memory);
+
     // Only verifiers created with memory=0 use PBKDF2. If metadata requires
     // Argon2, do not fall back because that would produce a different key and look
     // like an invalid PIN.
@@ -268,7 +295,7 @@ export const verifyMasterPassword = async (
     const derivedKey = await deriveKey(masterPassword, salt, iterations, memory);
     const computedVerifier = CryptoJS.SHA256(derivedKey).toString();
 
-    return computedVerifier === verifier;
+    return constantTimeEqual(computedVerifier, verifier);
   } catch (error) {
     Logger.error('CryptoService: Errore durante la verifica della master password', error);
     return false;
@@ -278,7 +305,7 @@ export const verifyMasterPassword = async (
 export const verifyDerivedKey = (derivedKey: string, masterKeyInfo: UserMasterKey): boolean => {
   try {
     const computedVerifier = CryptoJS.SHA256(derivedKey).toString();
-    return computedVerifier === masterKeyInfo.verifier;
+    return constantTimeEqual(computedVerifier, masterKeyInfo.verifier);
   } catch (error) {
     Logger.error('CryptoService: Errore durante la verifica della chiave derivata', error);
     return false;

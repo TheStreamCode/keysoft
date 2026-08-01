@@ -4,6 +4,32 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+### Release
+
+- Prepared the Keysoft 3.1.0 Android production rebuild from the completed EAS build 127 baseline; remote auto-increment targets versionCode 128 while the local manifest value remains informational.
+
+### Security
+
+- Bounded untrusted KDF parameters and backup file, collection, and field sizes to prevent resource-exhaustion during login or import.
+- Kept error details out of production logs, cleared backup secrets from UI state, removed temporary export files after sharing, and switched verifier comparisons to the constant-time helper.
+- Changed storage mutations to persist before updating the decrypted cache and limited reset to Keysoft-owned AsyncStorage keys.
+
+### Fixed
+
+- Prevented failed preference writes from applying screenshot, auto-lock, or clipboard behavior that was not persisted, and removed a saving state that could leave profile actions disabled.
+- Preserved nested preference defaults and returned defensive preference copies so callers cannot mutate the storage cache accidentally.
+- Removed the Settings timer that temporarily monkey-patched the global backup-notification method; periodic reminders and explicit import success notifications now retain stable service behavior.
+- Removed the fully rendered but hidden legacy Settings tree and its unused styles, plus stale Tailwind, password-counter, and accessibility-hook files.
+
+### Tooling
+
+- Aligned Expo SDK 57 packages, React Native, Jest Expo, and native modules to compatible patch releases; removed four unused direct dependencies and patched the critical transitive `shell-quote` advisory.
+- Added one-command verification, coverage-enabled CI tests, dependency auditing, deterministic Bun/Node versions, SHA-pinned GitHub Actions, concurrency limits, timeouts, CODEOWNERS, EditorConfig, and documented environment handling.
+
+### Tests
+
+- Added regression coverage for storage write failures and scoped reset, defensive preferences, KDF bounds, secure random bounds, and backup size limits.
+
 ## [3.1.0] - 2026-07-26
 
 ### Changed

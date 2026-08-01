@@ -33,11 +33,4 @@ export const NOTE_COLORS = {
 
 // Color names used for mapping
 export type NoteColorName =
-  | 'default'
-  | 'yellow'
-  | 'orange'
-  | 'pink'
-  | 'purple'
-  | 'blue'
-  | 'green'
-  | 'gray';
+  'default' | 'yellow' | 'orange' | 'pink' | 'purple' | 'blue' | 'green' | 'gray';

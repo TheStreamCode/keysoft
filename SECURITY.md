@@ -10,8 +10,7 @@ production Android release.
 
 ## Reporting A Vulnerability
 
-Send a private report to the repository owner through GitHub private contact
-channels or another private channel already agreed with the maintainer.
+Use [GitHub private vulnerability reporting](https://github.com/TheStreamCode/keysoft/security/advisories/new) so the report and any proposed fix remain private. If GitHub reporting is unavailable, use another private channel already agreed with the maintainer. Do not open a public issue.
 
 Include:
 

@@ -40,6 +40,8 @@ describe('StorageService', () => {
       ),
     );
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+    (AsyncStorage.multiSet as jest.Mock).mockResolvedValue(undefined);
+    (AsyncStorage.multiRemove as jest.Mock).mockResolvedValue(undefined);
     (AsyncStorage.clear as jest.Mock).mockResolvedValue(undefined);
     (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
     (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
@@ -91,6 +93,15 @@ describe('StorageService', () => {
         JSON.stringify(prefs),
       );
     });
+
+    it('returns defensive copies of nested preference objects', async () => {
+      const preferences = await StorageService.getUserPreferences();
+      preferences.passwordGeneratorSettings.length = 99;
+
+      const unchangedPreferences = await StorageService.getUserPreferences();
+
+      expect(unchangedPreferences.passwordGeneratorSettings.length).toBe(16);
+    });
   });
 
   describe('Passwords', () => {
@@ -120,6 +131,14 @@ describe('StorageService', () => {
         expect.stringContaining('passwords'),
         expect.stringContaining('encrypted-'),
       );
+    });
+
+    it('does not expose a password in memory when persistence fails', async () => {
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('disk full'));
+
+      await expect(StorageService.savePassword(mockPassword)).rejects.toThrow('disk full');
+
+      await expect(StorageService.getAllPasswords()).resolves.toEqual([]);
     });
 
     it('should retrieve decrypted passwords', async () => {
@@ -268,9 +287,11 @@ describe('StorageService', () => {
         newKey,
       );
 
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        expect.stringContaining('passwords'),
-        expect.stringContaining('new-encrypted-'),
+      expect(AsyncStorage.multiSet).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          [expect.stringContaining('passwords'), expect.stringContaining('new-encrypted-')],
+          [expect.stringContaining('notes'), expect.stringContaining('new-encrypted-')],
+        ]),
       );
 
       // Verify internal key update by checking if a new password save uses the new key
@@ -312,6 +333,22 @@ describe('StorageService', () => {
         JSON.stringify([mockNote]),
         mockEncryptionKey,
       );
+    });
+  });
+
+  describe('Data reset', () => {
+    it('removes only Keysoft-owned AsyncStorage records', async () => {
+      await StorageService.clearAllData();
+
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          'keysoft_user_preferences',
+          'keysoft_passwords',
+          'keysoft_categories',
+          'keysoft_notes',
+        ]),
+      );
+      expect(AsyncStorage.clear).not.toHaveBeenCalled();
     });
   });
 });

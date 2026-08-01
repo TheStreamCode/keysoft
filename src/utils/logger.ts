@@ -38,7 +38,7 @@ class LoggerService {
    * @param message The message to log
    * @param data Optional data to log
    */
-  static debug(message: string, ...data: any[]): void {
+  static debug(message: string, ...data: unknown[]): void {
     if (this.currentLevel <= LogLevel.DEBUG) {
       console.log(`[DEBUG] ${message}`, ...data);
     }
@@ -49,7 +49,7 @@ class LoggerService {
    * @param message The message to log
    * @param data Optional data to log
    */
-  static info(message: string, ...data: any[]): void {
+  static info(message: string, ...data: unknown[]): void {
     if (this.currentLevel <= LogLevel.INFO) {
       console.log(`[INFO] ${message}`, ...data);
     }
@@ -60,7 +60,7 @@ class LoggerService {
    * @param message The message to log
    * @param data Optional data to log
    */
-  static warn(message: string, ...data: any[]): void {
+  static warn(message: string, ...data: unknown[]): void {
     if (this.currentLevel <= LogLevel.WARN) {
       console.warn(`[WARN] ${message}`, ...data);
     }
@@ -72,9 +72,14 @@ class LoggerService {
    * @param error Optional error object
    * @param data Optional additional data
    */
-  static error(message: string, error?: any, ...data: any[]): void {
+  static error(message: string, error?: unknown, ...data: unknown[]): void {
     if (this.currentLevel <= LogLevel.ERROR) {
-      if (error) {
+      // Error objects may contain request data, file paths, or native-module details.
+      // Keep production diagnostics intentionally message-only; development retains
+      // the full context needed to debug locally.
+      if (!__DEV__) {
+        console.error(`[ERROR] ${message}`);
+      } else if (error) {
         console.error(`[ERROR] ${message}`, error, ...data);
       } else {
         console.error(`[ERROR] ${message}`, ...data);
@@ -90,7 +95,7 @@ class LoggerService {
    * @param label Label for the data
    * @param data Data to log (will be stringified)
    */
-  static debugData(label: string, data: any): void {
+  static debugData(label: string, data: unknown): void {
     if (__DEV__ && this.currentLevel <= LogLevel.DEBUG) {
       try {
         console.log(`[DEBUG DATA] ${label}:`, JSON.stringify(data, null, 2));

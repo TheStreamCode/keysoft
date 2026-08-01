@@ -9,7 +9,7 @@ Keysoft is an offline-first React Native application built with Expo. The archit
 | Layer           | Technology                         |
 | --------------- | ---------------------------------- |
 | App framework   | Expo SDK 57                        |
-| UI runtime      | React Native 0.86.0                |
+| UI runtime      | React Native 0.86.2                |
 | Language        | TypeScript, strict mode            |
 | Navigation      | React Navigation v7                |
 | Package manager | Bun                                |
@@ -41,7 +41,7 @@ The presentation layer follows the Nocturne system: semantic light/dark theme to
 
 `ProfileAvatar` owns photo rendering and the initial-based fallback across unlock, vault, and settings surfaces. `KeysoftMark` renders the canonical shield-and-eye asset in onboarding, matching the launcher, adaptive, splash, and web artwork configured in `app.config.js`.
 
-The visible compact Settings layout is the canonical settings surface. It keeps email support, the in-app privacy notice, open-source notices, and GitHub Sponsors directly reachable. The hidden legacy layout is retained only as a temporary migration reference and must not be treated as proof that an action is user-accessible; regression tests inspect the visible layout before that boundary.
+The compact Settings layout is the single settings surface. It keeps email support, the in-app privacy notice, open-source notices, and GitHub Sponsors directly reachable; regression tests verify those public actions in the rendered source tree.
 
 Contact details live in `src/constants/contact.ts` and are the only definition of the support address and the Mikesoft site. Support opens a `mailto:` intent and falls back to copying the address, so no screen or dictionary repeats either value.
 
@@ -109,7 +109,7 @@ A top-level error boundary (`src/components/ErrorBoundary.tsx`) wraps the naviga
 3. Biometric login asks SecureStore for the stored biometric vault key with device authentication, verifies it against the same master-key verifier, and then loads it into memory.
 4. `StorageService` initializes the encrypted vault cache with the active key.
 5. `AuthContext` completes the shared post-login pipeline: authentication state, login notification, post-auth migration, notification settings, clipboard timeout, and auto-lock timeout.
-6. Password and note writes are serialized, encrypted with KS1, and stored in AsyncStorage.
+6. Password and note writes are serialized, encrypted with KS1, persisted to AsyncStorage, and only then committed to the decrypted in-memory cache.
 7. Logout and auto-lock clear authentication state and the in-memory key.
 
 ## Storage Boundaries
@@ -137,6 +137,8 @@ Exports are user-initiated. Encrypted exports use `KS1-PW1`, which wraps:
 - Version metadata.
 
 Imports are parsed as unknown data and validated before any object reaches `StorageService`.
+
+Imported files and collection sizes are bounded before parsing and persistence. Export passwords and encrypted import payloads are cleared from hook state when their dialogs close, and temporary export files are removed after the platform share flow completes.
 
 ## Testing Strategy
 

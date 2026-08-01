@@ -36,11 +36,13 @@ Master-password authentication derives a vault key using:
 
 Each vault stores its own KDF parameters (`salt`, `iterations`, `memory`) in its metadata, so the parameters used to verify a login always match the ones the vault was created with.
 
+Untrusted KDF metadata is range-checked before derivation. PBKDF2 iterations are limited to 1,000,000; Argon2 iterations to 10; and Argon2 memory to 256 MiB. This prevents a malformed local record or imported encrypted payload from requesting unbounded CPU or memory work.
+
 Derived keys are normalized to 64-character lowercase hex strings. Invalid derived key formats are rejected. Argon2id derivation is bounded by the shared KDF timeout so a slow native release device cannot block login indefinitely. If stored vault metadata requires Argon2id (`memory > 0`) and the native Argon2 module is unavailable, login fails with a native-KDF diagnostic instead of falling back to PBKDF2 and reporting a misleading invalid PIN.
 
 ### Transparent KDF upgrade on login
 
-Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier) and re-encrypts the vault atomically. It is best-effort and non-destructive: on any failure the vault is left on its previous working key and the upgrade simply retries on the next login, so the user is never locked out. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
+Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier), precomputes both encrypted collections, persists them in one batched storage call, and uses explicit rollback if the following verifier update fails. It is best-effort and non-destructive: on any failure the previous working key is restored and the upgrade retries on the next login. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
 
 When creating or changing the PIN, the verifier metadata and the vault key are produced from the same KDF result. This avoids a duplicate KDF pass for the same new PIN while preserving the configured KDF cost and the 64-character derived-key requirement.
 
@@ -81,6 +83,8 @@ The payload contains:
 
 The export password is never used directly as a KS1 key. It is first passed through a KDF to derive a valid encryption key.
 
+Backup imports are limited to 10 MiB and validate collection sizes and field lengths before any object reaches storage. Export passwords and imported ciphertext are removed from UI state on close, while temporary export files are deleted after sharing completes.
+
 ## Biometric Authentication
 
 Biometric authentication stores the current vault key in `expo-secure-store` only after the user enables biometrics from an authenticated session.
@@ -98,6 +102,8 @@ Expected behavior:
 - The storage service must reject secure writes if no encryption key is available.
 - Legacy plaintext arrays are immediately re-encrypted when loaded with an active encryption key.
 - Writes are blocked after decryption errors until the unsafe state is resolved.
+- Mutations persist encrypted data before changing the decrypted cache, so a failed write cannot expose an uncommitted value through later reads.
+- Reset removes only Keysoft-owned AsyncStorage keys; it must not call the process-wide `AsyncStorage.clear()` API.
 
 ## Randomness
 
@@ -129,6 +135,8 @@ Use the central `Logger` service. Do not log:
 
 Authentication diagnostics may include sanitized failure reasons such as native KDF unavailable, KDF timeout, verifier mismatch, database initialization failure, or biometric key unavailable. They must not include user-entered PINs, derived keys, SecureStore values, or decrypted vault data.
 
+Production error logs contain only the sanitized message. Error objects and structured diagnostic context are emitted only in development because native errors can include file paths or platform details.
+
 ## Local Secrets
 
 Operational secrets belong in `.secrets/`, which is ignored by git. Keystores, credentials, environment files, certificates, and signing material must never be committed. Keep Android signing files locally or in the platform-provided secret store used by EAS/Play Console.
@@ -138,10 +146,8 @@ Operational secrets belong in `.secrets/`, which is ignored by git. Keystores, c
 Run before release:
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bunx expo-doctor
+bun run verify
+bun run deps:audit
 bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
 ```
 

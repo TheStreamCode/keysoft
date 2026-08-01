@@ -17,14 +17,14 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | ------------------- | ---------------------------------- |
 | Platform focus      | Android release; iOS cloud testing |
 | App version         | 3.1.0                              |
-| Android versionCode | 127 (EAS production target)        |
-| Expo SDK            | 57.0.8                             |
-| React Native        | 0.86.0                             |
+| Android versionCode | 128 (next EAS production build)    |
+| Expo SDK            | 57.0.9                             |
+| React Native        | 0.86.2                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 29 suites, 182 tests               |
+| Test suite          | 29 suites, 189 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
-Production build numbers are managed remotely by EAS. `app.config.js` is aligned to Android versionCode 127 for local manifest visibility. The EAS remote baseline is published build 126, so the production profile auto-increments the store build for Keysoft 3.1.0 to 127.
+Production build numbers are managed remotely by EAS. The latest completed production artifact is Keysoft 3.1.0 build 127, and the production profile will auto-increment the next store build to 128. `app.config.js` retains versionCode 127 only for local manifest visibility; with `appVersionSource: "remote"`, it does not control the EAS build number.
 
 ## Core Capabilities
 
@@ -81,8 +81,8 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 
 ## Requirements
 
-- Bun
-- Node.js compatible with the Expo toolchain
+- Bun 1.3.14 (the version declared in `package.json` and used by CI)
+- Node.js 22.13 or newer
 - Expo Go installed on the Android device used for development
 - Expo account access for EAS builds on expo.dev
 - Expo CLI via `bunx expo`
@@ -92,6 +92,14 @@ See [Security Architecture](docs/security.md) for the full model, operational as
 ```bash
 bun install
 ```
+
+Use `bun install --frozen-lockfile` in CI and when validating a clean checkout.
+
+## Configuration
+
+Keysoft needs no environment variables or backend service for local development. The tracked `.env.example` documents this intentionally empty configuration. Local `.env*` files, `.secrets/`, signing keys, and generated native projects are ignored by Git.
+
+Never store secrets in `EXPO_PUBLIC_*` variables: Expo embeds those values in the client bundle. Store EAS credentials in EAS-managed secrets and repository automation credentials in GitHub Actions secrets. The Expo project identifier and update URLs in `app.config.js` are public application metadata, not credentials.
 
 ## Development
 
@@ -131,25 +139,25 @@ EAS builds upload the project to expo.dev. Start them only after the release che
 
 ### Build from GitHub
 
-The repository is linked to EAS Build. The Android production workflow runs for version tags or manual dispatch. iOS is retained as a cloud-simulator test target; App Store publication is intentionally outside the project release workflow.
+The repository is linked to EAS Build. The Android production workflow runs only for version tags matching `v*` or by manual dispatch. Google Play submission is currently manual; `bun run submit:android:production` is reserved for a future configured submission profile. iOS is retained as a cloud-simulator test target, and App Store publication is intentionally outside the project release workflow.
 
 ## Verification
 
 Run the full local verification suite before shipping changes:
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bunx expo-doctor
+bun run verify
+bun run deps:audit
 bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
 ```
+
+`bun run verify` checks formatting, TypeScript, ESLint, the coverage-enabled Jest suite, and Expo project health. The individual commands remain available as `bun run format:check`, `bun run typecheck`, `bun run lint`, `bun run test`, and `bunx expo-doctor`.
 
 Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test`: passing, 29 suites and 180 tests
+- `bun run test:ci`: passing, 29 suites and 189 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing

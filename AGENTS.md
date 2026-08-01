@@ -8,7 +8,8 @@
 
 ## Workflow And Commands
 
-- Install: `bun install`
+- Required toolchain: Bun 1.3.14 and Node.js 22.13 or newer
+- Install: `bun install`; clean validation/CI: `bun install --frozen-lockfile`
 - Dev server for Expo Go: `bun run start`
 - Android with Expo Go: `bun run android`
 - Expo Go tunnel: `bun run start:tunnel`
@@ -21,7 +22,10 @@
 - Lint: `bun run lint`
 - Typecheck: `bun run typecheck`
 - Tests: `bun run test`
+- Coverage CI tests: `bun run test:ci`
 - Health check: `bunx expo-doctor`
+- Full local checks: `bun run verify`
+- Dependency audit: `bun run deps:audit`
 
 ## Code Style
 
@@ -50,6 +54,10 @@
 - Do not log secrets. Use `Logger` with sanitized messages.
 - Copy secrets with `ClipboardService.copyToClipboard`, which schedules the auto-clear. Use `ClipboardService.copyPlainText` only for non-secret text such as a contact address; never route a password through it.
 - Local secrets live in `.secrets/` and must never be committed.
+- The project requires no local environment variables. Keep `.env.example` non-secret, never put credentials in `EXPO_PUBLIC_*`, and use EAS/GitHub secret stores for automation credentials.
+- Treat imported files and KDF metadata as untrusted. Preserve backup/file-size and KDF-cost bounds when changing validation or crypto code.
+- Persist encrypted storage mutations before updating decrypted caches. Reset only Keysoft-owned keys; do not use `AsyncStorage.clear()`.
+- Clear backup passwords/ciphertext from UI state and remove temporary export files after sharing.
 
 ## Internationalization
 
@@ -79,6 +87,15 @@
 - Expo Go uses the PBKDF2 fallback because custom native modules are not available there; EAS/native builds may use Argon2.
 - Use EAS/native builds for release-grade Argon2 validation; Expo Go vaults are development data.
 - When R8 or native build configuration changes, verify optimized shrinking and the Argon2 keep rules in a temporary generated Android project before starting EAS.
+- Dependency removals or native-package changes require `bun run verify` and a local Android export.
+
+## Repository And CI
+
+- Keep `bun.lock` committed and frozen in normal CI runs.
+- Pin third-party GitHub Actions to full commit SHAs and keep workflow permissions minimal.
+- Do not weaken the required `Validate` branch-protection check or bypass human review for dependency updates.
+- Do not modify design, icons, or visual assets unless the task explicitly requests it. Lossless size optimization must preserve format, proportions, transparency, and visual quality.
+- Never run EAS build, submit, deployment, tag, push, or release commands without explicit approval; these create external changes or consume cloud resources.
 
 ## Documentation
 

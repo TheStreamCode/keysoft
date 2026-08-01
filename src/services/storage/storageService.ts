@@ -17,6 +17,13 @@ const STORAGE_KEYS = {
   MASTER_KEY_INFO_SECURE: 'keysoft_master_key_info',
 };
 
+const ASYNC_STORAGE_KEYS = [
+  STORAGE_KEYS.USER_PREFERENCES,
+  STORAGE_KEYS.PASSWORDS,
+  STORAGE_KEYS.CATEGORIES,
+  STORAGE_KEYS.NOTES,
+];
+
 // Limits
 export const MAX_PASSWORDS_LIMIT = 1000;
 
@@ -50,6 +57,34 @@ const defaultUserPreferences: UserPreferences = {
   hasPromptedForBiometrics: false,
 };
 
+function cloneUserPreferences(preferences: UserPreferences): UserPreferences {
+  return {
+    ...preferences,
+    passwordGeneratorSettings: { ...preferences.passwordGeneratorSettings },
+    notificationSettings: preferences.notificationSettings
+      ? { ...preferences.notificationSettings }
+      : undefined,
+    lastNotificationChecks: preferences.lastNotificationChecks
+      ? { ...preferences.lastNotificationChecks }
+      : undefined,
+  };
+}
+
+function mergeUserPreferences(stored: Partial<UserPreferences>): UserPreferences {
+  return cloneUserPreferences({
+    ...defaultUserPreferences,
+    ...stored,
+    passwordGeneratorSettings: {
+      ...defaultUserPreferences.passwordGeneratorSettings,
+      ...(stored.passwordGeneratorSettings ?? {}),
+    },
+    notificationSettings: {
+      ...defaultUserPreferences.notificationSettings,
+      ...(stored.notificationSettings ?? {}),
+    },
+  });
+}
+
 // In-memory cache
 interface CacheData {
   passwords: Password[];
@@ -63,7 +98,7 @@ const cache: CacheData = {
   passwords: [],
   categories: [],
   notes: [],
-  userPreferences: { ...defaultUserPreferences },
+  userPreferences: cloneUserPreferences(defaultUserPreferences),
   masterKeyInfo: null,
 };
 
@@ -89,29 +124,23 @@ export const reEncryptAllData = async (newKey: string): Promise<void> => {
     throw new Error('Cannot re-encrypt data due to prior decryption errors');
   }
 
-  // 1. Encrypt Passwords with new key
   try {
-    const passwordsData = JSON.stringify(cache.passwords);
-    const encryptedPasswords = await CryptoService.encrypt(passwordsData, newKey);
-    await AsyncStorage.setItem(STORAGE_KEYS.PASSWORDS, encryptedPasswords);
-    Logger.debug('StorageService: Passwords re-encrypted successfully');
+    const [encryptedPasswords, encryptedNotes] = await Promise.all([
+      CryptoService.encrypt(JSON.stringify(cache.passwords), newKey),
+      CryptoService.encrypt(JSON.stringify(cache.notes), newKey),
+    ]);
+
+    // Compute both ciphertexts before the storage operation so an encryption
+    // failure cannot leave only half of the vault on the new key.
+    await AsyncStorage.multiSet([
+      [STORAGE_KEYS.PASSWORDS, encryptedPasswords],
+      [STORAGE_KEYS.NOTES, encryptedNotes],
+    ]);
   } catch (error) {
-    Logger.error('StorageService: Error re-encrypting passwords', error);
-    throw new Error('Failed to re-encrypt passwords');
+    Logger.error('StorageService: Error re-encrypting vault data', error);
+    throw new Error('Failed to re-encrypt vault data');
   }
 
-  // 2. Encrypt Notes with new key
-  try {
-    const notesData = JSON.stringify(cache.notes);
-    const encryptedNotes = await CryptoService.encrypt(notesData, newKey);
-    await AsyncStorage.setItem(STORAGE_KEYS.NOTES, encryptedNotes);
-    Logger.debug('StorageService: Notes re-encrypted successfully');
-  } catch (error) {
-    Logger.error('StorageService: Error re-encrypting notes', error);
-    throw new Error('Failed to re-encrypt notes');
-  }
-
-  // 3. Update memory key
   encryptionKey = newKey;
   Logger.info('StorageService: Data re-encryption completed successfully');
 };
@@ -202,8 +231,8 @@ const loadDataFromStorage = async (): Promise<void> => {
 
     const userPreferencesJson = storedEntries.get(STORAGE_KEYS.USER_PREFERENCES);
     if (userPreferencesJson) {
-      const storedPrefs = JSON.parse(userPreferencesJson);
-      cache.userPreferences = { ...defaultUserPreferences, ...storedPrefs };
+      const storedPrefs = JSON.parse(userPreferencesJson) as Partial<UserPreferences>;
+      cache.userPreferences = mergeUserPreferences(storedPrefs);
       if (!cache.userPreferences.language) {
         cache.userPreferences.language = 'it';
       }
@@ -351,32 +380,37 @@ const checkPasswordLimit = () => {
 
 export const savePassword = async (password: Password): Promise<string> => {
   try {
+    const activeKey = getEncryptionKeyOrThrow('save password', 'passwords');
     const existingIndex = password.id ? cache.passwords.findIndex((p) => p.id === password.id) : -1;
+    const now = Date.now();
+    let savedPassword: Password;
+    let nextPasswords: Password[];
 
     if (existingIndex !== -1) {
-      cache.passwords[existingIndex] = {
+      savedPassword = {
         ...password,
-        updatedAt: Date.now(),
+        updatedAt: now,
       };
+      nextPasswords = cache.passwords.map((current, index) =>
+        index === existingIndex ? savedPassword : current,
+      );
     } else {
       checkPasswordLimit();
-      const newPassword: Password = {
+      savedPassword = {
         ...password,
         id: password.id || generateStorageId(),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now,
+        updatedAt: now,
       };
-      cache.passwords.push(newPassword);
-      password.id = newPassword.id; // ensure return ID is correct
+      nextPasswords = [...cache.passwords, savedPassword];
     }
 
-    const activeKey = getEncryptionKeyOrThrow('save password', 'passwords');
-
-    const data = JSON.stringify(cache.passwords);
+    const data = JSON.stringify(nextPasswords);
     const encrypted = await CryptoService.encrypt(data, activeKey);
     await AsyncStorage.setItem(STORAGE_KEYS.PASSWORDS, encrypted);
+    cache.passwords = nextPasswords;
 
-    return password.id;
+    return savedPassword.id;
   } catch (error) {
     Logger.error('StorageService: Error saving password', error);
     throw error;
@@ -422,13 +456,13 @@ export const getPasswordsPaginated = async (
 
 export const deletePassword = async (id: string): Promise<void> => {
   try {
-    cache.passwords = cache.passwords.filter((p) => p.id !== id);
-
     const activeKey = getEncryptionKeyOrThrow('delete password', 'passwords');
+    const nextPasswords = cache.passwords.filter((password) => password.id !== id);
 
-    const data = JSON.stringify(cache.passwords);
+    const data = JSON.stringify(nextPasswords);
     const encrypted = await CryptoService.encrypt(data, activeKey);
     await AsyncStorage.setItem(STORAGE_KEYS.PASSWORDS, encrypted);
+    cache.passwords = nextPasswords;
   } catch (error) {
     Logger.error('StorageService: Error deleting password', error);
     throw error;
@@ -440,8 +474,8 @@ export const clearAllPasswords = async (): Promise<void> => {
     if (decryptionErrors.passwords) {
       throw new Error('Decryption error detected. Cannot clear passwords safely.');
     }
-    cache.passwords = [];
     await AsyncStorage.removeItem(STORAGE_KEYS.PASSWORDS);
+    cache.passwords = [];
     Logger.info('StorageService: All passwords cleared');
   } catch (error) {
     Logger.error('StorageService: Error clearing passwords', error);
@@ -451,7 +485,9 @@ export const clearAllPasswords = async (): Promise<void> => {
 
 export const clearAllData = async (): Promise<void> => {
   try {
-    await AsyncStorage.clear();
+    // Remove only Keysoft-owned records. AsyncStorage can also be used by
+    // third-party libraries, so a global clear risks deleting unrelated state.
+    await AsyncStorage.multiRemove(ASYNC_STORAGE_KEYS);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.MASTER_KEY_INFO_SECURE);
     await SecureStore.deleteItemAsync(BIOMETRIC_KEY_STORAGE);
 
@@ -459,7 +495,7 @@ export const clearAllData = async (): Promise<void> => {
     cache.passwords = [];
     cache.categories = [];
     cache.notes = [];
-    cache.userPreferences = { ...defaultUserPreferences };
+    cache.userPreferences = cloneUserPreferences(defaultUserPreferences);
     cache.masterKeyInfo = null;
     encryptionKey = null;
 
@@ -482,8 +518,9 @@ export const createCategory = async (category: Omit<PasswordCategory, 'id'>): Pr
       ...category,
       id: generateStorageId(),
     };
-    cache.categories.push(newCategory);
-    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cache.categories));
+    const nextCategories = [...cache.categories, newCategory];
+    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+    cache.categories = nextCategories;
     return newCategory.id;
   } catch (error) {
     Logger.error('StorageService: Error creating category', error);
@@ -495,8 +532,11 @@ export const updateCategory = async (category: PasswordCategory): Promise<void> 
   try {
     const index = cache.categories.findIndex((c) => c.id === category.id);
     if (index !== -1) {
-      cache.categories[index] = category;
-      await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cache.categories));
+      const nextCategories = cache.categories.map((current, currentIndex) =>
+        currentIndex === index ? category : current,
+      );
+      await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+      cache.categories = nextCategories;
     }
   } catch (error) {
     Logger.error('StorageService: Error updating category', error);
@@ -506,8 +546,9 @@ export const updateCategory = async (category: PasswordCategory): Promise<void> 
 
 export const deleteCategory = async (id: string): Promise<void> => {
   try {
-    cache.categories = cache.categories.filter((c) => c.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cache.categories));
+    const nextCategories = cache.categories.filter((category) => category.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(nextCategories));
+    cache.categories = nextCategories;
   } catch (error) {
     Logger.error('StorageService: Error deleting category', error);
     throw error;
@@ -518,18 +559,17 @@ export const deleteCategory = async (id: string): Promise<void> => {
 
 export const saveNote = async (note: Note): Promise<void> => {
   try {
-    const existingIndex = cache.notes.findIndex((n) => n.id === note.id);
-    if (existingIndex >= 0) {
-      cache.notes[existingIndex] = note;
-    } else {
-      cache.notes.push(note);
-    }
-
     const activeKey = getEncryptionKeyOrThrow('save note', 'notes');
+    const existingIndex = cache.notes.findIndex((n) => n.id === note.id);
+    const nextNotes =
+      existingIndex >= 0
+        ? cache.notes.map((current, index) => (index === existingIndex ? note : current))
+        : [...cache.notes, note];
 
-    const data = JSON.stringify(cache.notes);
+    const data = JSON.stringify(nextNotes);
     const encrypted = await CryptoService.encrypt(data, activeKey);
     await AsyncStorage.setItem(STORAGE_KEYS.NOTES, encrypted);
+    cache.notes = nextNotes;
   } catch (error) {
     Logger.error('StorageService: Error saving note', error);
     throw error;
@@ -551,13 +591,13 @@ export const getNoteById = async (noteId: string): Promise<Note | null> => {
 
 export const deleteNote = async (noteId: string): Promise<void> => {
   try {
-    cache.notes = cache.notes.filter((n) => n.id !== noteId);
-
     const activeKey = getEncryptionKeyOrThrow('delete note', 'notes');
+    const nextNotes = cache.notes.filter((note) => note.id !== noteId);
 
-    const data = JSON.stringify(cache.notes);
+    const data = JSON.stringify(nextNotes);
     const encrypted = await CryptoService.encrypt(data, activeKey);
     await AsyncStorage.setItem(STORAGE_KEYS.NOTES, encrypted);
+    cache.notes = nextNotes;
   } catch (error) {
     Logger.error('StorageService: Error deleting note', error);
     throw error;
@@ -569,8 +609,8 @@ export const clearAllNotes = async (): Promise<void> => {
     if (decryptionErrors.notes) {
       throw new Error('Decryption error detected. Cannot clear notes safely.');
     }
-    cache.notes = [];
     await AsyncStorage.removeItem(STORAGE_KEYS.NOTES);
+    cache.notes = [];
     Logger.info('StorageService: All notes cleared');
   } catch (error) {
     Logger.error('StorageService: Error clearing notes', error);
@@ -581,13 +621,13 @@ export const clearAllNotes = async (): Promise<void> => {
 // --- User Preferences ---
 
 export const getUserPreferences = async (): Promise<UserPreferences> => {
-  return { ...cache.userPreferences };
+  return cloneUserPreferences(cache.userPreferences);
 };
 
 export const saveUserPreferences = async (preferences: UserPreferences): Promise<void> => {
   try {
-    cache.userPreferences = { ...preferences };
     await AsyncStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(preferences));
+    cache.userPreferences = cloneUserPreferences(preferences);
     Logger.debug('StorageService: User preferences saved');
   } catch (error) {
     Logger.error('StorageService: Error saving user preferences', error);
@@ -597,8 +637,8 @@ export const saveUserPreferences = async (preferences: UserPreferences): Promise
 
 export const clearPreferences = async (): Promise<void> => {
   try {
-    cache.userPreferences = { ...defaultUserPreferences };
     await AsyncStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES);
+    cache.userPreferences = cloneUserPreferences(defaultUserPreferences);
     Logger.info('StorageService: Preferences cleared');
   } catch (error) {
     Logger.error('StorageService: Error clearing preferences', error);

@@ -37,10 +37,9 @@ describe('Apache legal notices', () => {
 
   it('keeps GitHub Sponsors reachable from the visible settings layout', () => {
     const settingsScreen = readRepositoryFile('src/screens/SettingsScreen.tsx');
-    const visibleSettings = settingsScreen.split('style={styles.legacyScrollView}')[0];
 
-    expect(visibleSettings).toContain("title={t('sponsor_github')}");
-    expect(visibleSettings).toContain('https://github.com/sponsors/TheStreamCode');
+    expect(settingsScreen).toContain("title={t('sponsor_github')}");
+    expect(settingsScreen).toContain('https://github.com/sponsors/TheStreamCode');
   });
 
   it('keeps the in-app privacy notice aligned with current app behavior', () => {

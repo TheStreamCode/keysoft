@@ -52,6 +52,20 @@ describe('CryptoService', () => {
         },
       );
     });
+
+    it('rejects attacker-controlled KDF costs outside supported bounds', async () => {
+      await expect(
+        CryptoService.deriveKey(password, salt, Number.MAX_SAFE_INTEGER, 0),
+      ).rejects.toMatchObject({
+        name: 'KdfError',
+        code: 'KDF_FAILED',
+      });
+
+      await expect(CryptoService.deriveKey(password, salt, 2, 1024 * 1024)).rejects.toMatchObject({
+        name: 'KdfError',
+        code: 'KDF_FAILED',
+      });
+    });
   });
 
   describe('Encryption/Decryption', () => {

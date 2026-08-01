@@ -12,8 +12,7 @@ describe('NotificationService in Expo Go', () => {
     });
 
     let notificationService:
-      | typeof import('../../services/utils/notificationService').default
-      | undefined;
+      typeof import('../../services/utils/notificationService').default | undefined;
 
     expect(() => {
       jest.isolateModules(() => {

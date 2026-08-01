@@ -1,18 +1,21 @@
 import { useCallback, useState } from 'react';
-import { Platform, LogBox } from 'react-native';
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Storage, Crypto, MAX_PASSWORDS_LIMIT } from '../../services';
 import NotificationService from '../../services/utils/notificationService';
-import { validateBackupData } from '../../services/import-export/backupValidation';
+import {
+  isBackupFileSizeAllowed,
+  MAX_BACKUP_FILE_SIZE_BYTES,
+  validateBackupData,
+} from '../../services/import-export/backupValidation';
 import Logger from '../../utils/logger';
 import { UserPreferences } from '../../models/User';
 
 interface UseExportImportParams {
   preferences: UserPreferences | null;
   setPreferences: (prefs: UserPreferences) => void;
-  disableBackupNotifications: () => void;
   t: (key: string) => string;
   alert: (
     title: string,
@@ -24,7 +27,6 @@ interface UseExportImportParams {
 export const useExportImport = ({
   preferences,
   setPreferences,
-  disableBackupNotifications,
   t,
   alert,
 }: UseExportImportParams) => {
@@ -51,11 +53,16 @@ export const useExportImport = ({
     [alert, t],
   );
 
+  const closeImportPasswordDialog = useCallback(() => {
+    setImportPassword('');
+    setImportFileContent('');
+    setIsEncryptedImport(false);
+    setShowImportPasswordDialog(false);
+  }, []);
+
   const processImport = useCallback(
     async (importData: unknown) => {
       try {
-        LogBox.ignoreAllLogs();
-
         let validatedData;
         try {
           validatedData = validateBackupData(importData);
@@ -155,11 +162,15 @@ export const useExportImport = ({
         return;
       }
 
-      disableBackupNotifications();
-
       let completed = false;
+      let temporaryFileUri: string | null = null;
 
       try {
+        if (exportEncrypted && !exportPassword) {
+          alert(t('error'), t('enter_encryption_password_error'));
+          return;
+        }
+
         const passwords = await Storage.getAllPasswords();
         const notes = await Storage.getNotes();
 
@@ -185,7 +196,11 @@ export const useExportImport = ({
 
         const filePrefix = exportEncrypted ? 'keysoft_backup_encrypted_' : 'keysoft_backup_';
         const fileExtension = exportEncrypted ? '.ksx' : '.json';
-        const fileUri = `${FileSystem.documentDirectory}${filePrefix}${new Date().toISOString().split('T')[0]}${fileExtension}`;
+        const exportDirectory = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+        if (!exportDirectory) {
+          throw new Error('Export directory unavailable');
+        }
+        temporaryFileUri = `${exportDirectory}${filePrefix}${new Date().toISOString().split('T')[0]}${fileExtension}`;
 
         alert(t('export_in_progress'), t('export_preparing_file'), [
           {
@@ -197,7 +212,7 @@ export const useExportImport = ({
           },
         ]);
 
-        await FileSystem.writeAsStringAsync(fileUri, jsonData);
+        await FileSystem.writeAsStringAsync(temporaryFileUri, jsonData);
 
         const isAvailable = await Sharing.isAvailableAsync();
 
@@ -223,11 +238,10 @@ export const useExportImport = ({
                 text: t('share'),
                 onPress: async () => {
                   try {
-                    LogBox.ignoreAllLogs();
                     const mimeType = exportEncrypted
                       ? 'application/octet-stream'
                       : 'application/json';
-                    await Sharing.shareAsync(fileUri, {
+                    await Sharing.shareAsync(temporaryFileUri!, {
                       mimeType,
                       dialogTitle: exportEncrypted
                         ? `${t('export_data_title')} (${t('encrypted')})`
@@ -238,8 +252,6 @@ export const useExportImport = ({
                   } catch (error) {
                     Logger.error('Errore durante la condivisione:', error);
                     resolve(false);
-                  } finally {
-                    LogBox.ignoreAllLogs();
                   }
                 },
               },
@@ -266,17 +278,18 @@ export const useExportImport = ({
       } catch (error) {
         Logger.error("Errore durante l'esportazione:", error);
         alert(t('error'), t('export_error'));
+      } finally {
+        setExportPassword('');
+        if (temporaryFileUri) {
+          try {
+            await FileSystem.deleteAsync(temporaryFileUri, { idempotent: true });
+          } catch (cleanupError) {
+            Logger.warn('Impossibile eliminare il file temporaneo di esportazione', cleanupError);
+          }
+        }
       }
     },
-    [
-      exportEncrypted,
-      exportPassword,
-      preferences,
-      setPreferences,
-      disableBackupNotifications,
-      t,
-      alert,
-    ],
+    [exportEncrypted, exportPassword, preferences, setPreferences, t, alert],
   );
 
   const handleImportPasswords = useCallback(async () => {
@@ -287,8 +300,6 @@ export const useExportImport = ({
           text: t('import'),
           onPress: async () => {
             try {
-              LogBox.ignoreAllLogs();
-
               const result = await DocumentPicker.getDocumentAsync({
                 type: ['application/json', '*/*'],
                 copyToCacheDirectory: true,
@@ -300,11 +311,17 @@ export const useExportImport = ({
                 return;
               }
 
-              const fileUri = result.assets[0].uri;
-              const fileName = result.assets[0].name || '';
+              const selectedFile = result.assets[0];
+              const fileUri = selectedFile.uri;
+              const fileName = selectedFile.name || '';
 
               if (!fileName.endsWith('.json') && !fileName.endsWith('.ksx')) {
                 alert(t('error'), t('unsupported_file'));
+                return;
+              }
+
+              if (!isBackupFileSizeAllowed(selectedFile.size)) {
+                alert(t('error'), t('import_invalid_file'));
                 return;
               }
 
@@ -314,6 +331,11 @@ export const useExportImport = ({
                 fileContent = await response.text();
               } else {
                 fileContent = await FileSystem.readAsStringAsync(fileUri);
+              }
+
+              if (fileContent.length > MAX_BACKUP_FILE_SIZE_BYTES) {
+                alert(t('error'), t('import_invalid_file'));
+                return;
               }
 
               const parsedData = JSON.parse(fileContent);
@@ -341,8 +363,6 @@ export const useExportImport = ({
 
   const handleDecryptAndImport = useCallback(async () => {
     try {
-      LogBox.ignoreAllLogs();
-
       if (!importPassword || !importFileContent) {
         showImportPasswordError(t('invalid_decryption_password'));
         return;
@@ -385,7 +405,7 @@ export const useExportImport = ({
     importFileContent,
     setImportFileContent,
     showImportPasswordDialog,
-    setShowImportPasswordDialog,
+    closeImportPasswordDialog,
     handleImportPasswords,
     handleDecryptAndImport,
     processImport,

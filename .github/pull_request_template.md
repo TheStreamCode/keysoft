@@ -4,10 +4,13 @@
 
 ## Verification
 
+- [ ] `bun run format:check`
 - [ ] `bun run typecheck`
 - [ ] `bun run lint`
-- [ ] `bun run test`
+- [ ] `bun run test:ci`
 - [ ] `bunx expo-doctor`
+- [ ] `bun audit --audit-level=critical`
+- [ ] Android export completed when dependencies, Expo/native config, or release code changed.
 
 ## Security/Release Notes
 

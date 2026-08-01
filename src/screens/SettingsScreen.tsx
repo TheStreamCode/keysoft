@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Image,
   TextInput,
   Linking,
 } from 'react-native';
@@ -29,11 +28,10 @@ import { useAlert } from '../contexts/AlertContext';
 import AutoLockService from '../services/utils/autoLockService';
 import ClipboardService from '../services/utils/clipboardService';
 import { copyPlainTextWithFeedback } from '../utils/clipboardUtils';
-import NotificationService, { NotificationType } from '../services/utils/notificationService';
+import { NotificationType } from '../services/utils/notificationService';
 import Constants from 'expo-constants';
 import { ListItem } from '../components/ui/list-item';
 import UISwitch from '../components/ui/switch';
-import Divider from '../components/ui/divider';
 import BottomSheet, { BottomSheetOption, BottomSheetButton } from '../components/ui/bottom-sheet';
 import { usePinManagement } from '../hooks/settings/usePinManagement';
 import {
@@ -47,36 +45,6 @@ import { ProfileAvatar } from '../components/ProfileAvatar';
 import { Dialog } from '../components/ui/dialog';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
-
-// Static flag tracking whether the notification has already been disabled
-// It stays active even if the component is remounted
-let isNotificationDisabled = false;
-
-// Temporarily disable backup notifications
-function disableBackupNotifications() {
-  if (!isNotificationDisabled) {
-    // Save the original method only once
-    const originalMethod = NotificationService.sendBackupReminder;
-
-    // Replace the method with a no-op implementation
-    NotificationService.sendBackupReminder = async () => {
-      Logger.debug('Notifica di backup disabilitata permanentemente');
-      return null;
-    };
-
-    // Set a flag indicating that notifications were disabled
-    isNotificationDisabled = true;
-
-    // Restore the original method after 5 seconds
-    setTimeout(() => {
-      if (isNotificationDisabled) {
-        NotificationService.sendBackupReminder = originalMethod;
-        isNotificationDisabled = false;
-        Logger.debug('Notifica di backup ripristinata dopo timeout');
-      }
-    }, 5000);
-  }
-}
 
 // defaultNotificationSettings is now exported by the useNotificationSettings hook
 
@@ -98,7 +66,7 @@ const SettingsScreen: React.FC = () => {
 
   const [showAutoLockOptions, setShowAutoLockOptions] = useState(false);
   const [showClipboardOptions, setShowClipboardOptions] = useState(false);
-  // showNotificationOptions and notificationSettings are now managed by useNotificationSettings (see below)
+  // Notification settings are managed by useNotificationSettings (see below)
 
   const { logout, updateMasterPassword, enableBiometrics } = useAuth();
   const { theme, isDarkMode, setThemeMode, themeMode } = useTheme();
@@ -163,17 +131,6 @@ const SettingsScreen: React.FC = () => {
 
   // Avatar synchronization is handled internally by useProfileForm
 
-  // Disable backup notifications immediately when the component mounts
-  // to prevent unwanted notifications
-  useEffect(() => {
-    disableBackupNotifications();
-
-    return () => {
-      // If the component unmounts before the timeout,
-      // the restore timer will re-enable notifications
-    };
-  }, []);
-
   // Add an effect to handle the initial layout phase
   useEffect(() => {
     // Use a short timeout to ensure the layout is calculated correctly
@@ -185,13 +142,15 @@ const SettingsScreen: React.FC = () => {
   }, []);
 
   const savePreferences = useCallback(
-    async (newPreferences: UserPreferences) => {
+    async (newPreferences: UserPreferences): Promise<boolean> => {
       try {
         await Storage.saveUserPreferences(newPreferences);
         setPreferences(newPreferences);
+        return true;
       } catch (error) {
         Logger.error('Errore durante il salvataggio delle preferenze:', error);
         alert(t('error'), t('preferences_save_error'));
+        return false;
       }
     },
     [t, alert],
@@ -260,22 +219,16 @@ const SettingsScreen: React.FC = () => {
     loadPreferences();
   }, [loadPreferences]);
 
-  // Notification settings hook (replaces notificationSettings state plus handleToggleNotification).
+  // Notification settings hook.
   // Declare it after loadPreferences so it can be passed as reloadPreferences.
-  const notifications = useNotificationSettings({
-    preferences,
-    setPreferences,
-    reloadPreferences: loadPreferences,
-    t,
-    alert,
-  });
-  const {
-    showOptions: showNotificationOptions,
-    setShowOptions: setShowNotificationOptions,
-    settings: notificationSettings,
-    setSettings: setNotificationSettings,
-    toggleNotification: handleToggleNotification,
-  } = notifications;
+  const { settings: notificationSettings, setSettings: setNotificationSettings } =
+    useNotificationSettings({
+      preferences,
+      setPreferences,
+      reloadPreferences: loadPreferences,
+      t,
+      alert,
+    });
 
   const handleToggleSecurityReminders = useCallback(
     async (value: boolean) => {
@@ -324,7 +277,6 @@ const SettingsScreen: React.FC = () => {
   const exportImport = useExportImport({
     preferences,
     setPreferences,
-    disableBackupNotifications,
     t,
     alert,
   });
@@ -339,7 +291,7 @@ const SettingsScreen: React.FC = () => {
     importPassword,
     setImportPassword,
     showImportPasswordDialog,
-    setShowImportPasswordDialog,
+    closeImportPasswordDialog,
     handleImportPasswords,
     handleDecryptAndImport,
   } = exportImport;
@@ -428,11 +380,9 @@ const SettingsScreen: React.FC = () => {
         screenshotProtectionEnabled: value,
       };
 
-      // Update local state
-      setPreferences(updatedPreferences);
-
       // Save the updated preferences
-      await savePreferences(updatedPreferences);
+      const isSaved = await savePreferences(updatedPreferences);
+      if (!isSaved) return;
 
       // Apply screenshot protection immediately
       if (value) {
@@ -450,40 +400,32 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleChangeAutoLockTimeout = (value: number) => {
+  const handleChangeAutoLockTimeout = async (value: number) => {
     if (!preferences) return;
 
-    setIsSaving(true);
     const updatedPreferences = {
       ...preferences,
       autoLockTimeout: value,
     };
 
-    // Save the updated preferences, not the original object
-    savePreferences(updatedPreferences);
-
-    // Also update local state
-    setPreferences(updatedPreferences);
+    const isSaved = await savePreferences(updatedPreferences);
+    if (!isSaved) return;
 
     // Update the auto-lock service timeout
     AutoLockService.updateTimeout(value);
     Logger.debug(`SettingsScreen: Timeout blocco automatico aggiornato a ${value} secondi`);
   };
 
-  const handleChangeClipboardClearTimeout = (value: number) => {
+  const handleChangeClipboardClearTimeout = async (value: number) => {
     if (!preferences) return;
 
-    setIsSaving(true);
     const updatedPreferences = {
       ...preferences,
       clipboardClearTimeout: value,
     };
 
-    // Save the updated preferences, not the original object
-    savePreferences(updatedPreferences);
-
-    // Also update local state
-    setPreferences(updatedPreferences);
+    const isSaved = await savePreferences(updatedPreferences);
+    if (!isSaved) return;
 
     // Update the clipboard service timeout
     ClipboardService.updateDefaultTimeout(value);
@@ -552,7 +494,6 @@ const SettingsScreen: React.FC = () => {
   // handleExportPasswords, performExport, handleImportPasswords, processImport,
   // and handleDecryptAndImport are provided by the useExportImport hook
 
-  // handleToggleNotification is provided by the useNotificationSettings hook
   // handleSaveProfile, pickImageFromGallery, and takePhoto are provided by the useProfileForm hook
 
   // Render the image source selection modal
@@ -1019,489 +960,6 @@ const SettingsScreen: React.FC = () => {
         </Reveal>
       </ScrollView>
 
-      <ScrollView
-        style={styles.legacyScrollView}
-        contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 100 }]}
-      >
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('profile')}
-          </Text>
-
-          <ListItem
-            title={preferences?.username || t('user')}
-            description={t('edit_profile')}
-            onPress={openProfileModal}
-            leftIcon={
-              <ProfileAvatar
-                name={preferences?.username || t('user')}
-                size={46}
-                uri={preferences?.avatar}
-              />
-            }
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('personalization')}
-          </Text>
-
-          <ListItem
-            title={t('theme')}
-            description={getThemeText()}
-            leftIcon={
-              <Ionicons
-                name={themeMode === 'light' ? 'sunny' : themeMode === 'dark' ? 'moon' : 'settings'}
-                size={24}
-                color={
-                  themeMode === 'light' ? '#FFA500' : themeMode === 'dark' ? '#4169E1' : '#9B59B6'
-                }
-              />
-            }
-            onPress={() => setShowThemeOptions(true)}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-          <Divider />
-
-          <ListItem
-            title={t('language')}
-            description={
-              language === 'system'
-                ? t('language_system')
-                : language === 'it'
-                  ? t('language_italian')
-                  : t('language_english')
-            }
-            leftIcon={
-              <Image
-                source={
-                  language === 'system'
-                    ? require('../../assets/world-flag.png')
-                    : language === 'it'
-                      ? require('../../assets/ita-flag.png')
-                      : require('../../assets/gb-flag.png')
-                }
-                style={{ width: 24, height: 24, borderRadius: 2 }}
-              />
-            }
-            onPress={() => setShowLanguageOptions(true)}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('security')}
-          </Text>
-
-          <ListItem
-            title={t('change_pin')}
-            description={t('change_pin_description')}
-            onPress={() => setShowChangePinModal(true)}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-
-          <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
-                {t('biometrics')}
-              </Text>
-              <Text style={[styles.settingDescription, { color: theme.colors.text + '80' }]}>
-                {t('biometrics_description')}
-              </Text>
-            </View>
-            <UISwitch
-              value={preferences?.biometricsEnabled || false}
-              onValueChange={handleToggleBiometrics}
-              accessibilityLabel={t('biometrics')}
-            />
-          </View>
-
-          <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
-            <View style={styles.settingTextContainer}>
-              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
-                {t('screenshot_protection')}
-              </Text>
-              <Text style={[styles.settingDescription, { color: theme.colors.text + '80' }]}>
-                {t('screenshot_protection_description')}
-              </Text>
-            </View>
-            <UISwitch
-              value={preferences?.screenshotProtectionEnabled || false}
-              onValueChange={handleToggleScreenshotProtection}
-              accessibilityLabel={t('screenshot_protection')}
-            />
-          </View>
-
-          <ListItem
-            title={t('auto_lock')}
-            description={t('auto_lock_description')}
-            onPress={() => setShowAutoLockOptions(true)}
-            rightIcon={
-              <Text style={[styles.pickerButtonText, { color: theme.colors.primary }]}>
-                {getAutoLockTimeoutText()}
-              </Text>
-            }
-          />
-
-          <ListItem
-            title={t('clipboard_timeout')}
-            description={t('clipboard_timeout_description')}
-            onPress={() => setShowClipboardOptions(true)}
-            rightIcon={
-              <Text style={[styles.pickerButtonText, { color: theme.colors.primary }]}>
-                {preferences?.clipboardClearTimeout === 0
-                  ? t('clipboard_never')
-                  : preferences?.clipboardClearTimeout === 60
-                    ? t('clipboard_1min')
-                    : preferences?.clipboardClearTimeout === 300
-                      ? t('clipboard_5min')
-                      : `${Math.floor((preferences?.clipboardClearTimeout || 0) / 60)} min`}
-              </Text>
-            }
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('notifications')}
-          </Text>
-
-          <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
-            <TouchableOpacity
-              style={styles.settingItemTouchable}
-              onPress={() => setShowNotificationOptions(!showNotificationOptions)}
-            >
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
-                  {t('notification_types')}
-                </Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.text + '80' }]}>
-                  {t('notification_types_description')}
-                </Text>
-              </View>
-              <Ionicons
-                name={showNotificationOptions ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={theme.colors.text}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {showNotificationOptions && (
-            <View
-              style={[
-                styles.notificationOptionsContainer,
-                { borderBottomColor: theme.colors.border },
-              ]}
-            >
-              {Object.entries(notificationSettings)
-                // Filter out auto-lock and clipboard-timeout notifications
-                .filter(
-                  ([type, _]) =>
-                    type !== NotificationType.AUTO_LOCK_WARNING &&
-                    type !== NotificationType.CLIPBOARD_CLEAR_WARNING,
-                )
-                .map(([type, enabled], index, filteredArray) => {
-                  const notificationType = type as NotificationType;
-                  let icon = 'information-circle-outline';
-                  let label = t('info');
-
-                  switch (notificationType) {
-                    case NotificationType.PASSWORD_EXPIRY:
-                      icon = 'key-outline';
-                      label = t('notification_expired_passwords');
-                      break;
-                    case NotificationType.WEAK_PASSWORD:
-                      icon = 'key-outline';
-                      label = t('notification_weak_passwords');
-                      break;
-                    case NotificationType.DUPLICATE_PASSWORD:
-                      icon = 'key-outline';
-                      label = t('notification_duplicate_passwords');
-                      break;
-                    case NotificationType.LOGIN_SUCCESS:
-                      icon = 'log-in-outline';
-                      label = t('notification_login_success');
-                      break;
-                    case NotificationType.LOGIN_FAILURE:
-                      icon = 'log-in-outline';
-                      label = t('notification_login_failure');
-                      break;
-                    case NotificationType.BACKUP_REMINDER:
-                      icon = 'cloud-upload-outline';
-                      label = t('notification_backup_reminder');
-                      break;
-                    case NotificationType.BACKUP_SUCCESS:
-                      icon = 'cloud-download-outline';
-                      label = t('notification_backup_success');
-                      break;
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.notificationOptionItem,
-                        index < filteredArray.length - 1
-                          ? { borderBottomColor: theme.colors.border }
-                          : { borderBottomWidth: 0 },
-                      ]}
-                      onPress={() => handleToggleNotification(notificationType, !enabled)}
-                    >
-                      <View style={styles.notificationOptionTextContainer}>
-                        <Ionicons
-                          name={icon as any}
-                          size={18}
-                          color={theme.colors.text}
-                          style={styles.notificationOptionIcon}
-                        />
-                        <Text style={[styles.notificationOptionText, { color: theme.colors.text }]}>
-                          {label}
-                        </Text>
-                      </View>
-                      <UISwitch
-                        value={enabled}
-                        onValueChange={(value) => handleToggleNotification(notificationType, value)}
-                        accessibilityLabel={label}
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-            </View>
-          )}
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('data')}
-          </Text>
-
-          <ListItem
-            title={t('export_data')}
-            description={t('export_data_description')}
-            onPress={handleExportPasswords}
-            leftIcon={<Ionicons name="arrow-down" size={20} color={theme.colors.primary} />}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-
-          <ListItem
-            title={t('import_data')}
-            description={t('import_data_description')}
-            onPress={handleImportPasswords}
-            leftIcon={<Ionicons name="arrow-up" size={20} color={theme.colors.primary} />}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('contribution')}
-          </Text>
-
-          <ListItem
-            title={t('sponsor_github')}
-            description={t('sponsor_github_description')}
-            onPress={() => Linking.openURL('https://github.com/sponsors/TheStreamCode')}
-            leftIcon={<Text style={{ fontSize: 18 }}>❤️</Text>}
-            rightIcon={<Ionicons name="open-outline" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('account')}
-          </Text>
-
-          <ListItem
-            title={t('logout')}
-            description={t('logout_description')}
-            onPress={handleLogout}
-            leftIcon={<Ionicons name="log-out-outline" size={20} color={theme.colors.error} />}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-
-          <ListItem
-            title={t('reset_app')}
-            description={t('reset_app_description')}
-            onPress={() => setShowResetModal(true)}
-            leftIcon={<Ionicons name="refresh-outline" size={20} color={theme.colors.error} />}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: theme.colors.background, borderColor: theme.colors.border },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.colors.text,
-                borderBottomColor: theme.colors.border,
-              },
-            ]}
-          >
-            {t('information')}
-          </Text>
-
-          <ListItem
-            title={t('version')}
-            rightIcon={
-              <Text style={{ color: theme.colors.textSecondary }}>
-                {Constants.expoConfig?.version || packageJson.version || '1.6'}
-              </Text>
-            }
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-
-          <ListItem
-            title={t('support')}
-            description={t('support_description', { email: SUPPORT_EMAIL })}
-            onPress={handleSupportPress}
-            rightIcon={<Ionicons name="mail-outline" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-
-          <ListItem
-            title={t('vault_health_title')}
-            description={t('vault_health_description')}
-            onPress={() => navigation.navigate('VaultHealth')}
-            leftIcon={
-              <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
-            }
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-
-          <ListItem
-            title={t('privacy_policy')}
-            description={t('privacy_policy_description')}
-            onPress={() => navigation.navigate('PrivacyPolicy')}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-          />
-          <ListItem
-            title={t('open_source')}
-            description={t('open_source_description')}
-            onPress={() => navigation.navigate('OpenSource')}
-            rightIcon={<Ionicons name="chevron-forward" size={20} color={theme.colors.text} />}
-          />
-        </View>
-      </ScrollView>
-
       {/* Change PIN - BottomSheet */}
       <BottomSheet
         visible={showChangePinModal}
@@ -1792,7 +1250,7 @@ const SettingsScreen: React.FC = () => {
       {/* Import Decryption Password - BottomSheet */}
       <BottomSheet
         visible={showImportPasswordDialog}
-        onClose={() => setShowImportPasswordDialog(false)}
+        onClose={closeImportPasswordDialog}
         title={t('import_encrypted')}
       >
         <View>
@@ -1835,7 +1293,7 @@ const SettingsScreen: React.FC = () => {
         <BottomSheetButton
           label={t('cancel')}
           variant="secondary"
-          onPress={() => setShowImportPasswordDialog(false)}
+          onPress={closeImportPasswordDialog}
         />
       </BottomSheet>
 
@@ -2021,22 +1479,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  backButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
   title: {
     textAlign: 'left',
     letterSpacing: -0.35,
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  legacyScrollView: {
-    display: 'none',
   },
   compactScrollView: { flex: 1 },
   compactScrollContent: {
@@ -2054,15 +1499,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  compactAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  compactAvatarText: { fontSize: 13, fontWeight: '700' },
   compactProfileCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
   compactProfileName: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
   compactProfileMeta: { fontSize: 10, lineHeight: 14, marginTop: 1 },
@@ -2080,98 +1516,6 @@ const styles = StyleSheet.create({
   compactRow: { borderBottomWidth: StyleSheet.hairlineWidth },
   compactValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   compactValue: { fontSize: 10, lineHeight: 14 },
-  scrollViewContent: {
-    padding: AppTheme.spacing.l,
-  },
-  section: {
-    marginBottom: AppTheme.spacing.l,
-    borderRadius: AppTheme.borderRadius.medium,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  sectionTitle: {
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
-    padding: AppTheme.spacing.l,
-    borderBottomWidth: 1,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: AppTheme.spacing.l,
-    borderBottomWidth: 1,
-  },
-  settingItemTouchable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  settingTextContainer: {
-    flex: 1,
-    marginRight: AppTheme.spacing.m,
-  },
-  settingLabel: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  settingDescription: {
-    fontSize: AppTheme.fonts.sizes.small,
-  },
-  pickerButton: {
-    paddingHorizontal: AppTheme.spacing.m,
-    paddingVertical: AppTheme.spacing.s,
-    borderRadius: AppTheme.borderRadius.medium,
-  },
-  pickerButtonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '85%',
-    maxWidth: 400, // Fix: limita la larghezza massima
-    borderRadius: AppTheme.borderRadius.medium,
-    padding: AppTheme.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  // Stili specifici per il modal del profilo
-  profileModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: AppTheme.spacing.l,
-  },
-  profileModalContent: {
-    width: '100%',
-    maxWidth: 340,
-    borderRadius: AppTheme.borderRadius.large,
-    padding: AppTheme.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    // Ensure content does not overflow
-    maxHeight: '80%',
-  },
   profileInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2197,12 +1541,6 @@ const styles = StyleSheet.create({
     height: 46, // Altezza leggermente inferiore al container
     textAlignVertical: 'center', // Android
   },
-  modalTitle: {
-    fontSize: AppTheme.fonts.sizes.large,
-    fontWeight: 'bold',
-    marginBottom: AppTheme.spacing.m, // Ridotto da l a m
-    textAlign: 'center',
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2225,115 +1563,6 @@ const styles = StyleSheet.create({
     fontSize: AppTheme.fonts.sizes.small,
     marginBottom: AppTheme.spacing.m,
     textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: AppTheme.spacing.m,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: AppTheme.spacing.m,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: AppTheme.borderRadius.medium,
-    marginHorizontal: AppTheme.spacing.xs,
-  },
-  cancelButton: {
-    borderWidth: 1,
-    borderColor: AppTheme.colors.border,
-  },
-  cancelButtonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
-  confirmButton: {
-    backgroundColor: AppTheme.colors.primary,
-    marginLeft: AppTheme.spacing.s,
-  },
-  confirmButtonText: {
-    color: AppTheme.colors.textLight,
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoutText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'medium',
-    color: AppTheme.colors.error,
-    textAlign: 'center',
-  },
-  selectionOptionItem: {
-    padding: AppTheme.spacing.l,
-    borderBottomWidth: 1,
-  },
-  selectionOptionText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    textAlign: 'center',
-  },
-  selectionCancelButton: {
-    padding: AppTheme.spacing.l,
-    borderTopWidth: 1,
-    alignItems: 'center',
-  },
-  selectionCancelButtonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
-  notificationOptionsContainer: {
-    borderBottomWidth: 1,
-    paddingHorizontal: AppTheme.spacing.l,
-  },
-  notificationOptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: AppTheme.spacing.m,
-    borderBottomWidth: 1,
-  },
-  notificationOptionTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: AppTheme.spacing.m,
-  },
-  notificationOptionIcon: {
-    marginRight: AppTheme.spacing.s,
-  },
-  notificationOptionText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-  },
-  settingItemText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    marginLeft: AppTheme.spacing.m,
-  },
-  profileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileAvatarContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    overflow: 'hidden',
-    backgroundColor: AppTheme.colors.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-    borderWidth: 2,
-    borderColor: AppTheme.colors.primary,
-  },
-  profileTextContainer: {
-    marginLeft: AppTheme.spacing.m,
-    flex: 1,
-  },
-  profileName: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
   },
   avatarContainer: {
     alignItems: 'center',
@@ -2369,193 +1598,21 @@ const styles = StyleSheet.create({
     zIndex: 10,
     ...AppTheme.shadows.small,
   },
-  profileAvatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40, // Updated for the new size
-  },
-  selectionItem: {
-    padding: AppTheme.spacing.m,
-    marginBottom: AppTheme.spacing.s,
-  },
-  selectionItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  selectionItemText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-  },
   pinRequirement: {
     fontSize: AppTheme.fonts.sizes.small,
     marginBottom: AppTheme.spacing.m,
     textAlign: 'center',
-  },
-  sectionContent: {
-    padding: AppTheme.spacing.m,
-  },
-  notificationSubSettingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: AppTheme.spacing.s,
-    paddingHorizontal: AppTheme.spacing.m,
-    marginLeft: AppTheme.spacing.l,
-    marginBottom: AppTheme.spacing.xs,
-  },
-  notificationSubSettingLabel: {
-    fontSize: AppTheme.fonts.sizes.small,
-    fontWeight: 'medium',
-  },
-  modalSelectionItemText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    textAlign: 'center',
-  },
-  supportContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  coffeeEmoji: {
-    fontSize: 24,
-    marginRight: AppTheme.spacing.m,
-  },
-  // Stili per i dialog
-  modalBody: {
-    padding: AppTheme.spacing.m,
   },
   modalText: {
     fontSize: AppTheme.fonts.sizes.medium,
     marginBottom: AppTheme.spacing.m,
     // Color is not specified here because it is set dynamically in JSX
   },
-  optionRow: {
-    marginBottom: AppTheme.spacing.m,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: AppTheme.spacing.s,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    // borderColor is set dynamically in JSX based on the theme
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: AppTheme.spacing.s,
-  },
-  checkboxLabel: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    // Color is not specified here because it is set dynamically in JSX
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderRadius: AppTheme.borderRadius.small,
-    paddingHorizontal: AppTheme.spacing.m,
-    fontSize: AppTheme.fonts.sizes.medium,
-  },
-  button: {
-    paddingVertical: AppTheme.spacing.m,
-    paddingHorizontal: AppTheme.spacing.l,
-    borderRadius: AppTheme.borderRadius.medium,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-    // Color is set dynamically in JSX based on the theme
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: AppTheme.spacing.m,
-    borderBottomWidth: 1,
-  },
-  formGroup: {
-    marginBottom: AppTheme.spacing.m,
-  },
-  label: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-    marginBottom: AppTheme.spacing.s,
-    // Color is not specified here because it is set dynamically in JSX
-  },
-  selectionOptionsContainer: {
-    padding: AppTheme.spacing.m,
-  },
-  saveButton: {
-    backgroundColor: AppTheme.colors.primary,
-    marginLeft: AppTheme.spacing.s,
-  },
-  saveButtonText: {
-    color: AppTheme.colors.textLight,
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
-  },
-  modalOption: {
-    padding: AppTheme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: AppTheme.colors.border,
-  },
-  modalOptionText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    color: AppTheme.colors.text,
-  },
-  themeOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: AppTheme.spacing.m,
-    borderBottomWidth: 1,
-  },
   modalDescription: {
     fontSize: AppTheme.fonts.sizes.medium,
     lineHeight: AppTheme.fonts.sizes.medium * 1.5,
     textAlign: 'left',
   },
-  modalButtonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: '600',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingCard: {
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  loadingSubtext: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
 });
+
 export default SettingsScreen;

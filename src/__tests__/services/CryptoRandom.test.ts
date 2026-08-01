@@ -93,15 +93,22 @@ describe('CryptoRandom', () => {
     });
 
     it('should throw for zero maxExclusive', () => {
-      expect(() => randomInt(0)).toThrow('maxExclusive must be a positive number');
+      expect(() => randomInt(0)).toThrow('maxExclusive must be an integer between 1 and 2^32');
     });
 
     it('should throw for negative maxExclusive', () => {
-      expect(() => randomInt(-1)).toThrow('maxExclusive must be a positive number');
+      expect(() => randomInt(-1)).toThrow('maxExclusive must be an integer between 1 and 2^32');
     });
 
     it('should throw for NaN maxExclusive', () => {
-      expect(() => randomInt(NaN)).toThrow('maxExclusive must be a positive number');
+      expect(() => randomInt(NaN)).toThrow('maxExclusive must be an integer between 1 and 2^32');
+    });
+
+    it('should reject fractional and out-of-range bounds', () => {
+      expect(() => randomInt(1.5)).toThrow('maxExclusive must be an integer between 1 and 2^32');
+      expect(() => randomInt(0x100000001)).toThrow(
+        'maxExclusive must be an integer between 1 and 2^32',
+      );
     });
 
     it('should return values in range for larger maxExclusive', () => {

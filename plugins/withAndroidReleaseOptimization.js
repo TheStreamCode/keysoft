@@ -1,4 +1,4 @@
-const { withAppBuildGradle, withGradleProperties } = require('@expo/config-plugins');
+const { withAppBuildGradle, withGradleProperties } = require('expo/config-plugins');
 
 const OPTIMIZED_RESOURCE_SHRINKING_KEY = 'android.r8.optimizedResourceShrinking';
 const DEFAULT_PROGUARD_PATTERN = /getDefaultProguardFile\((['"])proguard-android\.txt\1\)/g;

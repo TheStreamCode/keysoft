@@ -1,15 +1,21 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-07-26
+Latest update: 2026-08-01
 
-Release target: Keysoft 3.1.0, Android versionCode 127 through EAS remote auto-increment, with iOS simulator readiness.
+Production rebuild target: Keysoft 3.1.0, Android versionCode 128 through EAS remote auto-increment, with iOS simulator readiness. The latest completed production baseline is build 127.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 2026-08-01 Repository Review
+
+The whole repository was re-reviewed for security, architecture, performance, maintainability, dependencies, documentation, and GitHub automation. Storage writes now persist before updating decrypted caches, reset is scoped to Keysoft-owned records, KDF and backup inputs are bounded, production error logs omit diagnostic objects, backup secrets and temporary files are cleaned up, and verifier checks use the constant-time helper. The fully rendered hidden Settings tree and other unused source/configuration files were removed without changing the visible interface.
+
+Expo SDK 57 dependencies were aligned to compatible patches, four unused direct dependencies were removed, explicit configuration dependencies were declared, and the critical transitive `shell-quote` advisory was patched. The remaining Bun audit findings are lower-severity transitive dependencies in the Expo/Jest/ESLint toolchain and require supported upstream upgrades rather than forced incompatible majors. CI now uses deterministic tool versions, frozen installs, full-SHA action pins, least permissions, formatting, coverage tests, Expo health checks, and a critical vulnerability gate.
 
 ### 3.1.0 Update
 
@@ -103,10 +109,12 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 
 ## Verification Passed
 
+- `bun run format:check`
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test`: 29 suites, 180 tests
+- `bun run test:ci`: 29 suites, 189 tests
 - `bunx expo-doctor`: 20/20 checks
+- `bun audit --audit-level=critical`
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`
 

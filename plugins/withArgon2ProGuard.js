@@ -1,5 +1,5 @@
 // Plugin: fix Argon2 ProGuard + replace deprecated jcenter() with mavenCentral()
-const { withDangerousMod } = require('@expo/config-plugins');
+const { withDangerousMod } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 

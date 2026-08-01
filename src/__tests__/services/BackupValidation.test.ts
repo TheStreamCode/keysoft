@@ -1,4 +1,9 @@
-import { validateBackupData } from '../../services/import-export/backupValidation';
+import {
+  isBackupFileSizeAllowed,
+  MAX_BACKUP_FILE_SIZE_BYTES,
+  MAX_BACKUP_PASSWORDS,
+  validateBackupData,
+} from '../../services/import-export/backupValidation';
 
 describe('Backup import validation', () => {
   it('should normalize valid passwords and notes', () => {
@@ -61,5 +66,25 @@ describe('Backup import validation', () => {
         notes: [{ title: 'Recovery', content: 123 }],
       }),
     ).toThrow('Invalid backup data');
+  });
+
+  it('rejects oversized backup collections before import', () => {
+    const password = {
+      title: 'Email',
+      username: 'user@example.com',
+      password: 'secret',
+    };
+
+    expect(() =>
+      validateBackupData({
+        passwords: Array.from({ length: MAX_BACKUP_PASSWORDS + 1 }, () => password),
+      }),
+    ).toThrow('Invalid backup data');
+  });
+
+  it('bounds backup file sizes', () => {
+    expect(isBackupFileSizeAllowed(undefined)).toBe(true);
+    expect(isBackupFileSizeAllowed(MAX_BACKUP_FILE_SIZE_BYTES)).toBe(true);
+    expect(isBackupFileSizeAllowed(MAX_BACKUP_FILE_SIZE_BYTES + 1)).toBe(false);
   });
 });

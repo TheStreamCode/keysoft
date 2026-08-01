@@ -2,14 +2,12 @@
 
 ## Release Readiness Checklist
 
-Current release target: Keysoft 3.1.0, Android versionCode 127 through EAS remote auto-increment. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current production rebuild target: Keysoft 3.1.0, Android versionCode 128 through EAS remote auto-increment. The latest completed production artifact is build 127. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
 
 Before preparing a release:
 
-- `bun run typecheck` passes.
-- `bun run lint` passes.
-- `bun run test` passes.
-- `bunx expo-doctor` passes.
+- `bun run verify` passes (format, typecheck, lint, coverage-enabled tests, and `expo-doctor`).
+- `bun run deps:audit` has no critical finding; remaining lower-severity transitive advisories are reviewed against the supported Expo toolchain.
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export` passes.
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export` passes.
 - Architecture and i18n regression tests are included in the passing test run.
@@ -24,7 +22,7 @@ Before preparing a release:
 - The in-app and public Mikesoft Keysoft policies show the same fixed effective date, dedicated `keysoft@mikesoft.it` contact, implemented permissions/features, Android release status, and iOS simulator-only boundary.
 - The published policy carries the same data-deletion section as the in-app notice. Google Play mandates a deletion path only for apps that create accounts, which Keysoft does not, so this disclosure is voluntary and easy to drop by accident.
 - Contact details are read from `src/constants/contact.ts`; no screen or dictionary carries its own copy of the support address or the site.
-- The visible compact Settings layout exposes email Support, Privacy Policy, Open source and legal, and GitHub Sponsors; an entry present only in the hidden legacy layout does not satisfy this check.
+- The compact Settings layout exposes email Support, Privacy Policy, Open source and legal, and GitHub Sponsors.
 - Settings > Support opens a `mailto:` intent directly and copies the address when the intent is refused. Do not reintroduce a `Linking.canOpenURL` gate: package visibility makes it report false on Android 11+ unless the `mailto` scheme is declared in `<queries>`.
 - Launcher, Android adaptive, splash, web favicon, and onboarding all use the original Keysoft shield-and-eye artwork; no obsolete alternate logo is packaged.
 - Verify Settings > Open source and legal while offline: it identifies Keysoft as Apache-2.0 and displays the complete bundled license. Confirm source, notices, and trademark links.
@@ -39,7 +37,7 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.1.0 release, `app.config.js` uses `version: "3.1.0"`, `android.versionCode: 127`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source, whose published baseline is build 126, so `autoIncrement` produces store build 127. The aligned local value remains visible through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, 3.1.0 has a distinct native runtime.
+For the current 3.1.0 production rebuild, `app.config.js` uses `version: "3.1.0"`, `android.versionCode: 127`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The Android EAS production profile uses the remote version source, whose latest completed baseline is build 127, so `autoIncrement` produces store build 128. The local value remains visible through `expo-constants` but does not control EAS production builds. Because EAS Update uses the `appVersion` runtime policy, the rebuild remains on native runtime 3.1.0.
 
 Read the current remote value with `bunx eas-cli build:version:get --platform android` instead of assuming the baseline.
 

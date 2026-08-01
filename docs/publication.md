@@ -23,10 +23,9 @@ publicly reviewable.
   `SECURITY.md`, and `CONTRIBUTING.md`.
 - Run release verification:
   ```bash
-  bun run typecheck
-  bun run lint
-  bun run test
-  bunx expo-doctor
+  bun run verify
+  bun run deps:audit
+  bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
   ```
 
 ## Historical Secret Exposure
