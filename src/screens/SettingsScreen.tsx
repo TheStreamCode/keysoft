@@ -357,7 +357,7 @@ const SettingsScreen: React.FC = () => {
 
         // Verify that preferences were saved correctly
         const savedPreferences = await Storage.getUserPreferences();
-        Logger.debug('Preferenze salvate:', savedPreferences);
+        Logger.debug('Preferenze salvate con successo');
         Logger.debug(
           `Biometria disabilitata nelle preferenze salvate: ${!savedPreferences.biometricsEnabled}`,
         );

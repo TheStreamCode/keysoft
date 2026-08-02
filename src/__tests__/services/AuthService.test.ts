@@ -172,6 +172,55 @@ describe('AuthService', () => {
       expect(result).toBe(true);
       expect(AuthService.getIsAuthenticated()).toBe(true);
     });
+
+    it('restores the previous key when KDF metadata persistence fails', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.reEncryptAllData as jest.Mock).mockResolvedValue(undefined);
+      (StorageService.saveMasterKeyInfo as jest.Mock).mockRejectedValueOnce(
+        new Error('SecureStore unavailable'),
+      );
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(true);
+      expect(StorageService.reEncryptAllData).toHaveBeenNthCalledWith(1, newKey);
+      expect(StorageService.reEncryptAllData).toHaveBeenNthCalledWith(2, mockEncryptionKey);
+      expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith(mockEncryptionKey);
+      expect(AuthService.getIsAuthenticated()).toBe(true);
+    });
+
+    it('forces logout when KDF metadata persistence and rollback both fail', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.reEncryptAllData as jest.Mock)
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('rollback failed'));
+      (StorageService.saveMasterKeyInfo as jest.Mock).mockRejectedValueOnce(
+        new Error('SecureStore unavailable'),
+      );
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(false);
+      expect(AuthService.getIsAuthenticated()).toBe(false);
+      expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith('');
+      expect(AuthService.getLastAuthFailure()).toEqual(
+        expect.objectContaining({ reason: 'kdf_upgrade_rollback_failed' }),
+      );
+    });
   });
 
   describe('Biometrics', () => {

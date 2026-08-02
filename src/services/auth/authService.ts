@@ -20,6 +20,7 @@ export type AuthFailureReason =
   | 'derive_key_failed'
   | 'verifier_mismatch'
   | 'init_database_failed'
+  | 'kdf_upgrade_rollback_failed'
   | 'biometrics_unavailable'
   | 'biometrics_disabled'
   | 'biometric_key_unavailable'
@@ -110,17 +111,18 @@ async function disableBiometrics(
  * Argon2 parameters) to the current Argon2id parameters. Runs after a successful
  * password login while the vault is decrypted in memory. On any failure the vault is
  * left on its previous (working) key, so the user is never locked out and the upgrade
- * simply retries on the next login.
+ * simply retries on the next login. If both metadata persistence and rollback fail, the
+ * session is closed because continuing with an uncertain key would risk further writes.
  */
 async function upgradeVaultKdfIfLegacy(
   masterPassword: string,
   mkInfo: UserMasterKey,
-): Promise<void> {
-  if (!CryptoService.isNativeKdfAvailable()) return; // Expo Go: cannot derive Argon2
-  if (!CryptoService.isLegacyKdf(mkInfo)) return;
+): Promise<boolean> {
+  if (!CryptoService.isNativeKdfAvailable()) return true; // Expo Go: cannot derive Argon2
+  if (!CryptoService.isLegacyKdf(mkInfo)) return true;
 
   const currentKey = StorageService.getEncryptionKey();
-  if (!currentKey) return;
+  if (!currentKey) return true;
 
   try {
     Logger.info('AuthService: upgrading vault KDF to current Argon2id parameters');
@@ -134,8 +136,20 @@ async function upgradeVaultKdfIfLegacy(
       await StorageService.saveMasterKeyInfo(newMkInfo);
     } catch (error) {
       // Roll back to the previous key so storage and metadata stay consistent.
-      await StorageService.reEncryptAllData(currentKey);
-      StorageService.setEncryptionKey(currentKey);
+      try {
+        await StorageService.reEncryptAllData(currentKey);
+        StorageService.setEncryptionKey(currentKey);
+      } catch (rollbackError) {
+        Logger.error(
+          'AuthService: CRITICAL - KDF upgrade rollback failed. Forcing logout to protect vault integrity.',
+          rollbackError,
+        );
+        isAuthenticated = false;
+        masterKeyInfo = null;
+        StorageService.setEncryptionKey('');
+        setAuthFailure('kdf_upgrade_rollback_failed', 'Vault KDF upgrade rollback failed');
+        return false;
+      }
       throw error;
     }
 
@@ -156,8 +170,10 @@ async function upgradeVaultKdfIfLegacy(
     masterKeyInfo = newMkInfo;
     StorageService.setEncryptionKey(newKey);
     Logger.info('AuthService: vault KDF upgrade completed');
+    return true;
   } catch (error) {
     Logger.warn('AuthService: vault KDF upgrade skipped (will retry next login)', error);
+    return true;
   }
 }
 
@@ -328,8 +344,12 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
       isAuthenticated = true;
 
       // Transparently migrate legacy/heavy KDFs to the lighter OWASP Argon2id
-      // parameters now that the vault is unlocked. Best-effort: never fails login.
-      await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
+      // parameters now that the vault is unlocked. Recoverable failures do not fail login;
+      // an unrecoverable rollback closes the session to avoid using an uncertain key.
+      const kdfUpgradeSafe = await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
+      if (!kdfUpgradeSafe) {
+        return false;
+      }
 
       Logger.debug(`AuthService: password login completed in ${Date.now() - loginStartedAt}ms`);
 

@@ -299,7 +299,7 @@ class NotificationService {
     });
 
     this.notificationSettings = updatedSettings;
-    Logger.debug('Impostazioni notifiche aggiornate:', this.notificationSettings);
+    Logger.debug('Impostazioni notifiche aggiornate');
   }
 
   /**

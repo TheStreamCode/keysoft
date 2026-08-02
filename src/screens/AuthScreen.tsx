@@ -377,7 +377,10 @@ function getPinLoginFailureMessageKey(): string {
     return 'kdf_timeout_message';
   }
 
-  if (failure?.reason === 'init_database_failed') {
+  if (
+    failure?.reason === 'init_database_failed' ||
+    failure?.reason === 'kdf_upgrade_rollback_failed'
+  ) {
     return 'vault_init_error';
   }
 

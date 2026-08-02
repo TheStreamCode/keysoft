@@ -1,7 +1,7 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-08-01
+Latest update: 2026-08-02
 
 Published production release: Keysoft 3.3.0, Android versionCode 129, with iOS simulator readiness retained outside the App Store release scope.
 
@@ -10,6 +10,23 @@ Published production release: Keysoft 3.3.0, Android versionCode 129, with iOS s
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 2026-08-02 Follow-Up Review
+
+The repository was reviewed again after the 3.3.0 release without changing its design,
+assets, permissions, vault format, or distribution target. Master-key verifier writes now
+update their in-memory cache only after SecureStore persistence succeeds. The transparent
+legacy-KDF migration now distinguishes a recoverable upgrade failure from the exceptional
+case where both verifier persistence and rollback fail: recoverable failures keep the
+previous key, while a double failure closes the session and clears the in-memory key.
+Regression tests cover all three paths.
+
+The follow-up also removed structured objects and vault-count metadata from debug logging,
+made the shared debug sink message-only, removed two unreferenced password-hash helpers
+from the development web mock, and replaced its ambiguous special-character regex with a
+canonical-alphabet membership check. Intentional CodeQL false positives are documented
+in source only where a KDF-derived verifier is hashed or password-manager records are
+reversibly encrypted; those operations retain their existing compatibility formats.
 
 ### 2026-08-01 Repository Review
 
@@ -82,7 +99,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 - Evidence: Expo Go intentionally uses PBKDF2 fallback. `createMasterKeyInfo` stores the KDF metadata used at setup time.
 - Impact: Vaults created in Expo Go remain PBKDF2-backed even when later opened in an EAS/native build with Argon2 available.
 - Fix: Document that Expo Go is development-only for real vault creation, or add a post-login KDF upgrade/rekey flow when Argon2 becomes available.
-- Status: Remediated. A best-effort, non-destructive post-login KDF upgrade now rekeys legacy vaults (PBKDF2 or the old heavy Argon2 parameters) to the current Argon2id OWASP parameters (`memory = 19456` KiB, `iterations = 2`, `parallelism = 1`) on the next successful password login; on any failure the vault is left on its previous working key, so the user is never locked out. Expo Go remains development/smoke-test only for KDF validation.
+- Status: Remediated. A best-effort, non-destructive post-login KDF upgrade now rekeys legacy vaults (PBKDF2 or the old heavy Argon2 parameters) to the current Argon2id OWASP parameters (`memory = 19456` KiB, `iterations = 2`, `parallelism = 1`) on the next successful password login. Recoverable failures restore the previous key and retry later. If both verifier persistence and rollback fail, the session is closed and the in-memory key is cleared rather than continuing against uncertain storage. Expo Go remains development/smoke-test only for KDF validation.
 
 ### UX-2: Several Touch Targets Are Below The 44px Mobile Minimum
 
@@ -116,7 +133,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 - `bun run format:check`
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test:ci`: 29 suites, 189 tests
+- `bun run test:ci`: 30 suites, 199 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bun audit --audit-level=critical`
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`

@@ -42,7 +42,7 @@ Derived keys are normalized to 64-character lowercase hex strings. Invalid deriv
 
 ### Transparent KDF upgrade on login
 
-Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier), precomputes both encrypted collections, persists them in one batched storage call, and uses explicit rollback if the following verifier update fails. It is best-effort and non-destructive: on any failure the previous working key is restored and the upgrade retries on the next login. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
+Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier), precomputes both encrypted collections, persists them in one batched storage call, and uses explicit rollback if the following verifier update fails. Recoverable failures restore the previous working key and retry on the next login. If both verifier persistence and rollback fail, Keysoft closes the authenticated session and clears the in-memory key rather than allowing further writes against uncertain storage. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
 
 When creating or changing the PIN, the verifier metadata and the vault key are produced from the same KDF result. This avoids a duplicate KDF pass for the same new PIN while preserving the configured KDF cost and the 64-character derived-key requirement.
 
@@ -126,6 +126,7 @@ Expected behavior:
 - Legacy plaintext arrays are immediately re-encrypted when loaded with an active encryption key.
 - Writes are blocked after decryption errors until the unsafe state is resolved.
 - Mutations persist encrypted data before changing the decrypted cache, so a failed write cannot expose an uncommitted value through later reads.
+- Master-key verifier metadata is written to SecureStore before its in-memory cache is updated. A failed SecureStore write leaves the previously persisted and cached verifier unchanged.
 - Reset removes only Keysoft-owned AsyncStorage keys; it must not call the process-wide `AsyncStorage.clear()` API.
 
 ## Randomness
@@ -156,7 +157,7 @@ Use the central `Logger` service. Do not log:
 - Note contents.
 - Raw backup payload secrets.
 
-Authentication diagnostics may include sanitized failure reasons such as native KDF unavailable, KDF timeout, verifier mismatch, database initialization failure, or biometric key unavailable. They must not include user-entered PINs, derived keys, SecureStore values, or decrypted vault data.
+Authentication diagnostics may include sanitized failure reasons such as native KDF unavailable, KDF timeout, verifier mismatch, database initialization failure, or biometric key unavailable. Debug output is message-only: structured preferences, vault records, generated passwords, derived keys, SecureStore values, and decrypted vault data must never be passed to logging sinks.
 
 Production error logs contain only the sanitized message. Error objects and structured diagnostic context are emitted only in development because native errors can include file paths or platform details.
 

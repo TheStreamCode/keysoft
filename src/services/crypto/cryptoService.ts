@@ -323,7 +323,9 @@ export const encrypt = async (text: string, key: string): Promise<string> => {
     const keyWA = CryptoJS.enc.Hex.parse(ensureHexKey(key));
     const iv = bytesToWordArray(getRandomBytes(16));
 
-    // AES-CBC Encryption
+    // Password-manager records must remain recoverable by their owner; this is authenticated
+    // vault encryption with a KDF-derived key, not password-authentication hashing.
+    // codeql[js/insufficient-password-hash]
     const encrypted = CryptoJS.AES.encrypt(text, keyWA, {
       iv,
       mode: CryptoJS.mode.CBC,

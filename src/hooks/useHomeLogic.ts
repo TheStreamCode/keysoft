@@ -116,7 +116,7 @@ export const useHomeLogic = () => {
             deferredSearchQuery,
           );
 
-          Logger.debug(`Caricate ${result.passwords.length} password, totale: ${result.total}`);
+          Logger.debug('Credenziali caricate dal vault');
 
           setTotalPasswords(result.total);
           setCategoryTotalPasswords(categoryFilter ? result.total : null);

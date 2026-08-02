@@ -157,6 +157,8 @@ describe('CryptoService', () => {
         info.iterations,
         info.memory,
       );
+      // The input is already a KDF output; this checks the compatibility verifier format.
+      // codeql[js/insufficient-password-hash]
       const verifier = CryptoJS.SHA256(derivedKey).toString();
       expect(verifier).toBe(info.verifier);
     });

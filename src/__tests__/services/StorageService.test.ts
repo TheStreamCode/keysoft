@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Password } from '../../models/Password';
 import { Note } from '../../models/Note';
+import { UserMasterKey } from '../../models/User';
 import * as CryptoService from '../../services/crypto/cryptoService';
 
 // Mock SecureStore with constants
@@ -79,6 +80,33 @@ describe('StorageService', () => {
 
       expect(StorageService.getEncryptionKey()).toBe('test-key');
       expect(StorageService.isEncryptionKeySet()).toBe(true);
+    });
+  });
+
+  describe('Master Key Info', () => {
+    it('does not update the cached verifier when SecureStore persistence fails', async () => {
+      const currentInfo: UserMasterKey = {
+        salt: 'current-salt',
+        iterations: 2,
+        memory: 19456,
+        verifier: 'current-verifier',
+      };
+      const nextInfo: UserMasterKey = {
+        salt: 'next-salt',
+        iterations: 2,
+        memory: 19456,
+        verifier: 'next-verifier',
+      };
+
+      await StorageService.saveMasterKeyInfo(currentInfo);
+      (SecureStore.setItemAsync as jest.Mock).mockRejectedValueOnce(
+        new Error('SecureStore unavailable'),
+      );
+
+      await expect(StorageService.saveMasterKeyInfo(nextInfo)).rejects.toThrow(
+        'SecureStore unavailable',
+      );
+      await expect(StorageService.getMasterKeyInfo()).resolves.toEqual(currentInfo);
     });
   });
 

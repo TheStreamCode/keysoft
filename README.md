@@ -21,7 +21,7 @@ Keysoft works offline for vault management. Network access is limited to platfor
 | Expo SDK            | 57.0.9                             |
 | React Native        | 0.86.2                             |
 | TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 29 suites, 195 tests               |
+| Test suite          | 30 suites, 199 tests               |
 | Health check        | `expo-doctor` 20/20                |
 
 Keysoft 3.3.0 is published on [Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Production build numbers are managed remotely by EAS; the 3.3.0 release uses Android versionCode 129. `app.config.js` mirrors that value for local manifest visibility, while `appVersionSource: "remote"` keeps EAS authoritative for future build numbers.
@@ -61,6 +61,7 @@ Keysoft uses the KS1 envelope for vault data:
 - CSPRNG-backed salts, IVs, IDs, and password generation.
 - The vault key stays in memory by default. If biometrics are enabled, the vault key is stored in SecureStore with device authentication required and is updated or removed when the PIN changes.
 - PIN setup and PIN changes reuse the vault key derived during verifier creation to avoid duplicate KDF work while preserving the configured Argon2/PBKDF2 cost.
+- Verifier metadata is cached only after SecureStore accepts the write. A failed KDF-upgrade rollback closes the session rather than continuing with an uncertain vault key.
 
 Backup files use a password-encrypted payload format (`KS1-PW1`) with KDF metadata and authenticated KS1 ciphertext.
 
@@ -157,7 +158,7 @@ Current verified state:
 
 - `bun run typecheck`: passing
 - `bun run lint`: passing
-- `bun run test:ci`: passing, 29 suites and 195 tests
+- `bun run test:ci`: passing, 30 suites and 199 tests
 - `bunx expo-doctor`: passing, 20/20 checks
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
 - `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing

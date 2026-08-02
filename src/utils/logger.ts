@@ -36,11 +36,13 @@ class LoggerService {
   /**
    * Log a debug message (only in development)
    * @param message The message to log
-   * @param data Optional data to log
+   * @param _data Ignored legacy context. Put only sanitized context in the message.
    */
-  static debug(message: string, ...data: unknown[]): void {
+  static debug(message: string, ..._data: unknown[]): void {
     if (this.currentLevel <= LogLevel.DEBUG) {
-      console.log(`[DEBUG] ${message}`, ...data);
+      // Debug objects can include preferences or vault records through upstream data flow.
+      // Keep the sink message-only so callers cannot accidentally emit sensitive values.
+      console.log(`[DEBUG] ${message}`);
     }
   }
 
@@ -83,24 +85,6 @@ class LoggerService {
         console.error(`[ERROR] ${message}`, error, ...data);
       } else {
         console.error(`[ERROR] ${message}`, ...data);
-      }
-    }
-  }
-
-  /**
-   * SECURITY WARNING: Never use this for sensitive data!
-   * Only for non-sensitive debugging in development.
-   * This method is completely disabled in production.
-   *
-   * @param label Label for the data
-   * @param data Data to log (will be stringified)
-   */
-  static debugData(label: string, data: unknown): void {
-    if (__DEV__ && this.currentLevel <= LogLevel.DEBUG) {
-      try {
-        console.log(`[DEBUG DATA] ${label}:`, JSON.stringify(data, null, 2));
-      } catch (_e) {
-        console.log(`[DEBUG DATA] ${label}: [Cannot stringify]`);
       }
     }
   }

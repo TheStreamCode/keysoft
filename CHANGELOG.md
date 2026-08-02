@@ -4,6 +4,17 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+### Security
+
+- Kept the cached master-key verifier unchanged when its SecureStore write fails, so an
+  unpersisted verifier cannot be observed later in the same session.
+- Closed the authenticated session and cleared the in-memory vault key if a transparent
+  KDF upgrade cannot persist its verifier and the rollback to the previous key also fails.
+  Recoverable upgrade failures still restore the previous key and retry on a future login.
+- Made debug logging message-only and removed preference objects and vault-count metadata
+  from call sites so development diagnostics cannot accidentally expose structured user
+  data.
+
 ### Fixed
 
 - The password generator now applies "exclude similar characters" to every selected
@@ -14,6 +25,9 @@ All notable project changes are documented here.
 - The password generator no longer returns more characters than requested when the
   requested length is shorter than the number of selected character sets. The in-app
   slider starts at 8, so this was only reachable through direct API use.
+- The development-only web crypto mock now checks special-character membership against
+  its canonical alphabet instead of an ambiguous regular-expression range that also
+  matched digits and punctuation outside that alphabet.
 
 ### Removed
 
@@ -23,6 +37,8 @@ All notable project changes are documented here.
 - The unused `JSX.IntrinsicElements` augmentation in `nativewind-env.d.ts`, which declared
   a `style` intrinsic element as `any`. No JSX `<style>` element exists in the codebase and
   the declaration only weakened type checking globally.
+- The unused `hashPassword` and `verifyPassword` methods from the development-only web
+  crypto mock. No application, test, build, or documentation path referenced them.
 
 ### Tooling
 
@@ -46,6 +62,10 @@ All notable project changes are documented here.
 - Added regression coverage for the password generator, which previously had none:
   character-set exclusion, requested length, short-length behavior, empty option set, and
   alphabet containment.
+- Added regression coverage for failed SecureStore verifier writes, recoverable KDF-upgrade
+  rollback, and forced logout after an unrecoverable double failure.
+- Added a deterministic web-mock regression test that distinguishes digits from the
+  requested special-character alphabet.
 
 ## [3.3.0] - 2026-08-01
 

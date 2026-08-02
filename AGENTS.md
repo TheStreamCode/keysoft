@@ -52,14 +52,16 @@
 - Keep the active vault key in memory by default. The only allowed persistence exception is SecureStore-backed biometric unlock via `StorageService.saveBiometricKey/getBiometricKey/deleteBiometricKey`, with device authentication required and no logging.
 - Update or delete the biometric SecureStore key when biometrics are disabled or the PIN changes.
 - Do not log secrets. Use `Logger` with sanitized messages.
+- Keep debug logging message-only. Do not pass preference objects, vault records, generated passwords, or other structured user data to logging sinks.
 - Copy secrets with `ClipboardService.copyToClipboard`, which schedules the auto-clear. Use `ClipboardService.copyPlainText` only for non-secret text such as a contact address; never route a password through it.
 - Local secrets live in `.secrets/` and must never be committed.
 - The project requires no local environment variables. Keep `.env.example` non-secret, never put credentials in `EXPO_PUBLIC_*`, and use EAS/GitHub secret stores for automation credentials.
 - Treat imported files and KDF metadata as untrusted. Preserve backup/file-size and KDF-cost bounds when changing validation or crypto code.
 - Password generation must apply every enabled option to every character set. The set that guarantees one character per class is the easy place to reintroduce an excluded character; keep it filtered and keep `src/__tests__/services/CryptoService.test.ts` generator coverage green.
+- The development-only web crypto mock has separate generator coverage in `CryptoServiceMock.test.ts`; keep its special-character membership check based on the canonical alphabet rather than an ambiguous regular-expression range.
 - Read `docs/security.md` "Known Limitations" before touching crypto. The shared AES/HMAC key and the PBKDF2 backup KDF are known, documented trade-offs, **not** bugs to fix in place: changing either silently makes every existing vault and every exported `KS1-PW1` backup undecryptable. Any change there needs a new format version plus a migration that runs in an authenticated session.
 - Do not alter the KS1/KS1-PW1 payload layout, the storage keys in `storageService.ts`, or the default KDF parameters of an existing vault. Vaults carry their own KDF parameters, so new capabilities (a longer master password, for instance) can be added without breaking old data — prefer that route.
-- Persist encrypted storage mutations before updating decrypted caches. Reset only Keysoft-owned keys; do not use `AsyncStorage.clear()`.
+- Persist encrypted storage mutations and master-key verifier metadata before updating their decrypted/in-memory caches. If both a KDF metadata update and its vault rollback fail, clear authentication state and the in-memory key; never continue the session with uncertain storage. Reset only Keysoft-owned keys; do not use `AsyncStorage.clear()`.
 - Clear backup passwords/ciphertext from UI state and remove temporary export files after sharing.
 
 ## Internationalization

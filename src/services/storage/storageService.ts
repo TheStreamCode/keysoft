@@ -255,7 +255,7 @@ const loadDataFromStorage = async (): Promise<void> => {
         try {
           const decrypted = await CryptoService.decrypt(passwordsJson, encryptionKey);
           cache.passwords = JSON.parse(decrypted);
-          Logger.debug(`StorageService: Loaded ${cache.passwords.length} passwords (decrypted)`);
+          Logger.debug('StorageService: Encrypted passwords loaded');
         } catch (e) {
           Logger.error('StorageService: Error decrypting passwords', e);
           decryptionErrors.passwords = true;
@@ -263,7 +263,7 @@ const loadDataFromStorage = async (): Promise<void> => {
         }
       } else if (passwordsJson.trim().startsWith('[')) {
         cache.passwords = JSON.parse(passwordsJson);
-        Logger.debug(`StorageService: Loaded ${cache.passwords.length} passwords (plain)`);
+        Logger.debug('StorageService: Legacy plaintext passwords loaded for migration');
         shouldPersistPasswords = true;
       }
     }
@@ -312,11 +312,11 @@ const loadDataFromStorage = async (): Promise<void> => {
 
 export const saveMasterKeyInfo = async (masterKeyInfo: UserMasterKey): Promise<void> => {
   try {
-    cache.masterKeyInfo = masterKeyInfo;
     await SecureStore.setItemAsync(
       STORAGE_KEYS.MASTER_KEY_INFO_SECURE,
       JSON.stringify(masterKeyInfo),
     );
+    cache.masterKeyInfo = masterKeyInfo;
     Logger.info('StorageService: Master key info saved');
   } catch (error) {
     Logger.error('StorageService: Error saving master key info', error);

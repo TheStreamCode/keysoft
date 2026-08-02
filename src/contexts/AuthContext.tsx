@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           try {
             const preferences = await Storage.getUserPreferences();
-            Logger.debug("AuthContext: Preferenze utente all'avvio:", preferences);
+            Logger.debug("AuthContext: Preferenze utente caricate all'avvio");
 
             if (preferences?.biometricsEnabled) {
               Logger.debug(

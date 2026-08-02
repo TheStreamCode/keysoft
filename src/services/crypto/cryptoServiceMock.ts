@@ -4,6 +4,13 @@ import Logger from '../../utils/logger';
 import { randomInt } from '../../utils/cryptoRandom';
 
 class CryptoServiceMock {
+  private static createVerifier(derivedKey: string): string {
+    // The input is already a PBKDF2-derived key. SHA-256 creates a compatibility verifier;
+    // it does not hash the user's master password directly.
+    // codeql[js/insufficient-password-hash]
+    return CryptoJS.SHA256(derivedKey).toString();
+  }
+
   /**
    * Generates an encryption key derived from the master password
    */
@@ -47,7 +54,7 @@ class CryptoServiceMock {
     const derivedKey = await this.deriveKey(masterPassword, salt, iterations, memory);
 
     // Create a verifier for the master password
-    const verifier = CryptoJS.SHA256(derivedKey).toString();
+    const verifier = this.createVerifier(derivedKey);
 
     return {
       masterKeyInfo: {
@@ -75,7 +82,7 @@ class CryptoServiceMock {
     try {
       const { salt, verifier, iterations, memory } = masterKeyInfo;
       const derivedKey = await this.deriveKey(masterPassword, salt, iterations, memory);
-      const computedVerifier = CryptoJS.SHA256(derivedKey).toString();
+      const computedVerifier = this.createVerifier(derivedKey);
 
       return computedVerifier === verifier;
     } catch (error) {
@@ -86,7 +93,7 @@ class CryptoServiceMock {
 
   static verifyDerivedKey(derivedKey: string, masterKeyInfo: UserMasterKey): boolean {
     try {
-      const computedVerifier = CryptoJS.SHA256(derivedKey).toString();
+      const computedVerifier = this.createVerifier(derivedKey);
       return computedVerifier === masterKeyInfo.verifier;
     } catch (error) {
       Logger.error('Errore durante la verifica della chiave derivata:', error);
@@ -176,22 +183,6 @@ class CryptoServiceMock {
   }
 
   /**
-   * Generates a password hash
-   */
-  static hashPassword(password: string, salt: string): string {
-    // Use CryptoJS to generate the password hash
-    return CryptoJS.SHA256(password + salt).toString();
-  }
-
-  /**
-   * Verifies whether a password matches a hash
-   */
-  static verifyPassword(password: string, salt: string, hash: string): boolean {
-    const calculatedHash = this.hashPassword(password, salt);
-    return calculatedHash === hash;
-  }
-
-  /**
    * Generates a secure password
    */
   static generateSecurePassword(
@@ -241,7 +232,7 @@ class CryptoServiceMock {
         numberChars.charAt(randomInt(numberChars.length)) +
         finalPassword.slice(3);
     }
-    if (includeSpecialChars && !finalPassword.match(/[!@#$%^&*()_+~`|}{[\]:;?><,./-=]/)) {
+    if (includeSpecialChars && ![...finalPassword].some((char) => specialChars.includes(char))) {
       finalPassword =
         finalPassword.slice(0, 3) +
         specialChars.charAt(randomInt(specialChars.length)) +
