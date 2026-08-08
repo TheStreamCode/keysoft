@@ -71,43 +71,24 @@ export const useExportImport = ({
           return;
         }
 
-        const hasPasswords = Array.isArray(validatedData.passwords);
-        const hasNotes = Array.isArray(validatedData.notes);
+        if (validatedData.passwords) {
+          const currentPasswords = await Storage.getAllPasswords();
+          const currentIds = new Set(currentPasswords.map((password) => password.id));
+          const newIds = new Set(
+            validatedData.passwords
+              .map((password) => password.id)
+              .filter((id) => !currentIds.has(id)),
+          );
 
-        let importedPasswordsCount = 0;
-        let importedNotesCount = 0;
-
-        if (hasPasswords && validatedData.passwords) {
-          const currentPasswordCount = await Storage.getPasswordCount();
-          const canAddMore = await Storage.canAddPassword();
-          const passwordsToImport = validatedData.passwords.length;
-
-          if (!canAddMore) {
-            alert(
-              t('limit_reached_import'),
-              t('limit_reached_import_message').replace('{limit}', MAX_PASSWORDS_LIMIT.toString()),
-            );
-            return;
-          }
-
-          const remainingSlots = MAX_PASSWORDS_LIMIT - currentPasswordCount;
-          if (passwordsToImport > remainingSlots) {
+          if (currentPasswords.length + newIds.size > MAX_PASSWORDS_LIMIT) {
             alert(t('insufficient_space'), t('insufficient_space_message'));
             return;
           }
-
-          for (const pwd of validatedData.passwords) {
-            await Storage.savePassword(pwd);
-            importedPasswordsCount++;
-          }
         }
 
-        if (hasNotes && validatedData.notes) {
-          for (const note of validatedData.notes) {
-            await Storage.saveNote(note);
-            importedNotesCount++;
-          }
-        }
+        const importResult = await Storage.importBackupData(validatedData);
+        const importedPasswordsCount = importResult.passwords;
+        const importedNotesCount = importResult.notes;
 
         await NotificationService.sendBackupSuccess();
 
@@ -320,7 +301,14 @@ export const useExportImport = ({
                 return;
               }
 
-              if (!isBackupFileSizeAllowed(selectedFile.size)) {
+              let fileSize = selectedFile.size;
+              if (fileSize === undefined && Platform.OS !== 'web') {
+                const fileInfo = await FileSystem.getInfoAsync(fileUri);
+                if (fileInfo.exists) fileSize = fileInfo.size;
+              }
+
+              // Reject unknown sizes instead of reading an unbounded file into memory.
+              if (!isBackupFileSizeAllowed(fileSize)) {
                 alert(t('error'), t('import_invalid_file'));
                 return;
               }

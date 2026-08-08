@@ -335,6 +335,11 @@ export const getMasterKeyInfo = async (): Promise<UserMasterKey | null> => {
   return cache.masterKeyInfo;
 };
 
+export const deleteMasterKeyInfo = async (): Promise<void> => {
+  await SecureStore.deleteItemAsync(STORAGE_KEYS.MASTER_KEY_INFO_SECURE);
+  cache.masterKeyInfo = null;
+};
+
 export const setEncryptionKey = (key: string): void => {
   if (!key) {
     encryptionKey = null;
@@ -362,6 +367,81 @@ export const getPasswordCount = async (): Promise<number> => {
 
 export const canAddPassword = async (): Promise<boolean> => {
   return cache.passwords.length < MAX_PASSWORDS_LIMIT;
+};
+
+export interface BackupImportData {
+  passwords?: Password[];
+  notes?: Note[];
+}
+
+export interface BackupImportResult {
+  passwords: number;
+  notes: number;
+}
+
+function mergeRecordsById<T extends { id: string }>(current: T[], imported: T[]): T[] {
+  const merged = [...current];
+  const indexesById = new Map(merged.map((record, index) => [record.id, index]));
+
+  for (const record of imported) {
+    const existingIndex = indexesById.get(record.id);
+    if (existingIndex === undefined) {
+      indexesById.set(record.id, merged.length);
+      merged.push(record);
+    } else {
+      merged[existingIndex] = record;
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Encrypts and persists a validated backup in one storage operation. All
+ * ciphertext is prepared before writing and caches are updated only after the
+ * write succeeds, preventing a failed import from exposing a partial vault in
+ * the active session.
+ */
+export const importBackupData = async (imported: BackupImportData): Promise<BackupImportResult> => {
+  const activeKey = getEncryptionKeyOrThrow('import backup');
+  if (decryptionErrors.passwords || decryptionErrors.notes) {
+    throw new Error('Decryption error detected. Cannot import backup safely.');
+  }
+
+  const importedPasswords = imported.passwords ?? [];
+  const importedNotes = imported.notes ?? [];
+  const nextPasswords = mergeRecordsById(cache.passwords, importedPasswords);
+  const nextNotes = mergeRecordsById(cache.notes, importedNotes);
+
+  if (nextPasswords.length > MAX_PASSWORDS_LIMIT) {
+    throw new Error(`Password limit of ${MAX_PASSWORDS_LIMIT} would be exceeded.`);
+  }
+
+  const writes: [string, string][] = [];
+  if (imported.passwords) {
+    writes.push([
+      STORAGE_KEYS.PASSWORDS,
+      await CryptoService.encrypt(JSON.stringify(nextPasswords), activeKey),
+    ]);
+  }
+  if (imported.notes) {
+    writes.push([
+      STORAGE_KEYS.NOTES,
+      await CryptoService.encrypt(JSON.stringify(nextNotes), activeKey),
+    ]);
+  }
+
+  if (writes.length > 0) {
+    await AsyncStorage.multiSet(writes);
+  }
+
+  if (imported.passwords) cache.passwords = nextPasswords;
+  if (imported.notes) cache.notes = nextNotes;
+
+  return {
+    passwords: importedPasswords.length,
+    notes: importedNotes.length,
+  };
 };
 
 function getEncryptionKeyOrThrow(action: string, scope?: 'passwords' | 'notes'): string {
@@ -471,9 +551,7 @@ export const deletePassword = async (id: string): Promise<void> => {
 
 export const clearAllPasswords = async (): Promise<void> => {
   try {
-    if (decryptionErrors.passwords) {
-      throw new Error('Decryption error detected. Cannot clear passwords safely.');
-    }
+    getEncryptionKeyOrThrow('clear passwords', 'passwords');
     await AsyncStorage.removeItem(STORAGE_KEYS.PASSWORDS);
     cache.passwords = [];
     Logger.info('StorageService: All passwords cleared');
@@ -606,9 +684,7 @@ export const deleteNote = async (noteId: string): Promise<void> => {
 
 export const clearAllNotes = async (): Promise<void> => {
   try {
-    if (decryptionErrors.notes) {
-      throw new Error('Decryption error detected. Cannot clear notes safely.');
-    }
+    getEncryptionKeyOrThrow('clear notes', 'notes');
     await AsyncStorage.removeItem(STORAGE_KEYS.NOTES);
     cache.notes = [];
     Logger.info('StorageService: All notes cleared');

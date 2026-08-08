@@ -69,6 +69,7 @@ module.exports = {
       'android.permission.RECORD_AUDIO',
       'android.permission.READ_MEDIA_IMAGES',
       'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.SYSTEM_ALERT_WINDOW',
     ],
     allowBackup: false,
     // Support multiple screen sizes

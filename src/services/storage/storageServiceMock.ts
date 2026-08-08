@@ -86,6 +86,11 @@ const StorageServiceMock = {
     }
   },
 
+  deleteMasterKeyInfo: async (): Promise<void> => {
+    await AsyncStorage.removeItem(STORAGE_KEYS.MASTER_KEY_INFO);
+    cachedMasterKeyInfo = null;
+  },
+
   setEncryptionKey: (key: string): void => {
     if (!key) {
       encryptionKey = null;
@@ -183,6 +188,48 @@ const StorageServiceMock = {
   canAddPassword: async (): Promise<boolean> => {
     const count = await StorageServiceMock.getPasswordCount();
     return count < MAX_PASSWORDS_LIMIT;
+  },
+
+  importBackupData: async (imported: {
+    passwords?: Password[];
+    notes?: Note[];
+  }): Promise<{ passwords: number; notes: number }> => {
+    const passwords = await StorageServiceMock.getAllPasswords();
+    const notes = await StorageServiceMock.getNotes();
+
+    const mergeById = <T extends { id: string }>(current: T[], incoming: T[]): T[] => {
+      const merged = [...current];
+      const indexesById = new Map(merged.map((record, index) => [record.id, index]));
+      for (const record of incoming) {
+        const existingIndex = indexesById.get(record.id);
+        if (existingIndex === undefined) {
+          indexesById.set(record.id, merged.length);
+          merged.push(record);
+        } else {
+          merged[existingIndex] = record;
+        }
+      }
+      return merged;
+    };
+
+    const nextPasswords = mergeById(passwords, imported.passwords ?? []);
+    if (nextPasswords.length > MAX_PASSWORDS_LIMIT) {
+      throw new Error(`Password limit of ${MAX_PASSWORDS_LIMIT} would be exceeded.`);
+    }
+
+    const writes: [string, string][] = [];
+    if (imported.passwords) {
+      writes.push([STORAGE_KEYS.PASSWORDS, JSON.stringify(nextPasswords)]);
+    }
+    if (imported.notes) {
+      writes.push([STORAGE_KEYS.NOTES, JSON.stringify(mergeById(notes, imported.notes))]);
+    }
+    if (writes.length > 0) await AsyncStorage.multiSet(writes);
+
+    return {
+      passwords: imported.passwords?.length ?? 0,
+      notes: imported.notes?.length ?? 0,
+    };
   },
 
   // Notes methods

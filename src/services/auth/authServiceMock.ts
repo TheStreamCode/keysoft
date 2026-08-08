@@ -23,10 +23,14 @@ const AuthServiceMock = {
   },
 
   setupMasterPassword: async (masterPassword: string): Promise<boolean> => {
+    let hasPersistedNewMasterKeyInfo = false;
     try {
+      if (await StorageServiceMock.getMasterKeyInfo()) return false;
+
       const { masterKeyInfo: mkInfo, derivedKey: encryptionKey } =
         await CryptoServiceMock.createMasterKeyInfoWithDerivedKey(masterPassword);
       await StorageServiceMock.saveMasterKeyInfo(mkInfo);
+      hasPersistedNewMasterKeyInfo = true;
 
       StorageServiceMock.setEncryptionKey(encryptionKey);
       await StorageServiceMock.initDatabase();
@@ -36,6 +40,16 @@ const AuthServiceMock = {
       return true;
     } catch (error) {
       Logger.error('AuthServiceMock: Error setting up master password', error);
+      isAuthenticated = false;
+      masterKeyInfo = null;
+      StorageServiceMock.setEncryptionKey('');
+      if (hasPersistedNewMasterKeyInfo) {
+        try {
+          await StorageServiceMock.deleteMasterKeyInfo();
+        } catch (cleanupError) {
+          Logger.error('AuthServiceMock: Failed to roll back incomplete setup', cleanupError);
+        }
+      }
       return false;
     }
   },

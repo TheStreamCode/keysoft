@@ -108,6 +108,21 @@ describe('StorageService', () => {
       );
       await expect(StorageService.getMasterKeyInfo()).resolves.toEqual(currentInfo);
     });
+
+    it('deletes verifier metadata before clearing its cache', async () => {
+      const currentInfo: UserMasterKey = {
+        salt: 'current-salt',
+        iterations: 2,
+        memory: 19456,
+        verifier: 'current-verifier',
+      };
+      await StorageService.saveMasterKeyInfo(currentInfo);
+
+      await StorageService.deleteMasterKeyInfo();
+
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('keysoft_master_key_info');
+      await expect(StorageService.getMasterKeyInfo()).resolves.toBeNull();
+    });
   });
 
   describe('User Preferences', () => {
@@ -167,6 +182,16 @@ describe('StorageService', () => {
       await expect(StorageService.savePassword(mockPassword)).rejects.toThrow('disk full');
 
       await expect(StorageService.getAllPasswords()).resolves.toEqual([]);
+    });
+
+    it('does not clear passwords without an active vault key', async () => {
+      await StorageService.savePassword(mockPassword);
+      StorageService.setEncryptionKey('');
+      jest.clearAllMocks();
+
+      await expect(StorageService.clearAllPasswords()).rejects.toThrow('Encryption key not set');
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+      await expect(StorageService.getAllPasswords()).resolves.toEqual([mockPassword]);
     });
 
     it('should retrieve decrypted passwords', async () => {
@@ -341,6 +366,79 @@ describe('StorageService', () => {
     });
   });
 
+  describe('Backup import', () => {
+    const existingPassword: Password = {
+      id: 'existing-password',
+      title: 'Existing',
+      username: 'user',
+      password: 'old-secret',
+      createdAt: mockTimestamp,
+      updatedAt: mockTimestamp,
+    };
+    const importedNote: Note = {
+      id: 'imported-note',
+      title: 'Imported',
+      content: 'Secret note',
+      createdAt: mockTimestamp,
+      updatedAt: mockTimestamp,
+    };
+
+    it('encrypts password and note collections before one storage write', async () => {
+      await StorageService.savePassword(existingPassword);
+      jest.clearAllMocks();
+
+      const updatedPassword = { ...existingPassword, password: 'new-secret' };
+      const result = await StorageService.importBackupData({
+        passwords: [updatedPassword],
+        notes: [importedNote],
+      });
+
+      expect(result).toEqual({ passwords: 1, notes: 1 });
+      expect(AsyncStorage.multiSet).toHaveBeenCalledTimes(1);
+      expect(AsyncStorage.multiSet).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          [expect.stringContaining('passwords'), expect.stringContaining('encrypted-')],
+          [expect.stringContaining('notes'), expect.stringContaining('encrypted-')],
+        ]),
+      );
+      await expect(StorageService.getAllPasswords()).resolves.toEqual([updatedPassword]);
+      await expect(StorageService.getNotes()).resolves.toEqual([importedNote]);
+    });
+
+    it('keeps both caches unchanged when the combined persistence fails', async () => {
+      await StorageService.savePassword(existingPassword);
+      (AsyncStorage.multiSet as jest.Mock).mockRejectedValueOnce(new Error('disk full'));
+
+      await expect(
+        StorageService.importBackupData({
+          passwords: [{ ...existingPassword, password: 'new-secret' }],
+          notes: [importedNote],
+        }),
+      ).rejects.toThrow('disk full');
+
+      await expect(StorageService.getAllPasswords()).resolves.toEqual([existingPassword]);
+      await expect(StorageService.getNotes()).resolves.toEqual([]);
+    });
+
+    it('rejects an import whose merged password set exceeds the vault limit', async () => {
+      await StorageService.savePassword(existingPassword);
+      const importedPasswords = Array.from(
+        { length: StorageService.MAX_PASSWORDS_LIMIT },
+        (_, index): Password => ({
+          ...existingPassword,
+          id: `imported-${index}`,
+        }),
+      );
+      jest.clearAllMocks();
+
+      await expect(
+        StorageService.importBackupData({ passwords: importedPasswords }),
+      ).rejects.toThrow('Password limit');
+      expect(CryptoService.encrypt).not.toHaveBeenCalled();
+      expect(AsyncStorage.multiSet).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Notes', () => {
     const mockNote: Note = {
       id: '1',
@@ -361,6 +459,16 @@ describe('StorageService', () => {
         JSON.stringify([mockNote]),
         mockEncryptionKey,
       );
+    });
+
+    it('does not clear notes without an active vault key', async () => {
+      await StorageService.saveNote(mockNote);
+      StorageService.setEncryptionKey('');
+      jest.clearAllMocks();
+
+      await expect(StorageService.clearAllNotes()).rejects.toThrow('Encryption key not set');
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+      await expect(StorageService.getNotes()).resolves.toEqual([mockNote]);
     });
   });
 

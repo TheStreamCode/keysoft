@@ -9,9 +9,12 @@ biometrics, import/export, notifications, or release configuration.
 ## Development Setup
 
 ```bash
-bun install
+bun install --frozen-lockfile
 bun run start
 ```
+
+Use Bun 1.3.14 and Node.js 22.13 or newer. The lockfile is part of the reviewed
+dependency graph and must remain frozen during clean validation.
 
 Android development uses Expo Go for day-to-day work. Release-grade validation
 for Argon2 and native modules requires an EAS/native Android build.
@@ -21,10 +24,8 @@ for Argon2 and native modules requires an EAS/native Android build.
 Run:
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bunx expo-doctor
+bun run verify
+bun run deps:audit
 ```
 
 For Android release-related changes, also run:

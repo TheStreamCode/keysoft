@@ -6,6 +6,21 @@ All notable project changes are documented here.
 
 ### Security
 
+- Made PIN rotation and transparent KDF upgrades transactional: preference reads now
+  happen before vault mutation, ciphertext and verifier metadata define the core commit,
+  and a later biometric cleanup failure can no longer roll back only one side of the
+  vault. An unrecoverable pre-commit rollback still closes the authenticated session.
+- Changed validated backup imports from repeated per-record writes to one encrypted batch.
+  Imported records are merged by ID, password limits are checked against the merged vault,
+  all ciphertext is prepared before persistence, and decrypted caches update only after
+  the batch succeeds.
+- Reject backup files whose size cannot be established before reading them, and reject KS1
+  payloads that lack a complete AES-CBC ciphertext block or are not block-aligned.
+- Require an active vault key before clearing password or note collections, and explicitly
+  remove `SYSTEM_ALERT_WINDOW` from generated Android manifests.
+- Prevent initial PIN setup from overwriting an existing verifier. If first-time database
+  initialization fails after a new verifier was saved, remove that verifier and clear all
+  authentication/key state before returning failure.
 - Kept the cached master-key verifier unchanged when its SecureStore write fails, so an
   unpersisted verifier cannot be observed later in the same session.
 - Closed the authenticated session and cleared the in-memory vault key if a transparent
@@ -42,12 +57,28 @@ All notable project changes are documented here.
 
 ### Tooling
 
+- Updated Expo SDK 57 packages to the compatible versions selected by `expo install`,
+  refreshed compatible JavaScript dependencies, removed the duplicate TypeScript ESLint
+  plugin registration, and restored `expo-doctor` to 20/20 checks.
+- Added weekly Bun Dependabot updates and made every CI installation use the committed
+  lockfile with `bun install --frozen-lockfile`.
 - Added `.codex/` to the ignored local agent-state directories, so a future Codex session
   cannot leave working state staged by accident, and folded the redundant trailing
   `.claude/settings.local.json` rule into the `.claude/` entry that already covered it.
 
 ### Documentation
 
+- Reworked the GitHub README around the product value proposition, an immediate Google
+  Play call to action, concise trust links, and a four-screen gallery sourced from the
+  production store listing. Removed fast-stale dependency/test counters from the product
+  overview and aligned contributor validation with the one-command verification workflow.
+- Disabled blank GitHub issues so bug, feature, and private security reports follow the
+  repository's structured intake paths.
+- Updated the public GitHub description around Keysoft's offline-first promise and changed
+  the repository homepage from the generic studio site to the product's Google Play page.
+- Added the dated full security and code-audit report in
+  `docs/security-audit-2026-08-08.md` and synchronized the security, development, and
+  release guides with the hardened import, PIN-change, dependency, and permission rules.
 - Documented the accepted cryptographic and operational trade-offs in `docs/security.md`
   under a new "Known Limitations" section: the shared AES/HMAC key, the PBKDF2-SHA1 backup
   KDF, the six-digit master PIN keyspace, the absence of unlock throttling, opt-in

@@ -143,6 +143,10 @@ bun install --frozen-lockfile
 bun run verify
 ```
 
+Dependabot uses the Bun ecosystem on a weekly schedule and must update both
+`package.json` and `bun.lock`. CI never relaxes the lockfile check for automation:
+all actors run `bun install --frozen-lockfile`.
+
 Keep Expo-native packages on the versions selected by `expo install`. Major upgrades of Expo, React Native, React, Jest, ESLint, or TypeScript require a coordinated migration and must not be forced through transitive overrides. Remove a direct dependency only after confirming it has no source, configuration, script, or native-plugin consumer and completing the full verification plus Android export.
 
 If `expo-doctor` reports duplicate native modules after a valid dependency update, regenerate `node_modules` and reinstall from the lockfile.

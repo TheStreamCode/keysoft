@@ -83,8 +83,9 @@ describe('Backup import validation', () => {
   });
 
   it('bounds backup file sizes', () => {
-    expect(isBackupFileSizeAllowed(undefined)).toBe(true);
+    expect(isBackupFileSizeAllowed(undefined)).toBe(false);
     expect(isBackupFileSizeAllowed(MAX_BACKUP_FILE_SIZE_BYTES)).toBe(true);
     expect(isBackupFileSizeAllowed(MAX_BACKUP_FILE_SIZE_BYTES + 1)).toBe(false);
+    expect(isBackupFileSizeAllowed(Number.NaN)).toBe(false);
   });
 });

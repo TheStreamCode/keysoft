@@ -25,7 +25,8 @@ export type AuthFailureReason =
   | 'biometrics_disabled'
   | 'biometric_key_unavailable'
   | 'biometric_auth_failed'
-  | 'not_authenticated';
+  | 'not_authenticated'
+  | 'master_key_already_configured';
 
 export interface AuthFailure {
   reason: AuthFailureReason;
@@ -127,6 +128,10 @@ async function upgradeVaultKdfIfLegacy(
   try {
     Logger.info('AuthService: upgrading vault KDF to current Argon2id parameters');
 
+    // Read preferences before changing either side of the vault transaction. A
+    // preference read failure must not leave ciphertext and verifier metadata out of sync.
+    const prefs = await StorageService.getUserPreferences();
+
     const { masterKeyInfo: newMkInfo, derivedKey: newKey } =
       await CryptoService.createMasterKeyInfoWithDerivedKey(masterPassword);
 
@@ -153,8 +158,14 @@ async function upgradeVaultKdfIfLegacy(
       throw error;
     }
 
-    // Keep biometric unlock working by storing the new vault key.
-    const prefs = await StorageService.getUserPreferences();
+    // Ciphertext and verifier metadata are now committed as one logical unit.
+    // Update authentication state before optional biometric maintenance so a
+    // SecureStore cleanup failure can never trigger a vault rollback.
+    masterKeyInfo = newMkInfo;
+    StorageService.setEncryptionKey(newKey);
+
+    // Keep biometric unlock working by storing the new vault key. This is
+    // deliberately best-effort after the core vault transaction has committed.
     if (prefs.biometricsEnabled) {
       try {
         await StorageService.saveBiometricKey(newKey);
@@ -163,12 +174,14 @@ async function upgradeVaultKdfIfLegacy(
           'AuthService: failed to refresh biometric key after KDF upgrade',
           biometricError,
         );
-        await disableBiometrics(prefs);
+        try {
+          await disableBiometrics(prefs);
+        } catch (cleanupError) {
+          Logger.warn('AuthService: failed to disable biometrics after KDF upgrade', cleanupError);
+        }
       }
     }
 
-    masterKeyInfo = newMkInfo;
-    StorageService.setEncryptionKey(newKey);
     Logger.info('AuthService: vault KDF upgrade completed');
     return true;
   } catch (error) {
@@ -236,14 +249,22 @@ export const initDatabase = async (): Promise<void> => {
  * Configures the master password for the user.
  */
 export const setupMasterPassword = async (masterPassword: string): Promise<boolean> => {
+  let hasPersistedNewMasterKeyInfo = false;
   try {
     clearAuthFailure();
+    const existingMasterKeyInfo = await StorageService.getMasterKeyInfo();
+    if (existingMasterKeyInfo) {
+      setAuthFailure('master_key_already_configured', 'Master password is already configured');
+      return false;
+    }
+
     // Create master key info (salt, iterations, etc.)
     const { masterKeyInfo: mkInfo, derivedKey: encryptionKey } =
       await CryptoService.createMasterKeyInfoWithDerivedKey(masterPassword);
 
     // Save info to SecureStore
     await StorageService.saveMasterKeyInfo(mkInfo);
+    hasPersistedNewMasterKeyInfo = true;
 
     // Set encryption key in memory
     StorageService.setEncryptionKey(encryptionKey);
@@ -258,6 +279,20 @@ export const setupMasterPassword = async (masterPassword: string): Promise<boole
   } catch (error) {
     Logger.error('AuthService: Error setting up master password', error);
     setAuthFailure('derive_key_failed', 'Master password setup failed');
+    isAuthenticated = false;
+    masterKeyInfo = null;
+    StorageService.setEncryptionKey('');
+
+    if (hasPersistedNewMasterKeyInfo) {
+      try {
+        await StorageService.deleteMasterKeyInfo();
+      } catch (cleanupError) {
+        Logger.error(
+          'AuthService: Failed to roll back incomplete master password setup',
+          cleanupError,
+        );
+      }
+    }
     return false;
   }
 };
@@ -542,8 +577,13 @@ export const updateMasterPassword = async (password: string): Promise<boolean> =
   const oldMkInfo = masterKeyInfo;
   let dataReEncryptedWithNewKey = false;
   let newEncryptionKey: string | null = null;
+  let prefs: Awaited<ReturnType<typeof StorageService.getUserPreferences>>;
 
   try {
+    // Resolve optional side-effect state before changing encrypted storage. If
+    // this read fails, the vault remains untouched.
+    prefs = await StorageService.getUserPreferences();
+
     // 2. Create new Master Key Info
     const { masterKeyInfo: newMkInfo, derivedKey } =
       await CryptoService.createMasterKeyInfoWithDerivedKey(password);
@@ -558,23 +598,11 @@ export const updateMasterPassword = async (password: string): Promise<boolean> =
     // CRITICAL: If this fails, the rollback below restores the old encrypted state.
     await StorageService.saveMasterKeyInfo(newMkInfo);
 
-    // 6. If Biometrics enabled, replace the stored biometric key with the new vault key.
-    const prefs = await StorageService.getUserPreferences();
-    if (prefs.biometricsEnabled) {
-      try {
-        await StorageService.saveBiometricKey(newEncryptionKey);
-      } catch (biometricError) {
-        Logger.warn('AuthService: Failed to update biometric key after PIN change', biometricError);
-        await disableBiometrics(prefs);
-      }
-    }
-
-    // 7. Update memory state
+    // 6. Ciphertext and verifier metadata are committed. Update in-memory state
+    // before optional biometric maintenance so later cleanup failures cannot
+    // roll the vault back while leaving the new verifier in SecureStore.
     masterKeyInfo = newMkInfo;
     StorageService.setEncryptionKey(newEncryptionKey);
-
-    Logger.info('AuthService: Master password updated successfully');
-    return true;
   } catch (error) {
     Logger.error('AuthService: Error updating master password', error);
     setAuthFailure('derive_key_failed', 'Master password update failed');
@@ -604,6 +632,25 @@ export const updateMasterPassword = async (password: string): Promise<boolean> =
 
     return false;
   }
+
+  // 7. Biometric persistence is a separate, best-effort transaction. The
+  // password change is already durable and must remain successful even if the
+  // biometric key or its cleanup cannot be written.
+  if (prefs.biometricsEnabled && newEncryptionKey) {
+    try {
+      await StorageService.saveBiometricKey(newEncryptionKey);
+    } catch (biometricError) {
+      Logger.warn('AuthService: Failed to update biometric key after PIN change', biometricError);
+      try {
+        await disableBiometrics(prefs);
+      } catch (cleanupError) {
+        Logger.warn('AuthService: Failed to disable biometrics after PIN change', cleanupError);
+      }
+    }
+  }
+
+  Logger.info('AuthService: Master password updated successfully');
+  return true;
 };
 
 // Add other methods as needed based on original file...

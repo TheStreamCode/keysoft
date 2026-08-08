@@ -130,6 +130,7 @@ Blocked:
 - `READ_MEDIA_IMAGES`
 - `READ_MEDIA_VIDEO`
 - `READ_MEDIA_AUDIO`
+- `SYSTEM_ALERT_WINDOW`
 
 Prefer Android Photo Picker or explicit user-selected file access instead of broad media permissions.
 
@@ -142,6 +143,8 @@ Encrypted backups use `KS1-PW1`. Release testing should cover:
 - Reject encrypted backup with the wrong password.
 - Reject malformed JSON backup.
 - Reject backup objects with invalid password or note shape.
+- Reject backup files whose size is missing or exceeds 10 MiB before reading them.
+- Verify that a failed batched import leaves both password and note collections unchanged.
 
 ## Security Regression Checks
 
@@ -151,6 +154,8 @@ Before release, confirm these invariants:
 - Argon2 vault metadata (`memory > 0`) fails with an explicit native-KDF error if the native module is unavailable.
 - Argon2 timeout surfaces as a KDF timeout diagnostic, not as a generic invalid PIN.
 - PIN setup and PIN change reuse the key derived while creating the master-key verifier instead of running an extra KDF pass for the same new PIN.
+- PIN setup refuses to overwrite an existing verifier and removes a newly created verifier if initial database setup fails.
+- A committed PIN change remains committed if biometric refresh or cleanup fails; failures before verifier persistence roll encrypted data back to the previous key.
 - No `Math.random` usage exists under `src`.
 - Backup export does not call `Crypto.encrypt(jsonData, exportPassword)`.
 - Backup import does not decrypt with `Crypto.decrypt(parsedData.data, importPassword)`.

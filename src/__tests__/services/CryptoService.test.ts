@@ -101,6 +101,24 @@ describe('CryptoService', () => {
       );
     });
 
+    it('rejects KS1 payloads without a complete ciphertext block', async () => {
+      const truncatedPayload = CryptoJS.lib.WordArray.create(new Uint8Array(48) as any);
+      const malformedPayload = `KS1:${CryptoJS.enc.Base64.stringify(truncatedPayload)}`;
+
+      await expect(CryptoService.decrypt(malformedPayload, masterKey)).rejects.toThrow(
+        'Invalid payload length',
+      );
+    });
+
+    it('rejects KS1 payloads whose ciphertext is not block aligned', async () => {
+      const nonAlignedPayload = CryptoJS.lib.WordArray.create(new Uint8Array(65) as any);
+      const malformedPayload = `KS1:${CryptoJS.enc.Base64.stringify(nonAlignedPayload)}`;
+
+      await expect(CryptoService.decrypt(malformedPayload, masterKey)).rejects.toThrow(
+        'Invalid payload length',
+      );
+    });
+
     it('should return empty string for empty input (legitimate empty case)', async () => {
       const result = await CryptoService.decrypt('', masterKey);
       expect(result).toBe('');

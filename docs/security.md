@@ -106,7 +106,7 @@ so this is the weakest link in the current design.
 The KDF identifier is part of the `KS1-PW1` payload, so a stronger KDF can only be
 introduced as a new payload version that still reads `KS1-PW1` files.
 
-Backup imports are limited to 10 MiB and validate collection sizes and field lengths before any object reaches storage. Export passwords and imported ciphertext are removed from UI state on close, while temporary export files are deleted after sharing completes.
+Backup imports are limited to 10 MiB and validate collection sizes and field lengths before any object reaches storage. An import whose size cannot be established is rejected before the file is read. Valid records are merged by ID, encrypted in memory, and persisted in one batched storage operation; decrypted caches change only after persistence succeeds. Export passwords and imported ciphertext are removed from UI state on close, while temporary export files are deleted after sharing completes.
 
 ## Biometric Authentication
 
@@ -117,7 +117,7 @@ Expected behavior:
 - The stored biometric key uses `requireAuthentication: true` and `WHEN_PASSCODE_SET_THIS_DEVICE_ONLY`.
 - Biometric login reads that SecureStore item, verifies it against the master-key verifier, loads vault metadata, initializes storage, and authenticates the session.
 - If the SecureStore item is missing, invalidated by biometric enrollment changes, or no longer verifies, biometrics are disabled and the user must log in with PIN and re-enable biometrics.
-- When the PIN changes, the biometric key is updated to the new vault key. If that update fails, biometrics are disabled and the stale key is deleted.
+- When the PIN changes, ciphertext and verifier metadata commit before biometric maintenance. The biometric key is then updated to the new vault key. If that update fails, biometrics are disabled and the stale key is deleted on a best-effort basis; biometric cleanup can never roll back an already committed PIN change.
 
 ## Storage Rules
 
@@ -126,7 +126,10 @@ Expected behavior:
 - Legacy plaintext arrays are immediately re-encrypted when loaded with an active encryption key.
 - Writes are blocked after decryption errors until the unsafe state is resolved.
 - Mutations persist encrypted data before changing the decrypted cache, so a failed write cannot expose an uncommitted value through later reads.
+- Backup imports prepare every changed encrypted collection before one batched write and update neither cache if that write fails.
+- Clearing a password or note collection requires an active vault key and is blocked after a decryption error.
 - Master-key verifier metadata is written to SecureStore before its in-memory cache is updated. A failed SecureStore write leaves the previously persisted and cached verifier unchanged.
+- Initial PIN setup refuses to replace existing verifier metadata. If first-time database initialization fails after saving a new verifier, that verifier is removed and authentication/key state is cleared before setup reports failure.
 - Reset removes only Keysoft-owned AsyncStorage keys; it must not call the process-wide `AsyncStorage.clear()` API.
 
 ## Randomness
@@ -210,3 +213,6 @@ bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
 ```
 
 Security-sensitive changes should add or update tests in `src/__tests__/services`.
+
+The latest repository-wide review is recorded in
+[`security-audit-2026-08-08.md`](security-audit-2026-08-08.md).

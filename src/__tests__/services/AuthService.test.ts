@@ -59,12 +59,18 @@ describe('AuthService', () => {
     (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(false);
 
     (StorageService.saveMasterKeyInfo as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.deleteMasterKeyInfo as jest.Mock).mockResolvedValue(undefined);
     (StorageService.setEncryptionKey as jest.Mock).mockImplementation(() => {});
     (StorageService.initDatabase as jest.Mock).mockResolvedValue(undefined);
     (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
     (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(null); // Default: no key
     (StorageService.getBiometricKey as jest.Mock).mockResolvedValue(mockEncryptionKey);
     (StorageService.saveBiometricKey as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.deleteBiometricKey as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+      biometricsEnabled: false,
+    });
+    (StorageService.saveUserPreferences as jest.Mock).mockResolvedValue(undefined);
 
     // Biometrics default: available and enrolled
     (LocalAuthentication.hasHardwareAsync as jest.Mock).mockResolvedValue(true);
@@ -77,6 +83,7 @@ describe('AuthService', () => {
 
   describe('Master Password Setup & Login', () => {
     it('should setup master password correctly', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(null);
       const result = await AuthService.setupMasterPassword(mockMasterPassword);
 
       expect(result).toBe(true);
@@ -87,6 +94,35 @@ describe('AuthService', () => {
       expect(StorageService.setEncryptionKey).toHaveBeenCalledWith(mockEncryptionKey);
       expect(StorageService.initDatabase).toHaveBeenCalled();
       expect(AuthService.getIsAuthenticated()).toBe(true);
+    });
+
+    it('does not overwrite an existing master password configuration', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+
+      const result = await AuthService.setupMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(false);
+      expect(CryptoService.createMasterKeyInfoWithDerivedKey).not.toHaveBeenCalled();
+      expect(StorageService.saveMasterKeyInfo).not.toHaveBeenCalled();
+      expect(AuthService.getLastAuthFailure()).toEqual(
+        expect.objectContaining({ reason: 'master_key_already_configured' }),
+      );
+    });
+
+    it('rolls back a new verifier and clears the key when initial database setup fails', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(null);
+      (StorageService.initDatabase as jest.Mock).mockRejectedValue(
+        new Error('storage unavailable'),
+      );
+
+      const result = await AuthService.setupMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(false);
+      expect(StorageService.saveMasterKeyInfo).toHaveBeenCalledWith(mockMasterKeyInfo);
+      expect(StorageService.deleteMasterKeyInfo).toHaveBeenCalled();
+      expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith('');
+      expect(AuthService.getIsAuthenticated()).toBe(false);
+      expect(AuthService.getMasterKeyInfo()).toBeNull();
     });
 
     it('should login with correct master password', async () => {
@@ -220,6 +256,36 @@ describe('AuthService', () => {
       expect(AuthService.getLastAuthFailure()).toEqual(
         expect.objectContaining({ reason: 'kdf_upgrade_rollback_failed' }),
       );
+    });
+
+    it('keeps a committed KDF upgrade when biometric refresh and cleanup fail', async () => {
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+        biometricsEnabled: true,
+      });
+      (StorageService.reEncryptAllData as jest.Mock).mockResolvedValue(undefined);
+      (StorageService.saveBiometricKey as jest.Mock).mockRejectedValue(
+        new Error('biometric write failed'),
+      );
+      (StorageService.deleteBiometricKey as jest.Mock).mockRejectedValue(
+        new Error('biometric cleanup failed'),
+      );
+
+      const result = await AuthService.loginWithMasterPassword(mockMasterPassword);
+
+      expect(result).toBe(true);
+      expect(StorageService.reEncryptAllData).toHaveBeenCalledTimes(1);
+      expect(StorageService.saveMasterKeyInfo).toHaveBeenCalledWith(newInfo);
+      expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith(newKey);
+      expect(AuthService.getMasterKeyInfo()).toEqual(newInfo);
+      expect(AuthService.getIsAuthenticated()).toBe(true);
     });
   });
 
@@ -411,6 +477,50 @@ describe('AuthService', () => {
           biometricsEnabled: false,
         }),
       );
+    });
+
+    it('does not mutate encrypted storage when preferences cannot be read', async () => {
+      await AuthService.loginWithMasterPassword(mockMasterPassword);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (StorageService.getUserPreferences as jest.Mock).mockRejectedValue(
+        new Error('preferences unavailable'),
+      );
+
+      const result = await AuthService.updateMasterPassword('new-password');
+
+      expect(result).toBe(false);
+      expect(StorageService.reEncryptAllData).not.toHaveBeenCalled();
+      expect(StorageService.saveMasterKeyInfo).not.toHaveBeenCalled();
+    });
+
+    it('keeps the committed password change when biometric cleanup also fails', async () => {
+      const newKey = '1112131415161718191a1b1c1d1e1f201112131415161718191a1b1c1d1e1f20';
+      const newInfo = { ...mockMasterKeyInfo, verifier: 'new-verifier' };
+
+      await AuthService.loginWithMasterPassword(mockMasterPassword);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+      (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+        biometricsEnabled: true,
+      });
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.saveBiometricKey as jest.Mock).mockRejectedValue(
+        new Error('biometric write failed'),
+      );
+      (StorageService.deleteBiometricKey as jest.Mock).mockRejectedValue(
+        new Error('biometric cleanup failed'),
+      );
+
+      const result = await AuthService.updateMasterPassword('new-password');
+
+      expect(result).toBe(true);
+      expect(StorageService.reEncryptAllData).toHaveBeenCalledTimes(1);
+      expect(StorageService.reEncryptAllData).toHaveBeenCalledWith(newKey);
+      expect(StorageService.saveMasterKeyInfo).toHaveBeenCalledWith(newInfo);
+      expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith(newKey);
+      expect(AuthService.getMasterKeyInfo()).toEqual(newInfo);
     });
 
     it('should rollback re-encryption when saveMasterKeyInfo fails', async () => {

@@ -366,8 +366,10 @@ export const decrypt = async (encryptedText: string, key: string): Promise<strin
       const payload = CryptoJS.enc.Base64.parse(b64);
       const keyWA = CryptoJS.enc.Hex.parse(ensureHexKey(key));
 
-      // Minimum length check: IV (4 words) + MAC (8 words)
-      if (payload.words.length < 12) {
+      // Payload must contain IV (16 bytes), at least one complete AES-CBC
+      // ciphertext block (16 bytes), and HMAC-SHA256 (32 bytes).
+      const ciphertextLength = payload.sigBytes - 48;
+      if (payload.sigBytes < 64 || ciphertextLength % 16 !== 0) {
         throw new CryptoError('Invalid payload length');
       }
 
@@ -380,10 +382,7 @@ export const decrypt = async (encryptedText: string, key: string): Promise<strin
       const mac = CryptoJS.lib.WordArray.create(payload.words.slice(macIndex), 32);
 
       // Ciphertext is everything in between
-      const ct = CryptoJS.lib.WordArray.create(
-        payload.words.slice(4, macIndex),
-        payload.sigBytes - 48,
-      );
+      const ct = CryptoJS.lib.WordArray.create(payload.words.slice(4, macIndex), ciphertextLength);
 
       // Verify MAC (constant-time comparison)
       const computedMac = CryptoJS.HmacSHA256(iv.clone().concat(ct.clone()), keyWA);

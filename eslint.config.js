@@ -1,7 +1,6 @@
 // ESLint 9 flat config. Mirrors the previous .eslintrc.js: the Expo preset plus
 // the project's unused-vars rule, with Jest globals scoped to test files.
 const expoFlat = require('eslint-config-expo/flat');
-const typescriptEslint = require('@typescript-eslint/eslint-plugin');
 const globals = require('globals');
 
 module.exports = [
@@ -30,9 +29,6 @@ module.exports = [
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.d.ts'],
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
-    },
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',

@@ -52,8 +52,10 @@ export interface ValidatedBackupData {
 
 export function isBackupFileSizeAllowed(size: number | undefined): boolean {
   return (
-    size === undefined ||
-    (Number.isSafeInteger(size) && size >= 0 && size <= MAX_BACKUP_FILE_SIZE_BYTES)
+    size !== undefined &&
+    Number.isSafeInteger(size) &&
+    size >= 0 &&
+    size <= MAX_BACKUP_FILE_SIZE_BYTES
   );
 }
 

@@ -1,207 +1,179 @@
-![Keysoft secure private offline password manager banner](docs/assets/keysoft-banner.png)
+<a href="https://play.google.com/store/apps/details?id=it.mikesoft.keysoft">
+  <img src="docs/assets/keysoft-banner.png" alt="Keysoft — secure, private, offline password manager" width="100%" />
+</a>
 
 # Keysoft
 
-[![CI](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg)](https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+<p align="center">
+  <strong>A private, offline-first password manager for Android.</strong><br />
+  No account, no ads, no cloud vault, and no tracking SDKs.
+</p>
 
-Keysoft is an offline-first password manager for Android, with cloud-simulator compatibility for iPhone and iPad, built with Expo, React Native, and TypeScript. It stores vault data locally and protects user content with authenticated encryption.
+<p align="center">
+  <a href="https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml"><img src="https://github.com/TheStreamCode/keysoft/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://github.com/TheStreamCode/keysoft/releases/latest"><img src="https://img.shields.io/github/v/release/TheStreamCode/keysoft?display_name=tag&amp;sort=semver" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Apache 2.0 license" /></a>
+</p>
 
-The application is designed around a local-only operating model: the PIN/master password is never persisted, vault data is encrypted at rest, and the app does not require a backend service to operate.
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=it.mikesoft.keysoft">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="64" />
+  </a>
+</p>
 
-Keysoft works offline for vault management. Network access is limited to platform services such as Expo/EAS updates and is not used to sync, upload, or transmit vault contents, PINs, master passwords, or encryption keys.
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=it.mikesoft.keysoft">Google Play</a> ·
+  <a href="https://mikesoft.it/en/keysoft-policy/">Privacy</a> ·
+  <a href="SECURITY.md">Security</a> ·
+  <a href="https://github.com/TheStreamCode/keysoft/releases/latest">Latest release</a>
+</p>
 
-## Current Status
+Keysoft keeps passwords and secure notes encrypted on the device and works without a
+backend service. Network access is limited to platform services such as Expo/EAS update
+delivery; vault contents, PINs, master passwords, and encryption keys are never used for
+sync or remote storage.
 
-| Area                | Status                             |
-| ------------------- | ---------------------------------- |
-| Platform focus      | Android release; iOS cloud testing |
-| App version         | 3.3.0                              |
-| Android versionCode | 129 (EAS production target)        |
-| Expo SDK            | 57.0.9                             |
-| React Native        | 0.86.2                             |
-| TypeScript          | 6.0.3, strict mode                 |
-| Test suite          | 30 suites, 199 tests               |
-| Health check        | `expo-doctor` 20/20                |
+## Why Keysoft
 
-Keysoft 3.3.0 is published on [Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Production build numbers are managed remotely by EAS; the 3.3.0 release uses Android versionCode 129. `app.config.js` mirrors that value for local manifest visibility, while `appVersionSource: "remote"` keeps EAS authoritative for future build numbers.
+- **Private by default:** no registration, cloud vault, advertising, or analytics SDK.
+- **Useful offline:** create, search, organize, and copy credentials without connectivity.
+- **Encrypted locally:** authenticated vault encryption with tamper detection.
+- **Fast unlock:** optional biometric access backed by device-authenticated SecureStore.
+- **User-owned backups:** password-protected import/export without a remote backup account.
+- **Practical security tools:** secure notes, password generation, vault-health checks,
+  clipboard auto-clear, local reminders, and optional screenshot protection.
+- **Accessible and responsive:** Italian and English UI, light/dark themes, reduced-motion
+  support, and phone/tablet layouts.
 
-## Core Capabilities
+## Product Tour
 
-- Password vault with create, read, update, delete, search, pagination, and categories.
-- Secure notes stored with the same vault encryption model.
-- Local password generator backed by cryptographically secure randomness.
-- Optional biometric unlock backed by SecureStore with device authentication.
-- Local notifications for security reminders and backup prompts.
-- Encrypted import/export workflow for user-managed backups.
-- Italian and English localization with system-language detection.
-- Automated i18n checks for Italian/English key parity, placeholder parity, and user-facing fallback regressions.
-- Source-structure regression checks for lowercase directories and shared settings hook placement.
-- Nocturne light/dark interface with responsive phone/tablet layouts, a dedicated PIN keypad, copy-first credential views, reduced-motion support, and accessible touch targets.
-- Local vault-health analysis for weak, reused, and expired credentials.
+The screenshots below are taken from the production Android listing on Google Play.
 
-## Design And Interaction
-
-- Semantic theme tokens provide automatic light and dark appearances without screen-specific color branching.
-- Responsive content bounds support compact phones, landscape, tablets, and split-view widths while preserving safe areas and 44-point minimum touch targets.
-- Alerts and confirmations use the shared dialog primitive, selection workflows use bottom sheets, and non-blocking feedback uses in-app toasts.
-- Entrance effects animate only opacity and transforms and respect the operating-system reduced-motion preference.
-- The profile photo is previewed locally and persisted only when profile changes are saved; the same avatar and initial fallback are rendered on unlock, vault, and settings screens.
-- The original Keysoft shield-and-eye artwork is the canonical launcher, adaptive, splash, favicon, and onboarding mark.
+<table>
+  <tr>
+    <td align="center"><img src="docs/assets/screenshots/add-password.png" alt="Add a password in Keysoft" width="210" /></td>
+    <td align="center"><img src="docs/assets/screenshots/password-generator.png" alt="Generate a strong password in Keysoft" width="210" /></td>
+    <td align="center"><img src="docs/assets/screenshots/secure-notes.png" alt="Store secure notes in Keysoft" width="210" /></td>
+    <td align="center"><img src="docs/assets/screenshots/encrypted-backup.png" alt="Export an encrypted Keysoft backup" width="210" /></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Quick entry</strong></td>
+    <td align="center"><strong>Password generator</strong></td>
+    <td align="center"><strong>Secure notes</strong></td>
+    <td align="center"><strong>Encrypted backups</strong></td>
+  </tr>
+</table>
 
 ## Security Model
 
-Keysoft uses the KS1 envelope for vault data:
+Keysoft uses the versioned KS1 envelope for vault data:
 
-- AES-256-CBC for encryption.
-- HMAC-SHA256 for integrity verification.
-- Argon2id in EAS/native builds when available, PBKDF2 fallback in Expo Go or where required.
-- Expo Go is a development workflow. Vaults created in Expo Go use PBKDF2 fallback metadata; use EAS/native builds for release-grade Argon2 validation.
-- 64-character hex derived keys.
-- CSPRNG-backed salts, IVs, IDs, and password generation.
-- The vault key stays in memory by default. If biometrics are enabled, the vault key is stored in SecureStore with device authentication required and is updated or removed when the PIN changes.
-- PIN setup and PIN changes reuse the vault key derived during verifier creation to avoid duplicate KDF work while preserving the configured Argon2/PBKDF2 cost.
-- Verifier metadata is cached only after SecureStore accepts the write. A failed KDF-upgrade rollback closes the session rather than continuing with an uncertain vault key.
+- AES-256-CBC encryption with HMAC-SHA256 integrity verification.
+- Argon2id key derivation in native builds; Expo Go uses the documented PBKDF2
+  development fallback.
+- CSPRNG-backed salts, IVs, identifiers, and password generation.
+- A 64-character derived vault key held in memory by default.
+- Optional biometric unlock stores only the derived vault key in SecureStore with device
+  authentication required.
+- Encrypted backups use the versioned `KS1-PW1` format and a user-provided passphrase.
 
-Backup files use a password-encrypted payload format (`KS1-PW1`) with KDF metadata and authenticated KS1 ciphertext.
+Keysoft cannot recover a forgotten master PIN because it has no server-side recovery
+material. Read the [security architecture](docs/security.md) for the full model, accepted
+trade-offs, and migration rules. Vulnerabilities should be reported privately through the
+[security policy](SECURITY.md), never through a public issue.
 
-See [Security Architecture](docs/security.md) for the full model, operational assumptions, and storage rules.
+## Current Release
 
-## Documentation
+Keysoft 3.3.0 is available on
+[Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Android is
+the production platform. iPhone and iPad remain cloud-simulator compatibility targets and
+are not currently distributed through the App Store.
 
-- [Architecture](docs/architecture.md)
-- [Security Architecture](docs/security.md)
-- [Development Guide](docs/development.md)
-- [Release Guide](docs/release.md)
-- [iOS Testing Without Apple Hardware](docs/ios-testing.md)
-- [Public Repository Checklist](docs/publication.md)
-- [First-Party Copyright And Scope Record](COPYRIGHT.md)
-- [Pre-Build Security/UI Review](docs/pre-build-security-ui-review.md)
-- [Keysoft 3.3.0 Release Notes](docs/releases/3.3.0.md)
-- [Changelog](CHANGELOG.md)
+The source of truth for shipped changes is the [changelog](CHANGELOG.md) and the
+[latest GitHub release](https://github.com/TheStreamCode/keysoft/releases/latest). Exact
+verification results are recorded in dated release and audit documents instead of being
+duplicated here.
 
-## Requirements
+## Developer Quick Start
 
-- Bun 1.3.14 (the version declared in `package.json` and used by CI)
-- Node.js 22.13 or newer
-- Expo Go installed on the Android device used for development
-- Expo account access for EAS builds on expo.dev
-- Expo CLI via `bunx expo`
+Requirements:
 
-## Installation
+- Bun 1.3.14.
+- Node.js 22.13 or newer.
+- Expo Go on an Android device for day-to-day development.
+
+Install and start:
 
 ```bash
 bun install
-```
-
-Use `bun install --frozen-lockfile` in CI and when validating a clean checkout.
-
-## Configuration
-
-Keysoft needs no environment variables or backend service for local development. The tracked `.env.example` documents this intentionally empty configuration. Local `.env*` files, `.secrets/`, signing keys, and generated native projects are ignored by Git.
-
-Never store secrets in `EXPO_PUBLIC_*` variables: Expo embeds those values in the client bundle. Store EAS credentials in EAS-managed secrets and repository automation credentials in GitHub Actions secrets. The Expo project identifier and update URLs in `app.config.js` are public application metadata, not credentials.
-
-## Development
-
-Start the Expo development server for Expo Go:
-
-```bash
 bun run start
 ```
 
-Open on Android with Expo Go:
+Useful commands:
 
 ```bash
 bun run android
-```
-
-Use a tunnel when the phone cannot reach the local machine over LAN:
-
-```bash
 bun run start:tunnel
-```
-
-Run web for development/testing:
-
-```bash
 bun run web
-```
-
-Build artifacts are produced on expo.dev through EAS:
-
-```bash
-bun run build:android:preview
-bun run build:android:production
-bun run build:ios:simulator
-```
-
-EAS builds upload the project to expo.dev. Start them only after the release checklist is complete and the upload has been explicitly approved.
-
-### Build from GitHub
-
-The repository is linked to EAS Build. The Android production workflow runs only for version tags matching `v*` or by manual dispatch. Google Play submission is currently manual; `bun run submit:android:production` is reserved for a future configured submission profile. iOS is retained as a cloud-simulator test target, and App Store publication is intentionally outside the project release workflow.
-
-## Verification
-
-Run the full local verification suite before shipping changes:
-
-```bash
 bun run verify
 bun run deps:audit
-bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export
 ```
 
-`bun run verify` checks formatting, TypeScript, ESLint, the coverage-enabled Jest suite, and Expo project health. The individual commands remain available as `bun run format:check`, `bun run typecheck`, `bun run lint`, `bun run test`, and `bunx expo-doctor`.
+Use `bun install --frozen-lockfile` for clean validation. Keysoft requires no local
+environment variables or backend service. Never place credentials in `EXPO_PUBLIC_*`
+variables: Expo embeds them in the client bundle.
 
-Current verified state:
-
-- `bun run typecheck`: passing
-- `bun run lint`: passing
-- `bun run test:ci`: passing, 30 suites and 199 tests
-- `bunx expo-doctor`: passing, 20/20 checks
-- `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`: passing
-- `bunx expo export --platform ios --output-dir C:\tmp\keysoft-ios-export`: passing
+Release artifacts are produced through EAS. EAS build, submission, tag, and release
+operations must only be started through the documented, explicitly approved release
+workflow. See the [development guide](docs/development.md) and
+[release guide](docs/release.md).
 
 ## Project Structure
 
 ```text
 src/
-  components/        Shared UI components
-    brand/            Canonical in-app brand mark
-    ui/               Dialog, bottom sheet, toast, motion, PIN keypad, and controls
-  contexts/          Application state providers
-  hooks/             Complex screen and behavior logic
-    settings/        Settings workflows extracted from SettingsScreen
-                     (usePinManagement, useNotificationSettings,
-                      useProfileForm, useExportImport)
-  locales/           i18n dictionaries (it.ts, en.ts) consumed by LanguageContext
+  components/        Shared UI and interaction primitives
+  contexts/          Authentication, language, theme, and alert state
+  hooks/             Complex screen and settings workflows
+  locales/           Italian and English dictionaries
   models/            TypeScript domain models
-  navigation/        Navigation configuration (typed via NativeStackScreenProps)
-  screens/           User-facing screens
-  services/          Business, crypto, storage, auth, and utility services
-  utils/             Shared platform and security helpers (incl. withTimeout)
+  navigation/        Typed application navigation
+  screens/           User-facing application screens
+  services/          Auth, crypto, storage, import/export, and utilities
+  utils/             Shared platform and security helpers
 ```
 
-Path aliases (`@/*`, `@components/*`, `@services/*`, …) are configured in
-`tsconfig.json` and `babel.config.js` for use in new code.
+## Documentation
 
-## Data Ownership
+- [Architecture](docs/architecture.md)
+- [Security Architecture](docs/security.md)
+- [Security and Code Audit (2026-08-08)](docs/security-audit-2026-08-08.md)
+- [Development Guide](docs/development.md)
+- [Release Guide](docs/release.md)
+- [iOS Testing Without Apple Hardware](docs/ios-testing.md)
+- [Public Repository Checklist](docs/publication.md)
+- [Keysoft 3.3.0 Release Notes](docs/releases/3.3.0.md)
+- [Changelog](CHANGELOG.md)
 
-Keysoft is local-first. The user owns their vault data and is responsible for keeping backup files and the master password secure. The app cannot recover a lost master password because no server-side recovery material exists.
+## Contributing
 
-## Support
+Contributions are welcome through focused pull requests. Read
+[CONTRIBUTING.md](CONTRIBUTING.md), keep security-sensitive changes small and testable,
+and run `bun run verify` before requesting review.
 
-Product assistance is available over email at [keysoft@mikesoft.it](mailto:keysoft@mikesoft.it). Settings > Support opens a pre-addressed message and copies the address to the clipboard when the device has no mail client registered. Do not include passwords, PINs, encryption keys, or real vault data in support requests.
+## Data Ownership and Support
 
-If Keysoft's local-first security work is useful to you, support continued development through GitHub Sponsors: [github.com/sponsors/TheStreamCode](https://github.com/sponsors/TheStreamCode).
+Users own their local vault data and are responsible for retaining backup files and the
+master passphrase. Product assistance is available at
+[keysoft@mikesoft.it](mailto:keysoft@mikesoft.it); never include real vault contents,
+PINs, encryption keys, or backup payloads in support requests.
 
-The current public privacy notice is available in [English](https://mikesoft.it/en/keysoft-policy/) and [Italian](https://mikesoft.it/it/keysoft-policy/). It documents Android distribution, iOS cloud-simulator testing, local storage, Expo Updates traffic, permissions, and user-controlled backups.
+Keysoft development can be supported through
+[GitHub Sponsors](https://github.com/sponsors/TheStreamCode).
 
-## License
+## License and Attribution
 
-This project is licensed under the [Apache License 2.0](LICENSE) (`Apache-2.0`). See the [first-party copyright and scope record](COPYRIGHT.md), [third-party notices](THIRD_PARTY_NOTICES.md), and [TRADEMARKS.md](TRADEMARKS.md).
-
-## Responsible Disclosure
-
-Please do not open public issues for vulnerabilities. Follow [SECURITY.md](SECURITY.md) for private reporting guidance.
+Keysoft is licensed under the [Apache License 2.0](LICENSE). See
+[COPYRIGHT.md](COPYRIGHT.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and
+[TRADEMARKS.md](TRADEMARKS.md) for first-party scope, dependency notices, and trademark
+terms.

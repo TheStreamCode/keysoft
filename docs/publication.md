@@ -21,6 +21,12 @@ publicly reviewable.
   provenance and license terms.
 - Review `README.md`, `LICENSE`, `COPYRIGHT.md`, `TRADEMARKS.md`,
   `SECURITY.md`, and `CONTRIBUTING.md`.
+- Confirm the README leads with a clear product promise, a working store call to action,
+  current production screenshots, and links to privacy, security, and the latest release.
+- Keep exact test/dependency snapshots in dated audits or releases instead of duplicating
+  fast-stale counters in the product overview.
+- Configure a repository social preview using a first-party image of at least 640x320 and
+  point the repository homepage to the most useful current product destination.
 - Run release verification:
   ```bash
   bun run verify
@@ -69,6 +75,8 @@ Recommended settings:
 - Disable force pushes on protected branches after any required history cleanup.
 - Keep GitHub Actions permissions at read-only by default unless a workflow
   requires write access.
+- Disable blank issues when structured bug, feature, and private vulnerability-reporting
+  paths are available.
 
 ## Current Public Configuration
 
