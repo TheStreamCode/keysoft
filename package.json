@@ -90,7 +90,7 @@
     "jest": "^29.7.0",
     "jest-expo": "~57.0.3",
     "prettier": "^3.9.6",
-    "react-test-renderer": "19.2.3"
+    "react-test-renderer": "19.2.8"
   },
   "overrides": {
     "shell-quote": "^1.10.0"
