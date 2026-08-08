@@ -1,15 +1,32 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-08-02
+Latest update: 2026-08-09
 
-Published production release: Keysoft 3.3.0, Android versionCode 129, with iOS simulator readiness retained outside the App Store release scope.
+Current source release target: Keysoft 3.3.1, Android versionCode 130. Google Play remains on
+Keysoft 3.3.0, versionCode 129, until the new production bundle is submitted manually. iOS
+simulator readiness remains outside the App Store release scope.
 
 ## Executive Summary
 
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 2026-08-09 Release Review
+
+The 3.3.1 release packages the 2026-08-08 security/code audit and GitHub presentation work.
+Authentication setup, PIN rotation, KDF upgrades, encrypted writes, and batched imports now
+fail closed across persistence errors. Backup size/KDF/ciphertext bounds, active-key guards,
+generated permission blocks, frozen CI installs, and focused regressions remain in place.
+The release preserves KS1/KS1-PW1 compatibility, storage keys, default vault KDF parameters,
+permissions, icons, and the offline-only vault boundary.
+
+Public documentation now leads with the product promise, Google Play availability, security
+model, and production screenshots. The repository description, homepage, structured issue
+intake, and first-party social preview were verified live. Local verification passes 30 Jest
+suites / 212 tests, Expo Doctor 20/20, the critical dependency gate, Android bundle export,
+and generated-native R8, permission, and Argon2 keep-rule checks.
 
 ### 2026-08-02 Follow-Up Review
 
@@ -133,7 +150,7 @@ The 2.2 release is documentation- and content-only on top of 2.1: the settings s
 - `bun run format:check`
 - `bun run typecheck`
 - `bun run lint`
-- `bun run test:ci`: 30 suites, 199 tests
+- `bun run test:ci`: 30 suites, 212 tests
 - `bunx expo-doctor`: 20/20 checks
 - `bun audit --audit-level=critical`
 - `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`

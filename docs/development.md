@@ -155,6 +155,11 @@ If `expo-doctor` reports duplicate native modules after a valid dependency updat
 
 For significant behavior or release changes, update `README.md`, `CHANGELOG.md`, and the relevant file under `docs/`. Historical release notes under `docs/releases/` remain snapshots and should not be rewritten to describe later behavior.
 
+Each release adds a new `docs/releases/<version>.md` snapshot and synchronizes
+`package.json`, `app.config.js`, `CITATION.cff`, `THIRD_PARTY_NOTICES.md`, the README current
+release section, and `docs/release.md`. Distinguish the source/GitHub release, EAS build,
+Google Play submission, and Play Store publication; none of those states implies the next.
+
 When a change affects permissions, networking, updates, backups, biometrics, clipboard handling, profile images, key derivation, data retention, support contacts, or supported platforms, also review:
 
 - the Italian and English privacy keys in `src/locales/`;
@@ -176,6 +181,12 @@ bun run build:android:production
 ```
 
 The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` can build the Android production app-bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. iOS remains available only through the explicitly approved cloud-simulator workflow; App Store publication is outside the project workflow.
+
+When publishing an approved release, push and verify `main` first, wait for the GitHub
+`Validate` and CodeQL checks, then create the version tag on that exact commit. The tag push
+already starts the EAS production workflow; do not also run `bun run
+build:android:production` unless the tag-triggered workflow failed to start and a deliberate
+replacement build is approved.
 
 Expo Go cannot load custom native modules. Keysoft therefore uses the PBKDF2 KDF fallback in Expo Go and keeps Argon2 for EAS/native builds where `react-native-argon2` is available.
 

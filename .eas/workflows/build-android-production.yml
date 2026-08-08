@@ -1,7 +1,7 @@
 name: Build Android production
 
 # Release-oriented triggers to conserve EAS build credits (free tier):
-# - push a version tag (e.g. v2.1) to build that release, or
+# - push a version tag (e.g. v3.3.1) to build that release, or
 # - run it manually from the Expo dashboard ("Run workflow") / `eas workflow:run`.
 # Intentionally NOT triggered on every push to main, to avoid burning build minutes.
 on:

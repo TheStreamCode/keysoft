@@ -4,6 +4,15 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [3.3.1] - 2026-08-09
+
+### Release
+
+- Prepared Keysoft 3.3.1 with native runtime 3.3.1 and Android production build target 130. EAS remote versioning remains authoritative and auto-increments from build 129;
+  Google Play submission remains a separate manual step.
+
 ### Security
 
 - Made PIN rotation and transparent KDF upgrades transactional: preference reads now

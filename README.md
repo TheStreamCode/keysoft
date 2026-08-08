@@ -84,10 +84,11 @@ trade-offs, and migration rules. Vulnerabilities should be reported privately th
 
 ## Current Release
 
-Keysoft 3.3.0 is available on
-[Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft). Android is
-the production platform. iPhone and iPad remain cloud-simulator compatibility targets and
-are not currently distributed through the App Store.
+Keysoft 3.3.1 is the current source release and Android production-build target.
+[Google Play](https://play.google.com/store/apps/details?id=it.mikesoft.keysoft) currently
+distributes Keysoft 3.3.0 (build 129) until the separately reviewed 3.3.1 app bundle is
+submitted. Android is the production platform. iPhone and iPad remain cloud-simulator
+compatibility targets and are not currently distributed through the App Store.
 
 The source of truth for shipped changes is the [changelog](CHANGELOG.md) and the
 [latest GitHub release](https://github.com/TheStreamCode/keysoft/releases/latest). Exact
@@ -152,7 +153,7 @@ src/
 - [Release Guide](docs/release.md)
 - [iOS Testing Without Apple Hardware](docs/ios-testing.md)
 - [Public Repository Checklist](docs/publication.md)
-- [Keysoft 3.3.0 Release Notes](docs/releases/3.3.0.md)
+- [Keysoft 3.3.1 Release Notes](docs/releases/3.3.1.md)
 - [Changelog](CHANGELOG.md)
 
 ## Contributing

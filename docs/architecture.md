@@ -109,8 +109,12 @@ A top-level error boundary (`src/components/ErrorBoundary.tsx`) wraps the naviga
 3. Biometric login asks SecureStore for the stored biometric vault key with device authentication, verifies it against the same master-key verifier, and then loads it into memory.
 4. `StorageService` initializes the encrypted vault cache with the active key.
 5. `AuthContext` completes the shared post-login pipeline: authentication state, login notification, post-auth migration, notification settings, clipboard timeout, and auto-lock timeout.
-6. Password and note writes are serialized, encrypted with KS1, persisted to AsyncStorage, and only then committed to the decrypted in-memory cache.
-7. Logout and auto-lock clear authentication state and the in-memory key.
+6. PIN setup, PIN rotation, and transparent KDF upgrades treat ciphertext and verifier
+   metadata as one authenticated transaction. If rollback also fails, the session and
+   in-memory key are cleared instead of continuing against uncertain storage.
+7. Password and note writes are serialized, encrypted with KS1, persisted to AsyncStorage,
+   and only then committed to the decrypted in-memory cache.
+8. Logout and auto-lock clear authentication state and the in-memory key.
 
 ## Storage Boundaries
 
@@ -137,6 +141,8 @@ Exports are user-initiated. Encrypted exports use `KS1-PW1`, which wraps:
 - Version metadata.
 
 Imports are parsed as unknown data and validated before any object reaches `StorageService`.
+Validated password and note records are merged by ID, encrypted completely, and committed
+through one batched storage mutation so an import cannot persist only one collection.
 
 Imported files and collection sizes are bounded before parsing and persistence. Export passwords and encrypted import payloads are cleared from hook state when their dialogs close, and temporary export files are removed after the platform share flow completes.
 

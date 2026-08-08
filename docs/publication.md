@@ -77,6 +77,8 @@ Recommended settings:
   requires write access.
 - Disable blank issues when structured bug, feature, and private vulnerability-reporting
   paths are available.
+- Verify the repository description, homepage, topics, and social preview after any product
+  positioning or store-link change.
 
 ## Current Public Configuration
 
@@ -95,3 +97,8 @@ classic branch protection API. The repository is therefore configured with
 administrator bypass disabled for non-admin collaborators by permission model:
 `TheStreamCode` is the only collaborator with push/admin access, and all other
 contributors must use pull requests.
+
+The repository description states the offline-first privacy promise, the homepage points to
+Google Play, structured issue templates are enabled with blank issues disabled, and the
+first-party Keysoft banner is configured as the social preview. Recheck these live settings
+before each public launch announcement.

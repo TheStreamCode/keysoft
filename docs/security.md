@@ -127,6 +127,8 @@ Expected behavior:
 - Writes are blocked after decryption errors until the unsafe state is resolved.
 - Mutations persist encrypted data before changing the decrypted cache, so a failed write cannot expose an uncommitted value through later reads.
 - Backup imports prepare every changed encrypted collection before one batched write and update neither cache if that write fails.
+- Imported records are merged by ID and checked against post-merge collection limits before
+  encryption, preventing both partial persistence and repeated quadratic writes.
 - Clearing a password or note collection requires an active vault key and is blocked after a decryption error.
 - Master-key verifier metadata is written to SecureStore before its in-memory cache is updated. A failed SecureStore write leaves the previously persisted and cached verifier unchanged.
 - Initial PIN setup refuses to replace existing verifier metadata. If first-time database initialization fails after saving a new verifier, that verifier is removed and authentication/key state is cleared before setup reports failure.
@@ -216,3 +218,4 @@ Security-sensitive changes should add or update tests in `src/__tests__/services
 
 The latest repository-wide review is recorded in
 [`security-audit-2026-08-08.md`](security-audit-2026-08-08.md).
+Its release follow-up is documented in the Keysoft 3.3.1 release notes.

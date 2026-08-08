@@ -2,7 +2,11 @@
 
 ## Release Readiness Checklist
 
-Current production release: Keysoft 3.3.0, Android versionCode 129, published on Google Play. EAS remote versioning remains authoritative for future Android builds. iOS remains a cloud-simulator compatibility target and is not an App Store release target.
+Current source release and Android build target: Keysoft 3.3.1, versionCode 130. Google Play
+currently distributes Keysoft 3.3.0, versionCode 129, until the new app bundle completes
+review and is submitted manually. EAS remote versioning remains authoritative for Android
+builds. iOS remains a cloud-simulator compatibility target and is not an App Store release
+target.
 
 Before preparing a release:
 
@@ -37,9 +41,15 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the current 3.3.0 production release, `app.config.js` uses `version: "3.3.0"`, `android.versionCode: 129`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The published Android release uses build 129. The local value mirrors the release for manifest visibility but does not control future EAS production builds. Because EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.0.
+For the 3.3.1 source release, `app.config.js` uses `version: "3.3.1"`,
+`android.versionCode: 130`, and an iOS simulator baseline of `ios.buildNumber: "1"`. Before
+the build, the EAS remote Android value is 129; the production profile auto-increments it to 130. The local value mirrors the target for manifest visibility but does not control the EAS
+counter. Because EAS Update uses the `appVersion` runtime policy, this release uses native
+runtime 3.3.1. Google Play remains on 3.3.0/129 until manual submission and publication.
 
-Read the current remote value with `bunx eas-cli build:version:get --platform android` instead of assuming the baseline.
+Read the current remote value with
+`bunx eas-cli build:version:get --platform android --profile production --non-interactive`
+instead of assuming the baseline.
 
 When changing Android permissions or update behavior, keep `app.config.js`, EAS profiles, and generated native configuration in sync.
 
@@ -68,7 +78,10 @@ These commands upload the project to expo.dev. Do not start them until the relea
 
 ### Build from GitHub
 
-The Android workflow runs for a matching version tag or manual dispatch. It uploads the project to Expo and therefore requires explicit approval before it is run.
+The Android workflow runs for a matching version tag or manual dispatch. It uploads the
+project to Expo and therefore requires explicit approval before it is run. A release tag
+already starts the production build; do not launch the local production-build command as
+well unless intentionally replacing a missing or failed workflow run.
 
 ## iOS Cloud Simulator Testing
 

@@ -206,3 +206,12 @@ This audit performed local source changes, dependency resolution, tests, an Andr
 export, and a temporary native prebuild. It did not start an EAS build, submit to Google
 Play, create a tag or release, push commits, change secrets, dismiss GitHub alerts, or
 deploy anything.
+
+## Post-Audit Publication Follow-Up — 2026-08-09
+
+The audited changes were subsequently published for review in GitHub PR #35 with green CI
+and CodeQL analysis. The existing `js/insufficient-password-hash` alert on the KS1 encryption
+call was dismissed as a false positive with a repository-visible technical justification:
+the operation reversibly encrypts vault records under an already KDF-derived key and is not
+password-authentication hashing. Keysoft 3.3.1 packages the audited changes without altering
+the KS1/KS1-PW1 formats or accepted compatibility boundaries.
