@@ -1,0 +1,41 @@
+version: 2
+
+# Version updates feed the Dependabot auto-merge workflow
+# (.github/workflows/dependabot-auto-merge.yml): patch and minor bumps are
+# queued for auto-merge once checks pass, while major bumps stay open for
+# human review. Groups keep weekly noise to a few themed PRs.
+updates:
+  - package-ecosystem: 'bun'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'Europe/Rome'
+    open-pull-requests-limit: 5
+    groups:
+      expo-sdk:
+        patterns:
+          - 'expo*'
+          - '@expo/*'
+          - 'babel-preset-expo'
+          - 'jest-expo'
+          - 'eslint-config-expo'
+      react-native:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'react-native*'
+          - 'react-test-renderer'
+          - '@react-navigation/*'
+      dev-tooling:
+        patterns:
+          - '@babel/*'
+          - '@testing-library/*'
+          - '@types/*'
+          - 'babel-*'
+          - 'eslint*'
+          - 'globals'
+          - 'jest*'
+          - 'prettier'
+          - 'typescript'
