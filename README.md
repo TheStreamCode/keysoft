@@ -95,6 +95,47 @@ The source of truth for shipped changes is the [changelog](CHANGELOG.md) and the
 verification results are recorded in dated release and audit documents instead of being
 duplicated here.
 
+## FAQ
+
+**I forgot my master PIN. Can it be recovered?**
+
+No — not by anyone. Keysoft has no account, server, or recovery back door, so
+there is no server-side material that could reset or reveal the PIN, not even
+through [support](mailto:keysoft@mikesoft.it). The only way back into a locked
+vault is a previously exported encrypted backup plus the passphrase chosen at
+export; without the PIN or that backup pair, the vault is unrecoverable by
+design. See the [security architecture](docs/security.md), and keep backup
+files and their passphrase somewhere safe — you own both.
+
+**Biometric unlock stopped working. What now?**
+
+Unlock with your master PIN, then re-enable biometrics in Settings
+(“Biometric authentication”). Biometric unlock stores only the derived vault
+key in SecureStore behind device authentication, so adding or removing a
+fingerprint/face, changing the PIN, or a SecureStore failure disables it and
+falls back to PIN login — the vault itself is unaffected. Details live under
+[“Biometric Authentication”](docs/security.md#biometric-authentication) and in
+the [architecture notes](docs/architecture.md).
+
+**How do I back up and restore my vault?**
+
+In Settings, “Export data” writes a versioned `KS1-PW1` encrypted backup file
+protected by a passphrase you choose, and “Import data” restores it: pick the
+backup file, enter the export passphrase, and records merge by ID. Imports up
+to 10 MiB are accepted and validated before anything is written. Keep both the
+file and its passphrase — losing either is the same as losing the vault. The
+format and validation rules are documented under
+[“Backup Encryption”](docs/security.md#backup-encryption).
+
+**Why does Expo Go behave differently from the installed app?**
+
+Expo Go builds use a documented PBKDF2 fallback because the native Argon2id
+module is unavailable there; production builds always derive keys with
+Argon2id. If a vault requires Argon2id and the native module is missing, login
+fails with a native-KDF diagnostic instead of silently accepting a weaker
+check. See the [security architecture](docs/security.md) and the
+[development guide](docs/development.md).
+
 ## Developer Quick Start
 
 Requirements:
