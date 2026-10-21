@@ -109,11 +109,16 @@ A top-level error boundary (`src/components/ErrorBoundary.tsx`) wraps the naviga
 3. Biometric login asks SecureStore for the stored biometric vault key with device authentication, verifies it against the same master-key verifier, and then loads it into memory.
 4. `StorageService` initializes the encrypted vault cache with the active key.
 5. `AuthContext` completes the shared post-login pipeline: authentication state, login notification, post-auth migration, notification settings, clipboard timeout, and auto-lock timeout.
-6. PIN setup, PIN rotation, and transparent KDF upgrades treat ciphertext and verifier
-   metadata as one authenticated transaction. If rollback also fails, the session and
-   in-memory key are cleared instead of continuing against uncertain storage.
-7. Password and note writes are serialized, encrypted with KS1, persisted to AsyncStorage,
-   and only then committed to the decrypted in-memory cache.
+6. PIN setup, PIN rotation, and transparent KDF upgrades write a pending recovery record
+   before touching the vault, re-encrypt the vault in one batched write, and commit the new
+   verifier metadata with a single SecureStore write. A process kill between the vault write
+   and the metadata commit is reconciled on the next master-password login; biometric unlock
+   waits for that login. If rollback also fails, the session and in-memory key are cleared
+   instead of continuing against uncertain storage, and the recovery record is kept so the
+   next login can complete the promotion.
+7. Whole-collection writes are queued per storage key, encrypted with KS1, persisted to
+   AsyncStorage, and only then committed to the decrypted in-memory cache, so two concurrent
+   mutations cannot overwrite each other from the same snapshot.
 8. Logout and auto-lock clear authentication state and the in-memory key.
 
 ## Storage Boundaries

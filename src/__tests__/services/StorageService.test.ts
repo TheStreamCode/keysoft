@@ -487,4 +487,85 @@ describe('StorageService', () => {
       expect(AsyncStorage.clear).not.toHaveBeenCalled();
     });
   });
+
+  describe('Serialised vault writes', () => {
+    const buildPassword = (id: string): Password => ({
+      id,
+      title: `Title ${id}`,
+      username: 'user',
+      password: `secret-${id}`,
+      createdAt: 0,
+      updatedAt: 0,
+    });
+
+    it('does not lose a password when two saves start from the same snapshot', async () => {
+      const persisted = new Map<string, string>();
+      (AsyncStorage.setItem as jest.Mock).mockImplementation(async (key: string, value: string) => {
+        const records = JSON.parse(value.replace('encrypted-', '')) as Password[];
+        // The first save is the slow write. Without serialisation the second save
+        // commits first from the same empty snapshot and is then overwritten by the
+        // first save's stale snapshot: the last writer silently drops the other record.
+        await new Promise((resolve) =>
+          setTimeout(resolve, records.some((record) => record.id === 'first') ? 20 : 1),
+        );
+        persisted.set(key, value);
+      });
+
+      await Promise.all([
+        StorageService.savePassword(buildPassword('first')),
+        StorageService.savePassword(buildPassword('second')),
+      ]);
+
+      const persistedPasswords = JSON.parse(
+        (persisted.get('keysoft_passwords') as string).replace('encrypted-', ''),
+      ) as Password[];
+      expect(persistedPasswords.map((record) => record.id)).toEqual(['first', 'second']);
+      await expect(StorageService.getAllPasswords()).resolves.toHaveLength(2);
+    });
+
+    it('runs a queued save after a concurrent re-encryption and uses the new key', async () => {
+      await StorageService.savePassword(buildPassword('existing'));
+      jest.clearAllMocks();
+      (CryptoService.encrypt as jest.Mock).mockImplementation((data: string, _key: string) =>
+        Promise.resolve(`encrypted-${data}`),
+      );
+      let stagedSnapshotTaken = false;
+      (AsyncStorage.multiSet as jest.Mock).mockImplementation(async () => {
+        stagedSnapshotTaken = true;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+
+      const newKey = '1112131415161718191a1b1c1d1e1f201112131415161718191a1b1c1d1e1f20';
+      const rekey = StorageService.reEncryptAllData(newKey);
+      // Let the re-encryption take its snapshot and acquire the collection locks before
+      // the save starts; the save must then wait and encrypt with the new key.
+      while (!stagedSnapshotTaken) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      const queuedSave = StorageService.savePassword(buildPassword('queued'));
+      await Promise.all([rekey, queuedSave]);
+
+      const queuedSaveEncrypt = (CryptoService.encrypt as jest.Mock).mock.calls.find(
+        ([data]) => typeof data === 'string' && data.includes('"id":"queued"'),
+      );
+      expect(queuedSaveEncrypt?.[1]).toBe(newKey);
+
+      const storedIds = (await StorageService.getAllPasswords()).map((record) => record.id);
+      expect(storedIds).toEqual(['existing', 'queued']);
+    });
+
+    it('keeps the write queue usable after a failed persistence', async () => {
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('disk full'));
+
+      await expect(StorageService.savePassword(buildPassword('failed'))).rejects.toThrow(
+        'disk full',
+      );
+
+      await StorageService.savePassword(buildPassword('after'));
+
+      const storedIds = (await StorageService.getAllPasswords()).map((record) => record.id);
+      expect(storedIds).toEqual(['after']);
+    });
+  });
 });

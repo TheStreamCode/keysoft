@@ -42,7 +42,18 @@ Derived keys are normalized to 64-character lowercase hex strings. Invalid deriv
 
 ### Transparent KDF upgrade on login
 
-Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The upgrade re-derives a new key (new salt and verifier), precomputes both encrypted collections, persists them in one batched storage call, and uses explicit rollback if the following verifier update fails. Recoverable failures restore the previous working key and retry on the next login. If both verifier persistence and rollback fail, Keysoft closes the authenticated session and clears the in-memory key rather than allowing further writes against uncertain storage. Biometric logins do not trigger the upgrade (no password is available); the next password login performs it.
+Vaults created with legacy parameters — either PBKDF2 (`memory = 0`) or the old heavy Argon2id (`64 MiB / t = 3`) — are transparently upgraded to the current Argon2id parameters on the next successful password login, while the vault is decrypted in memory. The same crash-safe sequence is used when the master password changes:
+
+1. A pending recovery record containing the new KDF metadata (salt, iterations, memory, verifier) is written to SecureStore while the active metadata still describes the previous key.
+2. Both encrypted collections are re-encrypted and persisted in one batched AsyncStorage write.
+3. The new metadata is committed with a single SecureStore write, which is the atomic switch point.
+4. The recovery record is removed.
+
+A process kill between the vault write and the metadata commit would previously leave ciphertext encrypted with a key whose salt was never stored — permanent vault loss. With the recovery record, the next master-password login derives both candidates, inspects which key decrypts the stored collections, and either promotes the pending metadata (vault already re-encrypted) or discards the record and keeps the previous password working (vault not re-encrypted yet). If the password only matches metadata whose key no longer decrypts the vault, login fails with a diagnostic naming the password that is required and keeps the recovery record untouched. A crash after the metadata commit leaves only a stale record, which the next login removes. Biometric unlock cannot derive the pending key: it refuses to run while a record exists and does not disable biometrics, and the following password login refreshes the biometric key best-effort.
+
+Recoverable failures during the regular flow restore the previous working key and retry on a later login. If both the metadata commit and the rollback fail, Keysoft closes the authenticated session and clears the in-memory key rather than allowing further writes against uncertain storage; the recovery record is kept so the next password login can complete the promotion instead of losing the vault. The recovery record holds no key material, only the same class of KDF metadata already stored in SecureStore.
+
+This safety relies on two platform guarantees: a single SecureStore key write is atomic, and `AsyncStorage.multiSet` persists both collections in one transaction on Android (the supported release platform). The residual risk is the same as any password change: once the vault has been re-encrypted, only the new password can open it, so a user who forgets the new password after a crash cannot fall back to the previous one.
 
 When creating or changing the PIN, the verifier metadata and the vault key are produced from the same KDF result. This avoids a duplicate KDF pass for the same new PIN while preserving the configured KDF cost and the 64-character derived-key requirement.
 
@@ -70,6 +81,8 @@ Vault data uses the KS1 format:
 - Random IV generated from CSPRNG.
 
 Decryption verifies the MAC before trusting plaintext output.
+
+Each collection is stored as one whole encrypted record. Mutations rebuild that record from the decrypted in-memory cache, so writes are queued per storage key: two concurrent mutations cannot both start from the same snapshot and silently drop each other's record, and a re-encryption of the whole vault excludes concurrent saves on the collections it rewrites.
 
 ### Key separation
 

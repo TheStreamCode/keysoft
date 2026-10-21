@@ -9,6 +9,9 @@ import Logger from '../../utils/logger';
 let isAuthenticated = false;
 let masterKeyInfo: UserMasterKey | null = null;
 let lastAuthFailure: AuthFailure | null = null;
+// Serialises rekey operations in-process: two concurrent rekeys would each write their
+// own recovery record and could commit the wrong metadata for the other's ciphertext.
+let isVaultRekeyInProgress = false;
 
 const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
@@ -21,6 +24,9 @@ export type AuthFailureReason =
   | 'verifier_mismatch'
   | 'init_database_failed'
   | 'kdf_upgrade_rollback_failed'
+  | 'kdf_recovery_pending'
+  | 'kdf_recovery_requires_new_password'
+  | 'kdf_recovery_requires_previous_password'
   | 'biometrics_unavailable'
   | 'biometrics_disabled'
   | 'biometric_key_unavailable'
@@ -108,6 +114,247 @@ async function disableBiometrics(
 }
 
 /**
+ * Derives a key without recording an authentication failure. Crash recovery has to try
+ * the password against both the active and the pending metadata, and a mismatch is a
+ * normal outcome there, not a login error.
+ */
+async function tryDeriveKey(masterPassword: string, mkInfo: UserMasterKey): Promise<string | null> {
+  try {
+    return await CryptoService.deriveKey(
+      masterPassword,
+      mkInfo.salt,
+      mkInfo.iterations,
+      mkInfo.memory,
+    );
+  } catch (error) {
+    Logger.warn(
+      'AuthService: key derivation failed while reconciling a pending KDF migration',
+      error,
+    );
+    return null;
+  }
+}
+
+class VaultRekeyRollbackError extends Error {
+  constructor(public readonly cause?: unknown) {
+    super('Vault re-encryption rollback failed');
+    this.name = 'VaultRekeyRollbackError';
+  }
+}
+
+/**
+ * Rekeys the whole vault and commits the new master-key metadata as one crash-safe
+ * sequence:
+ *  1. persist a recovery record describing the new metadata while the previous metadata
+ *     is still active and still derivable from the previous password;
+ *  2. re-encrypt the vault (batched write, transactional on Android);
+ *  3. commit the new metadata with a single SecureStore write.
+ * A process kill before (3) leaves the previous metadata usable, and the recovery record
+ * lets the next password login either roll the vault back or finish the promotion. A
+ * kill after (3) only leaves a stale recovery record that the next login removes.
+ */
+async function rekeyVaultWithRecoveryRecord(
+  newMasterKeyInfo: UserMasterKey,
+  newKey: string,
+  previousKey: string,
+): Promise<void> {
+  await StorageService.savePendingMasterKeyMigration({
+    masterKeyInfo: newMasterKeyInfo,
+    startedAt: Date.now(),
+  });
+
+  try {
+    await StorageService.reEncryptAllData(newKey);
+  } catch (error) {
+    // The vault still uses the previous key. Drop the recovery record; if deleting it
+    // fails, the next login removes it once it sees the vault decrypt with the active key.
+    await StorageService.deletePendingMasterKeyMigration();
+    StorageService.setEncryptionKey(previousKey);
+    throw error;
+  }
+
+  try {
+    await StorageService.saveMasterKeyInfo(newMasterKeyInfo);
+  } catch (error) {
+    // The vault is on the new key while the active metadata still describes the old one.
+    // Roll the ciphertext back so the previous password keeps working.
+    try {
+      await StorageService.reEncryptAllData(previousKey);
+      StorageService.setEncryptionKey(previousKey);
+      await StorageService.deletePendingMasterKeyMigration();
+    } catch (rollbackError) {
+      // Keep the recovery record: the next password login can still finish the promotion.
+      Logger.error(
+        'AuthService: CRITICAL - vault re-encryption rollback failed after a metadata commit error',
+        rollbackError,
+      );
+      throw new VaultRekeyRollbackError(rollbackError);
+    }
+    throw error;
+  }
+
+  await StorageService.deletePendingMasterKeyMigration();
+  StorageService.setEncryptionKey(newKey);
+}
+
+/**
+ * Makes the biometric vault key match the active key after a crash recovery. Best-effort:
+ * the password change is already durable and must stay successful even if this fails.
+ */
+async function refreshBiometricKeyAfterKdfRecovery(vaultKey: string): Promise<void> {
+  try {
+    const prefs = await StorageService.getUserPreferences();
+    if (!prefs.biometricsEnabled) {
+      return;
+    }
+
+    try {
+      await StorageService.saveBiometricKey(vaultKey);
+    } catch (biometricError) {
+      Logger.warn(
+        'AuthService: failed to refresh biometric key after KDF recovery',
+        biometricError,
+      );
+      try {
+        await disableBiometrics(prefs);
+      } catch (cleanupError) {
+        Logger.warn('AuthService: failed to disable biometrics after KDF recovery', cleanupError);
+      }
+    }
+  } catch (error) {
+    Logger.warn('AuthService: failed to read preferences after KDF recovery', error);
+  }
+}
+
+interface PendingKdfRecoveryResult {
+  masterKeyInfo: UserMasterKey;
+  vaultKey: string;
+}
+
+/**
+ * Resolves a recovery record left by an interrupted KDF upgrade or master-password
+ * update. The vault may have been written with the previous key, with the pending key,
+ * or not yet touched at all, so both passwords are checked against both metadata records
+ * and the vault records are inspected with the keys that actually derive.
+ */
+async function recoverPendingKdfMigration(
+  masterPassword: string,
+  activeMasterKeyInfo: UserMasterKey,
+  activeDerivedKey: string,
+  isActivePasswordValid: boolean,
+  pendingMigration: StorageService.PendingMasterKeyMigration,
+): Promise<PendingKdfRecoveryResult | null> {
+  const pendingMasterKeyInfo = pendingMigration.masterKeyInfo;
+  const pendingDerivedKey = await tryDeriveKey(masterPassword, pendingMasterKeyInfo);
+  const isPendingPasswordValid = pendingDerivedKey
+    ? CryptoService.verifyDerivedKey(pendingDerivedKey, pendingMasterKeyInfo)
+    : false;
+
+  const activeVaultDecrypts =
+    isActivePasswordValid && (await StorageService.canDecryptVaultWithKey(activeDerivedKey));
+  const pendingVaultDecrypts =
+    isPendingPasswordValid && pendingDerivedKey !== null
+      ? await StorageService.canDecryptVaultWithKey(pendingDerivedKey)
+      : false;
+
+  if (isActivePasswordValid && activeVaultDecrypts) {
+    // The vault still matches the active metadata: the crash happened before the vault
+    // write, or the record is stale after a committed rekey. Drop it and log in.
+    await StorageService.deletePendingMasterKeyMigration();
+    Logger.info('AuthService: discarded a stale pending KDF migration; vault unchanged');
+    return {
+      masterKeyInfo: activeMasterKeyInfo,
+      vaultKey: activeDerivedKey,
+    };
+  }
+
+  if (isPendingPasswordValid && pendingDerivedKey !== null && pendingVaultDecrypts) {
+    // The vault was re-encrypted before the crash: commit the pending metadata first.
+    // That single SecureStore write is the point where the new key becomes derivable
+    // from stored metadata; until it succeeds the recovery record is kept intact.
+    try {
+      await StorageService.saveMasterKeyInfo(pendingMasterKeyInfo);
+    } catch (error) {
+      Logger.error('AuthService: failed to commit recovered KDF metadata', error);
+      setAuthFailure('kdf_recovery_pending', 'Could not persist recovered vault metadata');
+      return null;
+    }
+    await StorageService.deletePendingMasterKeyMigration();
+    Logger.info('AuthService: completed a pending KDF migration after crash recovery');
+    return {
+      masterKeyInfo: pendingMasterKeyInfo,
+      vaultKey: pendingDerivedKey,
+    };
+  }
+
+  if (isActivePasswordValid && !activeVaultDecrypts) {
+    if (isPendingPasswordValid) {
+      // The same password derives both metadata records, yet the vault decrypts with
+      // neither key: the records are unreadable or corrupted. Keep the recovery record.
+      setAuthFailure('init_database_failed', 'Vault records are unreadable after crash recovery');
+      return null;
+    }
+    // The previous password still matches the active metadata, but the vault is already
+    // on the new key. Only the password chosen during the interrupted change can open it.
+    setAuthFailure(
+      'kdf_recovery_requires_new_password',
+      'Vault already re-encrypted with the new password',
+    );
+    return null;
+  }
+
+  if (isPendingPasswordValid) {
+    // The new password matches the pending metadata, but the vault was not re-encrypted
+    // before the crash: the previous password still opens it.
+    setAuthFailure(
+      'kdf_recovery_requires_previous_password',
+      'Vault still requires the previous password',
+    );
+    return null;
+  }
+
+  setAuthFailure('verifier_mismatch', 'Master password verifier mismatch');
+  return null;
+}
+
+/**
+ * Loads the decrypted vault with a verified key and completes the post-login steps.
+ * Shared by the regular password flow and crash recovery.
+ */
+async function completePasswordLogin(
+  masterPassword: string,
+  mkInfo: UserMasterKey,
+  derivedKey: string,
+): Promise<boolean> {
+  StorageService.setEncryptionKey(derivedKey);
+  try {
+    const storageStartedAt = Date.now();
+    await StorageService.initDatabase();
+    Logger.debug(
+      `AuthService: encrypted vault load completed in ${Date.now() - storageStartedAt}ms`,
+    );
+  } catch (error) {
+    StorageService.setEncryptionKey('');
+    setAuthFailure('init_database_failed', 'Database initialization failed after login');
+    Logger.error('AuthService: initDatabase failed after master password login', error);
+    return false;
+  }
+
+  masterKeyInfo = mkInfo;
+  isAuthenticated = true;
+
+  // Transparently migrate legacy/heavy KDFs to the lighter OWASP Argon2id parameters now
+  // that the vault is unlocked. Recoverable failures do not fail login; an unrecoverable
+  // rollback closes the session to avoid using an uncertain key.
+  const kdfUpgradeSafe = await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
+  if (!kdfUpgradeSafe) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Best-effort, non-destructive upgrade of a legacy vault (PBKDF2 or the old heavy
  * Argon2 parameters) to the current Argon2id parameters. Runs after a successful
  * password login while the vault is decrypted in memory. On any failure the vault is
@@ -121,10 +368,12 @@ async function upgradeVaultKdfIfLegacy(
 ): Promise<boolean> {
   if (!CryptoService.isNativeKdfAvailable()) return true; // Expo Go: cannot derive Argon2
   if (!CryptoService.isLegacyKdf(mkInfo)) return true;
+  if (isVaultRekeyInProgress) return true;
 
   const currentKey = StorageService.getEncryptionKey();
   if (!currentKey) return true;
 
+  isVaultRekeyInProgress = true;
   try {
     Logger.info('AuthService: upgrading vault KDF to current Argon2id parameters');
 
@@ -135,19 +384,16 @@ async function upgradeVaultKdfIfLegacy(
     const { masterKeyInfo: newMkInfo, derivedKey: newKey } =
       await CryptoService.createMasterKeyInfoWithDerivedKey(masterPassword);
 
-    // Re-encrypt the in-memory vault with the new key, then persist the new metadata.
-    await StorageService.reEncryptAllData(newKey);
     try {
-      await StorageService.saveMasterKeyInfo(newMkInfo);
+      // Recovery record, then batched vault write, then atomic metadata commit.
+      await rekeyVaultWithRecoveryRecord(newMkInfo, newKey, currentKey);
     } catch (error) {
-      // Roll back to the previous key so storage and metadata stay consistent.
-      try {
-        await StorageService.reEncryptAllData(currentKey);
-        StorageService.setEncryptionKey(currentKey);
-      } catch (rollbackError) {
+      if (error instanceof VaultRekeyRollbackError) {
+        // The vault may be inconsistent; end the session and keep the recovery record so
+        // the next password login can complete the promotion instead of losing the vault.
         Logger.error(
           'AuthService: CRITICAL - KDF upgrade rollback failed. Forcing logout to protect vault integrity.',
-          rollbackError,
+          error,
         );
         isAuthenticated = false;
         masterKeyInfo = null;
@@ -187,6 +433,8 @@ async function upgradeVaultKdfIfLegacy(
   } catch (error) {
     Logger.warn('AuthService: vault KDF upgrade skipped (will retry next login)', error);
     return true;
+  } finally {
+    isVaultRekeyInProgress = false;
   }
 }
 
@@ -256,6 +504,12 @@ export const setupMasterPassword = async (masterPassword: string): Promise<boole
     if (existingMasterKeyInfo) {
       setAuthFailure('master_key_already_configured', 'Master password is already configured');
       return false;
+    }
+
+    // A recovery record cannot be reconciled without active metadata; drop any leftover
+    // from an interrupted setup before creating a fresh vault.
+    if (await StorageService.getPendingMasterKeyMigration()) {
+      await StorageService.deletePendingMasterKeyMigration();
     }
 
     // Create master key info (salt, iterations, etc.)
@@ -360,39 +614,50 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
 
     // Verify derived key without re-deriving (avoid double KDF work)
     const isValid = CryptoService.verifyDerivedKey(derivedKey, mkInfo);
+    const pendingMigration = await StorageService.getPendingMasterKeyMigration();
 
-    if (isValid) {
-      StorageService.setEncryptionKey(derivedKey);
-      try {
-        const storageStartedAt = Date.now();
-        await StorageService.initDatabase();
-        Logger.debug(
-          `AuthService: encrypted vault load completed in ${Date.now() - storageStartedAt}ms`,
-        );
-      } catch (error) {
-        StorageService.setEncryptionKey('');
-        setAuthFailure('init_database_failed', 'Database initialization failed after login');
-        Logger.error('AuthService: initDatabase failed after master password login', error);
-        return false;
-      }
-      masterKeyInfo = mkInfo;
-      isAuthenticated = true;
-
-      // Transparently migrate legacy/heavy KDFs to the lighter OWASP Argon2id
-      // parameters now that the vault is unlocked. Recoverable failures do not fail login;
-      // an unrecoverable rollback closes the session to avoid using an uncertain key.
-      const kdfUpgradeSafe = await upgradeVaultKdfIfLegacy(masterPassword, mkInfo);
-      if (!kdfUpgradeSafe) {
+    if (pendingMigration) {
+      // Crash recovery takes precedence over the regular flow: the vault may already be
+      // encrypted with the pending key while the active metadata still describes the old one.
+      const recovered = await recoverPendingKdfMigration(
+        masterPassword,
+        mkInfo,
+        derivedKey,
+        isValid,
+        pendingMigration,
+      );
+      if (!recovered) {
         return false;
       }
 
-      Logger.debug(`AuthService: password login completed in ${Date.now() - loginStartedAt}ms`);
-
-      return true;
+      const loginSucceeded = await completePasswordLogin(
+        masterPassword,
+        recovered.masterKeyInfo,
+        recovered.vaultKey,
+      );
+      if (loginSucceeded) {
+        // The interrupted rekey may have committed after the biometric key was last
+        // written; refresh it so biometric unlock keeps working. Writing the current key
+        // again is harmless when recovery rolled the vault back instead.
+        await refreshBiometricKeyAfterKdfRecovery(recovered.vaultKey);
+        Logger.debug(`AuthService: password login completed in ${Date.now() - loginStartedAt}ms`);
+      }
+      return loginSucceeded;
     }
 
-    setAuthFailure('verifier_mismatch', 'Master password verifier mismatch');
-    return false;
+    if (!isValid) {
+      setAuthFailure('verifier_mismatch', 'Master password verifier mismatch');
+      return false;
+    }
+
+    const loginSucceeded = await completePasswordLogin(masterPassword, mkInfo, derivedKey);
+    if (!loginSucceeded) {
+      return false;
+    }
+
+    Logger.debug(`AuthService: password login completed in ${Date.now() - loginStartedAt}ms`);
+
+    return true;
   } catch (error) {
     Logger.error('AuthService: Error logging in with master password', error);
     setAuthFailure('derive_key_failed', 'Master password login failed');
@@ -408,6 +673,18 @@ export const loginWithMasterPassword = async (masterPassword: string): Promise<b
 export const loginWithBiometrics = async (): Promise<boolean> => {
   try {
     clearAuthFailure();
+
+    // A pending KDF migration can only be reconciled with the master password. Do not
+    // read or disable the biometric key here: the password login may still promote it.
+    const pendingMigration = await StorageService.getPendingMasterKeyMigration();
+    if (pendingMigration) {
+      setAuthFailure(
+        'kdf_recovery_pending',
+        'A pending vault security upgrade requires the master password',
+      );
+      return false;
+    }
+
     const { available } = await isBiometricsAvailable();
     if (!available) {
       setAuthFailure('biometrics_unavailable', 'Biometrics unavailable');
@@ -573,67 +850,63 @@ export const updateMasterPassword = async (password: string): Promise<boolean> =
     return false;
   }
 
-  // Snapshot of current state for rollback
-  const oldMkInfo = masterKeyInfo;
-  let dataReEncryptedWithNewKey = false;
+  if (isVaultRekeyInProgress) {
+    Logger.warn('AuthService: ignoring master password update while a vault rekey is in progress');
+    return false;
+  }
+
   let newEncryptionKey: string | null = null;
   let prefs: Awaited<ReturnType<typeof StorageService.getUserPreferences>>;
 
+  isVaultRekeyInProgress = true;
   try {
     // Resolve optional side-effect state before changing encrypted storage. If
     // this read fails, the vault remains untouched.
     prefs = await StorageService.getUserPreferences();
+
+    // A recovery record here can only be stale: password login reconciles it and
+    // biometric login refuses to run while one exists. Drop it before recording the
+    // new migration so its companion metadata cannot be overwritten.
+    await StorageService.deletePendingMasterKeyMigration();
 
     // 2. Create new Master Key Info
     const { masterKeyInfo: newMkInfo, derivedKey } =
       await CryptoService.createMasterKeyInfoWithDerivedKey(password);
     newEncryptionKey = derivedKey;
 
-    // 4. Re-encrypt all data with new key
-    // This updates AsyncStorage AND the in-memory encryption key.
-    await StorageService.reEncryptAllData(newEncryptionKey);
-    dataReEncryptedWithNewKey = true;
+    // 3. Recovery record, then batched vault write, then atomic metadata commit.
+    // A process kill between the vault write and the commit is reconciled on the next
+    // password login instead of leaving ciphertext whose salt was never persisted.
+    await rekeyVaultWithRecoveryRecord(newMkInfo, derivedKey, currentKey);
 
-    // 5. Save new Master Key Info
-    // CRITICAL: If this fails, the rollback below restores the old encrypted state.
-    await StorageService.saveMasterKeyInfo(newMkInfo);
-
-    // 6. Ciphertext and verifier metadata are committed. Update in-memory state
+    // 4. Ciphertext and verifier metadata are committed. Update in-memory state
     // before optional biometric maintenance so later cleanup failures cannot
     // roll the vault back while leaving the new verifier in SecureStore.
     masterKeyInfo = newMkInfo;
-    StorageService.setEncryptionKey(newEncryptionKey);
+    StorageService.setEncryptionKey(derivedKey);
   } catch (error) {
     Logger.error('AuthService: Error updating master password', error);
     setAuthFailure('derive_key_failed', 'Master password update failed');
 
-    // Rollback: if the data was already re-encrypted with the new key, restore old encryption.
-    if (dataReEncryptedWithNewKey) {
-      try {
-        Logger.warn('AuthService: Attempting rollback to old encryption key...');
-        await StorageService.reEncryptAllData(currentKey);
-        StorageService.setEncryptionKey(currentKey);
-        masterKeyInfo = oldMkInfo;
-        Logger.info('AuthService: Rollback completed - vault restored to old key');
-      } catch (rollbackError) {
-        // Critical: rollback failed, so the vault may be inconsistent.
-        // Force logout: the user must authenticate again and initDatabase will reload
-        // the current state from disk. This is safer than continuing with in-memory state
-        // that may be out of sync with AsyncStorage data.
-        Logger.error(
-          'AuthService: CRITICAL - rollback failed. Forcing logout to prevent data corruption.',
-          rollbackError,
-        );
-        isAuthenticated = false;
-        masterKeyInfo = null;
-        StorageService.setEncryptionKey('');
-      }
+    if (error instanceof VaultRekeyRollbackError) {
+      // Critical: the vault may be inconsistent. Force logout: the user must
+      // authenticate again and initDatabase will reload the persisted state. The recovery
+      // record is kept so the next password login can still complete the promotion.
+      Logger.error(
+        'AuthService: CRITICAL - rollback failed. Forcing logout to prevent data corruption.',
+        error,
+      );
+      isAuthenticated = false;
+      masterKeyInfo = null;
+      StorageService.setEncryptionKey('');
     }
 
     return false;
+  } finally {
+    isVaultRekeyInProgress = false;
   }
 
-  // 7. Biometric persistence is a separate, best-effort transaction. The
+  // 5. Biometric persistence is a separate, best-effort transaction. The
   // password change is already durable and must remain successful even if the
   // biometric key or its cleanup cannot be written.
   if (prefs.biometricsEnabled && newEncryptionKey) {

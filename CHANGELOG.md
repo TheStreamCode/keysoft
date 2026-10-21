@@ -4,7 +4,22 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Security
+
+- Made transparent KDF upgrades and master-password changes crash-safe. The vault is
+  re-encrypted only after a pending recovery record describing the new KDF metadata is
+  persisted alongside the still-active previous metadata, and the new metadata commit is a
+  single SecureStore write. A process kill between the vault write and the metadata commit
+  no longer leaves ciphertext encrypted under a salt that was never stored: the next
+  password login inspects the vault records and either promotes the pending metadata or
+  discards it, keeping the previous password usable when the vault was not re-encrypted
+  yet. Biometric unlock defers to the master password while a recovery record exists, and
+  the login screen reports whether the new or the previous password is required.
+- Serialised whole-vault writes with a per-storage-key async mutex. Two mutations that
+  start from the same in-memory snapshot (for example an import while a save is in flight,
+  or autosave plus a manual save) can no longer overwrite each other; a queued mutation
+  always rebuilds from the committed cache and re-encryptions run before any concurrent
+  write on the same collection.
 
 ## [3.3.1] - 2026-08-09
 

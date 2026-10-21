@@ -61,6 +61,12 @@ export const it = {
   kdf_timeout_message:
     'La derivazione della chiave sta richiedendo troppo tempo. Riprova tra poco.',
   vault_init_error: "Non è stato possibile aprire il vault. Riprova dopo aver riavviato l'app.",
+  kdf_recovery_new_password_message:
+    'Il vault è già stato aggiornato con la nuova password. Inserisci la nuova password per sbloccarlo.',
+  kdf_recovery_previous_password_message:
+    'Il vault non è ancora stato aggiornato. Inserisci la password precedente e riprova il cambio password.',
+  kdf_recovery_master_password_message:
+    'Un aggiornamento di sicurezza è in sospeso. Accedi con la master password per completarlo.',
 
   // HomeScreen
   search_passwords: 'Cerca password...',
