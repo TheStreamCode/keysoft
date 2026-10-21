@@ -2,6 +2,7 @@
 
 ## Where to get help
 
+- **Usage questions and workflows:** GitHub Discussions on this repository.
 - **Product assistance:** email [keysoft@mikesoft.it](mailto:keysoft@mikesoft.it) for usage questions
   and problems with the published Android app.
 - **Bug reports and reproducible defects:** GitHub Issues using the bug report form.
