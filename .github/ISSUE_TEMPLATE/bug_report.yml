@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a defect.
+        Fill in every field: reports without a version and a reproduction are hard to act on.
+        Never include vault contents, PINs, exported backups, or signing material.
+        For security issues use SECURITY.md, never a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag, Google Play build, or commit the problem appears in.
+      placeholder: "v3.3.1 or Google Play build 129"
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Build type
+      options:
+        - Google Play release
+        - EAS preview build
+        - Expo Go
+        - Local source build
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Android version, device model, and any accessibility or display settings involved.
+      placeholder: "Android 15, Pixel 7"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Smallest sequence that shows the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Redact vault data, PINs, backups, and personal data.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: This report does not contain vault contents, PINs, encryption keys, or exported backups.
+          required: true
