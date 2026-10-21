@@ -30,3 +30,8 @@ updates:
       bun-minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # Expo packages are versioned by the installed Expo SDK; a major bump on a
+      # single package would break the SDK alignment that expo-doctor enforces.
+      - dependency-name: "expo*"
+        update-types: ["version-update:semver-major"]
