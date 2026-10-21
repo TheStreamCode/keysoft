@@ -384,6 +384,14 @@ function getPinLoginFailureMessageKey(): string {
     return 'vault_init_error';
   }
 
+  if (failure?.reason === 'kdf_recovery_requires_new_password') {
+    return 'kdf_recovery_new_password_message';
+  }
+
+  if (failure?.reason === 'kdf_recovery_requires_previous_password') {
+    return 'kdf_recovery_previous_password_message';
+  }
+
   return 'invalid_pin';
 }
 
@@ -392,6 +400,10 @@ function getBiometricFailureMessageKey(): string {
 
   if (failure?.reason === 'biometric_key_unavailable') {
     return 'biometric_key_unavailable_message';
+  }
+
+  if (failure?.reason === 'kdf_recovery_pending') {
+    return 'kdf_recovery_master_password_message';
   }
 
   if (failure?.reason === 'init_database_failed') {

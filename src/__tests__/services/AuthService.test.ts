@@ -60,6 +60,10 @@ describe('AuthService', () => {
 
     (StorageService.saveMasterKeyInfo as jest.Mock).mockResolvedValue(undefined);
     (StorageService.deleteMasterKeyInfo as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.savePendingMasterKeyMigration as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.getPendingMasterKeyMigration as jest.Mock).mockResolvedValue(null);
+    (StorageService.deletePendingMasterKeyMigration as jest.Mock).mockResolvedValue(undefined);
+    (StorageService.canDecryptVaultWithKey as jest.Mock).mockResolvedValue(true);
     (StorageService.setEncryptionKey as jest.Mock).mockImplementation(() => {});
     (StorageService.initDatabase as jest.Mock).mockResolvedValue(undefined);
     (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
@@ -586,6 +590,115 @@ describe('AuthService', () => {
       expect(AuthService.getIsAuthenticated()).toBe(false);
       // Encryption key must be cleared
       expect(StorageService.setEncryptionKey).toHaveBeenLastCalledWith('');
+    });
+  });
+
+  describe('Crash-safe KDF transaction', () => {
+    const newInfo: UserMasterKey = {
+      salt: 'new-salt',
+      iterations: 2,
+      memory: 19456,
+      verifier: 'new-verifier',
+    };
+    const newKey = 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+
+    beforeEach(() => {
+      (CryptoService.createMasterKeyInfoWithDerivedKey as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        derivedKey: newKey,
+      });
+      (StorageService.getMasterKeyInfo as jest.Mock).mockResolvedValue(mockMasterKeyInfo);
+      (StorageService.getEncryptionKey as jest.Mock).mockReturnValue(mockEncryptionKey);
+    });
+
+    it('writes the recovery record before the vault and commits metadata last', async () => {
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+
+      const callOrder: string[] = [];
+      (StorageService.savePendingMasterKeyMigration as jest.Mock).mockImplementation(async () => {
+        callOrder.push('write-recovery-record');
+      });
+      (StorageService.reEncryptAllData as jest.Mock).mockImplementation(async () => {
+        callOrder.push('vault-write');
+      });
+      (StorageService.saveMasterKeyInfo as jest.Mock).mockImplementation(async () => {
+        callOrder.push('metadata-commit');
+      });
+      (StorageService.deletePendingMasterKeyMigration as jest.Mock).mockImplementation(async () => {
+        callOrder.push('clear-recovery-record');
+      });
+
+      await expect(AuthService.loginWithMasterPassword(mockMasterPassword)).resolves.toBe(true);
+
+      expect(callOrder).toEqual([
+        'write-recovery-record',
+        'vault-write',
+        'metadata-commit',
+        'clear-recovery-record',
+      ]);
+      expect(StorageService.savePendingMasterKeyMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ masterKeyInfo: newInfo }),
+      );
+    });
+
+    it('keeps the recovery record when the metadata commit and the rollback both fail', async () => {
+      (CryptoService.isNativeKdfAvailable as jest.Mock).mockReturnValue(true);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(true);
+      (StorageService.reEncryptAllData as jest.Mock)
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('rollback failed'));
+      (StorageService.saveMasterKeyInfo as jest.Mock).mockRejectedValueOnce(
+        new Error('SecureStore unavailable'),
+      );
+
+      await expect(AuthService.loginWithMasterPassword(mockMasterPassword)).resolves.toBe(false);
+
+      expect(StorageService.savePendingMasterKeyMigration).toHaveBeenCalled();
+      expect(StorageService.deletePendingMasterKeyMigration).not.toHaveBeenCalled();
+      expect(AuthService.getLastAuthFailure()).toEqual(
+        expect.objectContaining({ reason: 'kdf_upgrade_rollback_failed' }),
+      );
+    });
+
+    it('writes the recovery record when rotating the master password', async () => {
+      await AuthService.loginWithMasterPassword(mockMasterPassword);
+      (CryptoService.isLegacyKdf as jest.Mock).mockReturnValue(false);
+
+      await expect(AuthService.updateMasterPassword('new-password')).resolves.toBe(true);
+
+      expect(StorageService.savePendingMasterKeyMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ masterKeyInfo: newInfo }),
+      );
+      const pendingWriteOrder = (StorageService.savePendingMasterKeyMigration as jest.Mock).mock
+        .invocationCallOrder[0];
+      const vaultWriteOrder = (StorageService.reEncryptAllData as jest.Mock).mock
+        .invocationCallOrder[0];
+      const metadataOrder = (StorageService.saveMasterKeyInfo as jest.Mock).mock
+        .invocationCallOrder[0];
+      const pendingClearOrders = (StorageService.deletePendingMasterKeyMigration as jest.Mock).mock
+        .invocationCallOrder;
+      expect(pendingWriteOrder).toBeLessThan(vaultWriteOrder);
+      expect(vaultWriteOrder).toBeLessThan(metadataOrder);
+      expect(Math.max(...pendingClearOrders)).toBeGreaterThan(metadataOrder);
+    });
+
+    it('refuses biometric login while a KDF recovery record is pending', async () => {
+      (StorageService.getPendingMasterKeyMigration as jest.Mock).mockResolvedValue({
+        masterKeyInfo: newInfo,
+        startedAt: 1,
+      });
+      (StorageService.getUserPreferences as jest.Mock).mockResolvedValue({
+        biometricsEnabled: true,
+      });
+
+      await expect(AuthService.loginWithBiometrics()).resolves.toBe(false);
+
+      expect(StorageService.getBiometricKey).not.toHaveBeenCalled();
+      expect(StorageService.deleteBiometricKey).not.toHaveBeenCalled();
+      expect(AuthService.getLastAuthFailure()).toEqual(
+        expect.objectContaining({ reason: 'kdf_recovery_pending' }),
+      );
     });
   });
 

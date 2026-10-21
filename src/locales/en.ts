@@ -59,6 +59,12 @@ export const en = {
     'The native security module is unavailable. Update the app or contact support.',
   kdf_timeout_message: 'Key derivation is taking too long. Try again shortly.',
   vault_init_error: 'The vault could not be opened. Restart the app and try again.',
+  kdf_recovery_new_password_message:
+    'The vault was already updated with the new password. Enter the new password to unlock it.',
+  kdf_recovery_previous_password_message:
+    'The vault was not updated yet. Enter the previous password and try changing it again.',
+  kdf_recovery_master_password_message:
+    'A security upgrade is pending. Sign in with the master password to complete it.',
 
   // HomeScreen
   search_passwords: 'Search passwords...',
