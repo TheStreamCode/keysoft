@@ -43,6 +43,13 @@ Out of scope:
 - Vulnerabilities in unsupported forks or modified binaries.
 - Reports without a reproducible security impact.
 
+## Response Expectations
+
+Reports are acknowledged within 7 days and receive a status update within 30 days.
+A valid report is fixed privately and disclosed in the release notes once a
+patched version is available. Credit is given in the advisory unless you ask
+otherwise.
+
 ## Disclosure
 
 Please allow time for triage, fix preparation, and release. Public disclosure
