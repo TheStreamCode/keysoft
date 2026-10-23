@@ -18,6 +18,7 @@ import { DesignSystem } from '../constants/designSystem';
 import { Theme } from '../constants/theme';
 import { SUPPORT_EMAIL, WEBSITE_HOST, WEBSITE_URL } from '../constants/contact';
 import { copyPlainTextWithFeedback } from '../utils/clipboardUtils';
+import { useResponsiveLayout } from '../utils/responsive';
 import { useWebScrollFix } from '../utils/webScrollFix';
 
 interface PrivacyPolicyScreenProps {
@@ -93,6 +94,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { notify } = useAlert();
+  const layout = useResponsiveLayout();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   // Apply web scroll fixes
@@ -113,7 +115,10 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { minWidth: layout.minTouchTarget, minHeight: layout.minTouchTarget },
+          ]}
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
@@ -125,7 +130,7 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ navigation })
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('privacy_policy')}</Text>
-        <View style={styles.headerSpacer} />
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
       <ScrollView
@@ -542,23 +547,19 @@ function createStyles(theme: Theme) {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: DesignSystem.spacing.l,
-      paddingVertical: DesignSystem.spacing.m,
+      paddingVertical: DesignSystem.spacing.s,
       backgroundColor: theme.colors.backgroundElevated,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.divider,
     },
     backButton: {
-      padding: DesignSystem.spacing.xs,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     headerTitle: {
       flex: 1,
       textAlign: 'center',
-      ...DesignSystem.typography.title,
-      color: theme.colors.text,
-    },
-    headerSpacer: {
-      width: 32, // Bilancia il pulsante back
+      ...DesignSystem.text('titleLarge', theme.colors.text),
     },
     scrollView: {
       flex: 1,
@@ -569,35 +570,29 @@ function createStyles(theme: Theme) {
       paddingBottom: DesignSystem.spacing.xl,
     },
     content: {
-      padding: DesignSystem.spacing.l,
+      paddingVertical: DesignSystem.spacing.l,
       gap: DesignSystem.spacing.xl,
     },
     section: {
       gap: DesignSystem.spacing.m,
     },
     title: {
-      ...DesignSystem.typography.headline,
-      color: theme.colors.text,
+      ...DesignSystem.text('headline', theme.colors.text),
       marginBottom: DesignSystem.spacing.xs,
     },
     subtitle: {
-      ...DesignSystem.typography.label,
-      color: theme.colors.textSecondary,
+      ...DesignSystem.text('label', theme.colors.textSecondary),
     },
     sectionTitle: {
-      ...DesignSystem.typography.title,
-      color: theme.colors.primary,
+      ...DesignSystem.text('title', theme.colors.primary),
       marginTop: DesignSystem.spacing.s,
     },
     subSectionTitle: {
-      ...DesignSystem.typography.subtitle,
-      color: theme.colors.text,
+      ...DesignSystem.text('subtitle', theme.colors.text),
       marginTop: DesignSystem.spacing.s,
     },
     paragraph: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.text,
-      lineHeight: 24,
+      ...DesignSystem.text('body', theme.colors.text),
     },
     bold: {
       fontWeight: '700',
@@ -607,31 +602,26 @@ function createStyles(theme: Theme) {
       paddingLeft: DesignSystem.spacing.s,
     },
     bulletPoint: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.text,
-      lineHeight: 24,
+      ...DesignSystem.text('body', theme.colors.text),
     },
     companyInfo: {
       marginTop: DesignSystem.spacing.s,
       padding: DesignSystem.spacing.m,
       backgroundColor: theme.colors.backgroundElevated,
-      borderRadius: DesignSystem.borderRadius.medium,
+      borderRadius: DesignSystem.radii.medium,
       borderWidth: 1,
       borderColor: theme.colors.divider,
       gap: DesignSystem.spacing.xs,
     },
     companyName: {
-      ...DesignSystem.typography.subtitle,
-      color: theme.colors.primary,
+      ...DesignSystem.text('subtitle', theme.colors.primary),
       marginBottom: DesignSystem.spacing.xs,
     },
     companyDetail: {
-      ...DesignSystem.typography.label,
-      color: theme.colors.textSecondary,
+      ...DesignSystem.text('label', theme.colors.textSecondary),
     },
     companyLink: {
-      ...DesignSystem.typography.label,
-      color: theme.colors.primary,
+      ...DesignSystem.text('label', theme.colors.primary),
       textDecorationLine: 'underline',
     },
     contactInfo: {
@@ -639,11 +629,10 @@ function createStyles(theme: Theme) {
       gap: DesignSystem.spacing.m,
     },
     contactLink: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.primary,
+      ...DesignSystem.text('body', theme.colors.primary),
       padding: DesignSystem.spacing.s,
       backgroundColor: theme.colors.backgroundElevated,
-      borderRadius: DesignSystem.borderRadius.medium,
+      borderRadius: DesignSystem.radii.medium,
       overflow: 'hidden',
       textAlign: 'center',
     },
@@ -652,14 +641,12 @@ function createStyles(theme: Theme) {
       alignItems: 'center',
     },
     linkText: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.primary,
+      ...DesignSystem.text('body', theme.colors.primary),
       textDecorationLine: 'underline',
       marginLeft: DesignSystem.spacing.xs,
     },
     versionText: {
-      ...DesignSystem.typography.caption,
-      color: theme.colors.textTertiary,
+      ...DesignSystem.text('caption', theme.colors.textTertiary),
       textAlign: 'center',
       marginTop: DesignSystem.spacing.xl,
     },

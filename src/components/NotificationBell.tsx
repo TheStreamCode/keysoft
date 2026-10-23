@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAlert } from '../contexts/AlertContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { DesignSystem } from '../constants/designSystem';
 import NotificationService, { NotificationType } from '../services/utils/notificationService';
 import { BottomSheet } from './ui/bottom-sheet';
 import { MotionPressable } from './ui/motion';
@@ -108,14 +109,18 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
       <MotionPressable
         accessibilityLabel={t('open_notifications')}
         accessibilityRole="button"
-        hitSlop={8}
+        hitSlop={4}
         onPress={() => {
           onPress?.();
           if (!onPress) setIsOpen(true);
         }}
         style={styles.bell}
       >
-        <Ionicons color={theme.colors.textSecondary} name="notifications-outline" size={20} />
+        <Ionicons
+          color={theme.colors.textSecondary}
+          name="notifications-outline"
+          size={DesignSystem.iconSizes.md}
+        />
         {unreadCount > 0 ? (
           <View
             style={[
@@ -143,7 +148,11 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
               onPress={() => void markAllAsRead()}
               style={[styles.toolButton, { borderColor: theme.colors.border }]}
             >
-              <Ionicons color={theme.colors.primary} name="checkmark-done-outline" size={17} />
+              <Ionicons
+                color={theme.colors.primary}
+                name="checkmark-done-outline"
+                size={DesignSystem.iconSizes.sm}
+              />
               <Text style={[styles.toolText, { color: theme.colors.text }]}>
                 {t('mark_all_read')}
               </Text>
@@ -154,7 +163,11 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
               onPress={confirmDeleteAll}
               style={[styles.toolIcon, { borderColor: theme.colors.border }]}
             >
-              <Ionicons color={theme.colors.error} name="trash-outline" size={17} />
+              <Ionicons
+                color={theme.colors.error}
+                name="trash-outline"
+                size={DesignSystem.iconSizes.sm}
+              />
             </MotionPressable>
           </View>
         ) : null}
@@ -165,7 +178,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
               <Ionicons
                 color={theme.colors.textTertiary}
                 name="notifications-off-outline"
-                size={25}
+                size={DesignSystem.iconSizes.lg}
               />
             </View>
             <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
@@ -207,7 +220,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
                     <Ionicons
                       color={theme.colors.primary}
                       name={getNotificationIcon(notification.type)}
-                      size={18}
+                      size={DesignSystem.iconSizes.sm}
                     />
                   </View>
                   <View style={styles.notificationCopy}>
@@ -231,11 +244,15 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onPress }) => {
                 <MotionPressable
                   accessibilityLabel={t('delete_notification')}
                   accessibilityRole="button"
-                  hitSlop={6}
+                  hitSlop={4}
                   onPress={() => void deleteNotification(notification.id)}
                   style={styles.deleteButton}
                 >
-                  <Ionicons color={theme.colors.textTertiary} name="close" size={17} />
+                  <Ionicons
+                    color={theme.colors.textTertiary}
+                    name="close"
+                    size={DesignSystem.iconSizes.sm}
+                  />
                 </MotionPressable>
               </View>
             ))}
@@ -268,70 +285,108 @@ function getNotificationIcon(type: NotificationType): keyof typeof Ionicons.glyp
 }
 
 const styles = StyleSheet.create({
-  bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  bell: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badge: {
     position: 'absolute',
-    right: 9,
-    top: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    right: 11,
+    top: 10,
+    width: 8,
+    height: 8,
+    borderRadius: DesignSystem.radii.pill,
     borderWidth: 1,
   },
-  tools: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  toolButton: {
-    flex: 1,
-    minHeight: 42,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 11,
+  tools: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: DesignSystem.spacing.s,
+    marginBottom: DesignSystem.spacing.m,
+  },
+  toolButton: {
+    flex: 1,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    borderWidth: 1,
+    borderRadius: DesignSystem.radii.medium,
+    paddingHorizontal: DesignSystem.spacing.m,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DesignSystem.spacing.s,
   },
   toolIcon: {
-    width: 44,
-    height: 42,
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toolText: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  empty: { alignItems: 'center', paddingHorizontal: 22, paddingVertical: 46 },
+  toolText: { ...DesignSystem.text('labelSmall'), fontWeight: '600' },
+  empty: {
+    alignItems: 'center',
+    paddingHorizontal: DesignSystem.spacing.xl,
+    paddingVertical: DesignSystem.spacing.xxxl,
+  },
   emptyIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 13,
+    width: 56,
+    height: 56,
+    borderRadius: DesignSystem.radii.large,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 15,
+    marginBottom: DesignSystem.spacing.l,
   },
-  emptyTitle: { fontSize: 16, lineHeight: 21, fontWeight: '600', textAlign: 'center' },
-  emptyBody: { marginTop: 6, fontSize: 13, lineHeight: 19, textAlign: 'center', maxWidth: 280 },
-  list: { borderWidth: 1, borderRadius: 10, overflow: 'hidden' },
-  notification: { minHeight: 82, flexDirection: 'row', alignItems: 'center' },
+  emptyTitle: { ...DesignSystem.text('subtitle'), textAlign: 'center' },
+  emptyBody: {
+    ...DesignSystem.text('bodySmall'),
+    marginTop: DesignSystem.spacing.s,
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+  list: {
+    borderWidth: 1,
+    borderRadius: DesignSystem.radii.medium,
+    overflow: 'hidden',
+  },
+  notification: {
+    minHeight: 88,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   notificationMain: {
     flex: 1,
     minWidth: 0,
-    paddingLeft: 10,
-    paddingVertical: 10,
+    paddingLeft: DesignSystem.spacing.m,
+    paddingVertical: DesignSystem.spacing.m,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: DesignSystem.spacing.m,
   },
   notificationIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
   notificationCopy: { flex: 1, minWidth: 0 },
-  notificationTitle: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  notificationBody: { fontSize: 12, lineHeight: 17, marginTop: 2 },
-  notificationTime: { fontSize: 10, lineHeight: 14, marginTop: 4 },
-  deleteButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  notificationTitle: { ...DesignSystem.text('bodySmall'), fontWeight: '600' },
+  notificationBody: {
+    ...DesignSystem.text('caption'),
+    marginTop: DesignSystem.spacing.xxs,
+  },
+  notificationTime: {
+    ...DesignSystem.text('micro'),
+    marginTop: DesignSystem.spacing.xs,
+  },
+  deleteButton: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default NotificationBell;

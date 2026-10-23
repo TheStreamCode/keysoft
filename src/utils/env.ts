@@ -1,17 +1,20 @@
 import Constants from 'expo-constants';
 
 /**
- * Utilities per determinare l'ambiente di esecuzione (Expo Go vs Standalone/Dev Client)
- * Basato su Constants.executionEnvironment e presenza di expoGoConfig.
+ * Utilities per determinare l'ambiente di esecuzione (Expo Go vs Standalone/Dev Client).
+ *
+ * Do not use `Constants.expoGoConfig` as an Expo Go signal. expo-constants resolves that
+ * property from the running manifest: in standalone/EAS builds the embedded update manifest
+ * has no `metadata` key, so the getter returns the embedded manifest object and the check
+ * becomes truthy outside Expo Go as well. That false positive made production builds take
+ * the pure-JS PBKDF2 fallback instead of the native Argon2id KDF. `executionEnvironment`
+ * and the deprecated `appOwnership` flag are the reliable signals.
  */
 export function isExpoGo(): boolean {
   try {
-    // StoreClient indica Expo Go
-    // Alcune versioni mantengono anche appOwnership==='expo' (deprecato)
-    const execEnv: any = (Constants as any)?.executionEnvironment;
-    const expoGoConfig = (Constants as any)?.expoGoConfig;
-    const appOwnership = (Constants as any)?.appOwnership;
-    return execEnv === 'storeClient' || !!expoGoConfig || appOwnership === 'expo';
+    const execEnv: string | undefined = (Constants as any)?.executionEnvironment;
+    const appOwnership: string | undefined = (Constants as any)?.appOwnership;
+    return execEnv === 'storeClient' || appOwnership === 'expo';
   } catch {
     return false;
   }
@@ -19,7 +22,7 @@ export function isExpoGo(): boolean {
 
 export function isStandalone(): boolean {
   try {
-    const execEnv: any = (Constants as any)?.executionEnvironment;
+    const execEnv: string | undefined = (Constants as any)?.executionEnvironment;
     return execEnv === 'standalone';
   } catch {
     return false;

@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation';
-import { AppTheme } from '../constants/theme';
+import { DesignSystem } from '../constants/designSystem';
 import { SUPPORT_EMAIL } from '../constants/contact';
 import { Ionicons } from '@expo/vector-icons';
 import { Storage, Auth } from '../services';
@@ -288,6 +288,7 @@ const SettingsScreen: React.FC = () => {
     setShowExportDialog,
     handleExportPasswords,
     performExport,
+    busyOperation,
     importPassword,
     setImportPassword,
     showImportPasswordDialog,
@@ -680,18 +681,7 @@ const SettingsScreen: React.FC = () => {
           },
         ]}
       >
-        <Text
-          style={[
-            styles.title,
-            {
-              color: theme.colors.text,
-              fontSize: 23,
-              fontWeight: '600',
-            },
-          ]}
-        >
-          {t('settings')}
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{t('settings')}</Text>
       </View>
 
       <ScrollView
@@ -771,7 +761,11 @@ const SettingsScreen: React.FC = () => {
                   <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
                     {getAutoLockTimeoutText()}
                   </Text>
-                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={DesignSystem.iconSizes.xs}
+                    color={theme.colors.textTertiary}
+                  />
                 </View>
               }
               style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
@@ -791,10 +785,14 @@ const SettingsScreen: React.FC = () => {
                           ? t('clipboard_5min')
                           : `${Math.floor((preferences?.clipboardClearTimeout || 0) / 60)} min`}
                   </Text>
-                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={DesignSystem.iconSizes.xs}
+                    color={theme.colors.textTertiary}
+                  />
                 </View>
               }
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -813,7 +811,11 @@ const SettingsScreen: React.FC = () => {
                   <Text style={[styles.compactValue, { color: theme.colors.textTertiary }]}>
                     {getThemeText()}
                   </Text>
-                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={DesignSystem.iconSizes.xs}
+                    color={theme.colors.textTertiary}
+                  />
                 </View>
               }
               style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
@@ -831,7 +833,11 @@ const SettingsScreen: React.FC = () => {
                         ? t('language_italian')
                         : t('language_english')}
                   </Text>
-                  <Ionicons name="chevron-forward" size={15} color={theme.colors.textTertiary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={DesignSystem.iconSizes.xs}
+                    color={theme.colors.textTertiary}
+                  />
                 </View>
               }
               style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
@@ -846,7 +852,7 @@ const SettingsScreen: React.FC = () => {
                   value={securityRemindersEnabled}
                 />
               }
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -868,7 +874,7 @@ const SettingsScreen: React.FC = () => {
               title={t('import_data')}
               onPress={handleImportPasswords}
               rightIcon="chevron-forward"
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -914,7 +920,7 @@ const SettingsScreen: React.FC = () => {
               title={t('open_source')}
               onPress={() => navigation.navigate('OpenSource')}
               rightIcon="chevron-forward"
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -930,7 +936,7 @@ const SettingsScreen: React.FC = () => {
               title={t('sponsor_github')}
               onPress={() => Linking.openURL('https://github.com/sponsors/TheStreamCode')}
               rightIcon="open-outline"
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -954,7 +960,7 @@ const SettingsScreen: React.FC = () => {
               title={t('reset_app')}
               onPress={() => setShowResetModal(true)}
               rightIcon="chevron-forward"
-              style={styles.compactRow}
+              style={[styles.compactRow, { borderBottomColor: theme.colors.divider }]}
             />
           </View>
         </Reveal>
@@ -967,12 +973,7 @@ const SettingsScreen: React.FC = () => {
         title={t('change_pin_title')}
       >
         <View>
-          <Text
-            style={[
-              styles.pinRequirement,
-              { color: theme.colors.text + '80', marginBottom: AppTheme.spacing.m },
-            ]}
-          >
+          <Text style={[styles.pinRequirement, { color: theme.colors.textSecondary }]}>
             {t('pin_requirement')}
           </Text>
 
@@ -980,16 +981,15 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.inputContainer,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.backgroundLight,
-                marginBottom: AppTheme.spacing.m,
+                borderColor: theme.colors.inputBorder,
+                backgroundColor: theme.colors.inputBackground,
               },
             ]}
           >
             <TextInput
               style={[styles.modalInput, { color: theme.colors.text, flex: 1 }]}
               placeholder={t('current_pin')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={currentPin}
               onChangeText={setCurrentPin}
               secureTextEntry={!showCurrentPin}
@@ -1002,7 +1002,7 @@ const SettingsScreen: React.FC = () => {
             >
               <Ionicons
                 name={showCurrentPin ? 'eye-off' : 'eye'}
-                size={20}
+                size={DesignSystem.iconSizes.md}
                 color={theme.colors.textSecondary}
               />
             </TouchableOpacity>
@@ -1012,16 +1012,15 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.inputContainer,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.backgroundLight,
-                marginBottom: AppTheme.spacing.m,
+                borderColor: theme.colors.inputBorder,
+                backgroundColor: theme.colors.inputBackground,
               },
             ]}
           >
             <TextInput
               style={[styles.modalInput, { color: theme.colors.text, flex: 1 }]}
               placeholder={t('new_pin')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={newPin}
               onChangeText={setNewPin}
               secureTextEntry={!showNewPin}
@@ -1031,7 +1030,7 @@ const SettingsScreen: React.FC = () => {
             <TouchableOpacity onPress={() => setShowNewPin(!showNewPin)} style={styles.eyeIcon}>
               <Ionicons
                 name={showNewPin ? 'eye-off' : 'eye'}
-                size={20}
+                size={DesignSystem.iconSizes.md}
                 color={theme.colors.textSecondary}
               />
             </TouchableOpacity>
@@ -1041,16 +1040,15 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.inputContainer,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.backgroundLight,
-                marginBottom: AppTheme.spacing.m,
+                borderColor: theme.colors.inputBorder,
+                backgroundColor: theme.colors.inputBackground,
               },
             ]}
           >
             <TextInput
               style={[styles.modalInput, { color: theme.colors.text, flex: 1 }]}
               placeholder={t('confirm_new_pin')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={confirmNewPin}
               onChangeText={setConfirmNewPin}
               secureTextEntry={!showConfirmNewPin}
@@ -1063,21 +1061,14 @@ const SettingsScreen: React.FC = () => {
             >
               <Ionicons
                 name={showConfirmNewPin ? 'eye-off' : 'eye'}
-                size={20}
+                size={DesignSystem.iconSizes.md}
                 color={theme.colors.textSecondary}
               />
             </TouchableOpacity>
           </View>
 
           {pinError ? (
-            <Text
-              style={[
-                styles.errorText,
-                { color: theme.colors.error, marginBottom: AppTheme.spacing.m },
-              ]}
-            >
-              {pinError}
-            </Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{pinError}</Text>
           ) : null}
         </View>
 
@@ -1106,23 +1097,27 @@ const SettingsScreen: React.FC = () => {
             accessibilityLabel={t('tap_to_change_image')}
             accessibilityRole="button"
             onPress={openImageSourceModal}
-            style={[
-              styles.avatarContainer,
-              { alignItems: 'center', marginBottom: AppTheme.spacing.l },
-            ]}
+            style={styles.avatarContainer}
           >
-            <View style={styles.editAvatarContainer}>
-              <ProfileAvatar name={tempUsername} size={80} uri={selectedImage || undefined} />
-              <View style={styles.cameraIconContainer}>
-                <Ionicons name="camera" size={18} color={theme.colors.textLight} />
-              </View>
-            </View>
-            <Text
+            <View
               style={[
-                styles.avatarHint,
-                { color: theme.colors.text + '80', marginTop: AppTheme.spacing.s },
+                styles.editAvatarContainer,
+                {
+                  backgroundColor: theme.colors.primaryContainer,
+                  borderColor: theme.colors.primary,
+                },
               ]}
             >
+              <ProfileAvatar name={tempUsername} size={80} uri={selectedImage || undefined} />
+              <View style={[styles.cameraIconContainer, { backgroundColor: theme.colors.primary }]}>
+                <Ionicons
+                  name="camera"
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.onPrimary}
+                />
+              </View>
+            </View>
+            <Text style={[styles.avatarHint, { color: theme.colors.textSecondary }]}>
               {t('tap_to_change_image')}
             </Text>
           </MotionPressable>
@@ -1131,14 +1126,17 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.profileInputContainer,
               {
-                backgroundColor: theme.colors.backgroundLight,
-                borderColor: theme.colors.border,
-                marginBottom: AppTheme.spacing.m,
+                backgroundColor: theme.colors.inputBackground,
+                borderColor: theme.colors.inputBorder,
               },
             ]}
           >
             <View style={styles.profileInputIcon}>
-              <Ionicons name="person-outline" size={20} color={theme.colors.primary} />
+              <Ionicons
+                name="person-outline"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.primary}
+              />
             </View>
             <TextInput
               style={[
@@ -1161,14 +1159,7 @@ const SettingsScreen: React.FC = () => {
           </View>
 
           {profileError ? (
-            <Text
-              style={[
-                styles.errorText,
-                { color: theme.colors.error, marginBottom: AppTheme.spacing.m },
-              ]}
-            >
-              {profileError}
-            </Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{profileError}</Text>
           ) : null}
         </View>
 
@@ -1190,12 +1181,7 @@ const SettingsScreen: React.FC = () => {
         title={t('export_passwords_title')}
       >
         <View>
-          <Text
-            style={[
-              styles.modalText,
-              { color: theme.colors.text, marginBottom: AppTheme.spacing.m },
-            ]}
-          >
+          <Text style={[styles.modalText, { color: theme.colors.text }]}>
             {t('export_passwords_message_encrypted_only')}
           </Text>
 
@@ -1205,9 +1191,8 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.inputContainer,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.backgroundLight,
-                marginBottom: AppTheme.spacing.m,
+                borderColor: theme.colors.inputBorder,
+                backgroundColor: theme.colors.inputBackground,
               },
             ]}
           >
@@ -1217,7 +1202,7 @@ const SettingsScreen: React.FC = () => {
               onChangeText={setExportPassword}
               secureTextEntry
               placeholder={t('enter_encryption_password')}
-              placeholderTextColor={theme.colors.text + '60'}
+              placeholderTextColor={theme.colors.textTertiary}
             />
           </View>
         </View>
@@ -1254,12 +1239,7 @@ const SettingsScreen: React.FC = () => {
         title={t('import_encrypted')}
       >
         <View>
-          <Text
-            style={[
-              styles.modalText,
-              { color: theme.colors.text, marginBottom: AppTheme.spacing.m },
-            ]}
-          >
+          <Text style={[styles.modalText, { color: theme.colors.text }]}>
             {t('enter_decryption_password')}
           </Text>
 
@@ -1267,9 +1247,8 @@ const SettingsScreen: React.FC = () => {
             style={[
               styles.inputContainer,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.backgroundLight,
-                marginBottom: AppTheme.spacing.m,
+                borderColor: theme.colors.inputBorder,
+                backgroundColor: theme.colors.inputBackground,
               },
             ]}
           >
@@ -1279,7 +1258,7 @@ const SettingsScreen: React.FC = () => {
               onChangeText={setImportPassword}
               secureTextEntry
               placeholder={t('decryption_password_placeholder')}
-              placeholderTextColor={theme.colors.text + '60'}
+              placeholderTextColor={theme.colors.textTertiary}
             />
           </View>
         </View>
@@ -1421,7 +1400,12 @@ const SettingsScreen: React.FC = () => {
         <Text
           style={[
             styles.modalDescription,
-            { color: theme.colors.text, fontWeight: '600', marginBottom: 10, marginTop: 16 },
+            {
+              color: theme.colors.text,
+              fontWeight: '600',
+              marginBottom: DesignSystem.spacing.m,
+              marginTop: DesignSystem.spacing.l,
+            },
           ]}
         >
           {t('reset_app_confirm_prompt')}
@@ -1455,6 +1439,15 @@ const SettingsScreen: React.FC = () => {
         title={t('updating_pin')}
         visible={isChangingPin}
       />
+
+      <Dialog
+        description={busyOperation === 'export' ? t('export_preparing_file') : t('please_wait')}
+        dismissible={false}
+        iconElement={<ActivityIndicator color={theme.colors.primary} size="small" />}
+        onClose={() => {}}
+        title={busyOperation === 'export' ? t('export_in_progress') : t('import_in_progress')}
+        visible={busyOperation !== null}
+      />
     </SafeAreaView>
   );
 };
@@ -1473,144 +1466,132 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
-    minHeight: 58,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    minHeight: DesignSystem.layout.touchTarget.large,
+    paddingVertical: DesignSystem.spacing.s,
   },
   title: {
+    ...DesignSystem.text('titleLarge'),
     textAlign: 'left',
-    letterSpacing: -0.35,
   },
   compactScrollView: { flex: 1 },
   compactScrollContent: {
     width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingBottom: 24,
+    paddingBottom: DesignSystem.spacing.xl,
   },
   compactProfile: {
     minHeight: 66,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: DesignSystem.radii.small,
+    paddingHorizontal: DesignSystem.spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: DesignSystem.spacing.s,
   },
-  compactProfileCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
-  compactProfileName: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
-  compactProfileMeta: { fontSize: 10, lineHeight: 14, marginTop: 1 },
-  compactEditText: { fontSize: 11, lineHeight: 15, fontWeight: '600' },
+  compactProfileCopy: { flex: 1, minWidth: 0, marginLeft: DesignSystem.spacing.s },
+  compactProfileName: { ...DesignSystem.text('label'), fontWeight: '600' },
+  compactProfileMeta: { ...DesignSystem.text('micro'), marginTop: DesignSystem.spacing.xxs },
+  compactEditText: { ...DesignSystem.text('micro'), fontWeight: '600' },
   compactSectionLabel: {
-    fontSize: 9,
-    lineHeight: 13,
+    ...DesignSystem.text('micro'),
     fontWeight: '700',
-    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginTop: 12,
-    marginBottom: 2,
+    marginTop: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.xxs,
   },
   compactGroup: { overflow: 'hidden' },
   compactRow: { borderBottomWidth: StyleSheet.hairlineWidth },
-  compactValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  compactValue: { fontSize: 10, lineHeight: 14 },
+  compactValueRow: { flexDirection: 'row', alignItems: 'center', gap: DesignSystem.spacing.xs },
+  compactValue: { ...DesignSystem.text('micro') },
   profileInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: AppTheme.borderRadius.medium,
-    marginTop: AppTheme.spacing.m,
-    marginBottom: AppTheme.spacing.m,
-    height: 48, // Altezza fissa per evitare espansioni
+    borderRadius: DesignSystem.radii.medium,
+    marginTop: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.m,
+    height: DesignSystem.layout.touchTarget.comfortable,
     overflow: 'hidden',
   },
   profileInputIcon: {
-    width: 48,
-    height: 48,
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0, // Does not shrink
+    flexShrink: 0,
   },
   profileTextInput: {
     flex: 1,
-    fontSize: AppTheme.fonts.sizes.medium,
-    paddingHorizontal: AppTheme.spacing.s,
-    paddingVertical: 0, // Rimuove padding verticale per controllo preciso dell'altezza
-    height: 46, // Altezza leggermente inferiore al container
-    textAlignVertical: 'center', // Android
+    ...DesignSystem.text('bodySmall'),
+    paddingHorizontal: DesignSystem.spacing.s,
+    paddingVertical: 0,
+    height: 46, // One border less than the container height.
+    textAlignVertical: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: AppTheme.borderRadius.medium,
-    marginBottom: AppTheme.spacing.m,
+    borderRadius: DesignSystem.radii.medium,
+    marginBottom: DesignSystem.spacing.m,
     overflow: 'hidden',
   },
   modalInput: {
     flex: 1,
-    padding: AppTheme.spacing.m,
-    fontSize: AppTheme.fonts.sizes.medium,
+    padding: DesignSystem.spacing.m,
+    ...DesignSystem.text('bodySmall'),
   },
   eyeIcon: {
-    padding: AppTheme.spacing.m,
+    padding: DesignSystem.spacing.m,
     justifyContent: 'center',
     alignItems: 'center',
   },
   errorText: {
-    fontSize: AppTheme.fonts.sizes.small,
-    marginBottom: AppTheme.spacing.m,
+    ...DesignSystem.text('caption'),
+    marginBottom: DesignSystem.spacing.m,
     textAlign: 'center',
   },
   avatarContainer: {
     alignItems: 'center',
-    marginBottom: AppTheme.spacing.m,
-    paddingVertical: AppTheme.spacing.s, // Aggiungiamo padding verticale
+    marginBottom: DesignSystem.spacing.l,
+    paddingVertical: DesignSystem.spacing.s,
   },
   editAvatarContainer: {
-    width: 80, // Ridotto da 100 a 80
-    height: 80, // Ridotto da 100 a 80
-    borderRadius: 40, // Updated for the new size
+    width: 80,
+    height: 80,
+    borderRadius: DesignSystem.radii.pill,
     overflow: 'visible',
-    backgroundColor: AppTheme.colors.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    marginBottom: AppTheme.spacing.s,
+    marginBottom: DesignSystem.spacing.s,
     borderWidth: 2,
-    borderColor: AppTheme.colors.primary,
   },
   avatarHint: {
-    fontSize: AppTheme.fonts.sizes.small,
-    marginTop: 4,
+    ...DesignSystem.text('caption'),
+    marginTop: DesignSystem.spacing.s,
     textAlign: 'center',
-    paddingHorizontal: AppTheme.spacing.s, // Padding per evitare che il testo tocchi i bordi
+    paddingHorizontal: DesignSystem.spacing.s,
   },
   cameraIconContainer: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: AppTheme.colors.primary,
-    borderRadius: 16, // Ridotto da 18 a 16
-    padding: 4, // Ridotto da 6 a 4
+    bottom: -DesignSystem.spacing.xs,
+    right: -DesignSystem.spacing.xs,
+    borderRadius: DesignSystem.radii.large,
+    padding: DesignSystem.spacing.xs,
     zIndex: 10,
-    ...AppTheme.shadows.small,
+    ...DesignSystem.shadows.small,
   },
   pinRequirement: {
-    fontSize: AppTheme.fonts.sizes.small,
-    marginBottom: AppTheme.spacing.m,
+    ...DesignSystem.text('caption'),
+    marginBottom: DesignSystem.spacing.m,
     textAlign: 'center',
   },
   modalText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    marginBottom: AppTheme.spacing.m,
-    // Color is not specified here because it is set dynamically in JSX
+    ...DesignSystem.text('bodySmall'),
+    marginBottom: DesignSystem.spacing.m,
+    // The color is applied dynamically in the JSX.
   },
   modalDescription: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    lineHeight: AppTheme.fonts.sizes.medium * 1.5,
+    ...DesignSystem.text('bodySmall'),
     textAlign: 'left',
   },
 });

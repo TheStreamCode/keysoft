@@ -1,5 +1,8 @@
 module.exports = {
   preset: 'jest-expo',
+  // Keep the transform/haste cache inside the project: avoids colliding with a running
+  // Metro server and works in shells that cannot write to the user temp directory.
+  cacheDirectory: '<rootDir>/tmp/jest-cache',
   setupFiles: [
     '<rootDir>/jest.preload.js',
     require.resolve('jest-expo/src/preset/setup.js'),

@@ -329,6 +329,7 @@ export const en = {
     'You are trying to import too many passwords. Reduce the number of passwords to import or delete some existing passwords.',
   no_data: 'No data',
   no_data_to_export: 'There are no passwords or notes to export.',
+  import_in_progress: 'Import in progress',
   import_success: 'Import completed',
   import_success_message_all: 'Successfully imported {passwords} passwords and {notes} notes.',
   import_success_message_passwords: 'Successfully imported {count} passwords.',

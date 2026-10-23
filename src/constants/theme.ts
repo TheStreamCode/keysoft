@@ -1,4 +1,5 @@
-import { Platform } from 'react-native';
+import { Easing, Platform } from 'react-native';
+import { BREAKPOINTS, LAYOUT, TOUCH_TARGET, WINDOW_METRICS } from './layout';
 
 // === Palette ==============================================================
 // Nocturne: one quiet blue accent over cool neutral surfaces.
@@ -33,22 +34,22 @@ const palette = {
   // Neutrals (Slate - Cool Gray with Blue undertones)
   slate: {
     25: '#fcfcfc',
-    50: '#f8fafc', // Light Bg
-    100: '#f1f5f9', // Light Surface
-    200: '#e2e8f0', // Light Border
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
     300: '#cbd5e1',
-    400: '#94a3b8', // Dark Text Secondary
-    500: '#64748b', // Light Text Secondary
+    400: '#94a3b8',
+    500: '#64748b',
     600: '#475569',
-    700: '#334155', // Dark Border
-    800: '#1e293b', // Dark Surface (Card)
-    900: '#0f172a', // Dark Bg
-    950: '#020617', // Deep Dark
+    700: '#334155',
+    800: '#1e293b',
+    900: '#0f172a',
+    950: '#020617',
   },
-  success: '#10b981', // Emerald 500
-  error: '#ef4444', // Red 500
-  warning: '#f59e0b', // Amber 500
-  info: '#3b82f6', // Blue 500
+  success: '#10b981',
+  error: '#ef4444',
+  warning: '#f59e0b',
+  info: '#3b82f6',
 };
 
 const baseFonts = {
@@ -56,11 +57,11 @@ const baseFonts = {
   secure: Platform.select({ ios: 'Courier', android: 'monospace', default: 'Courier' }),
   sizes: {
     xsmall: 11,
-    small: 13,
-    medium: 15,
-    large: 17,
+    small: 12,
+    medium: 14,
+    large: 16,
     xlarge: 20,
-    xxlarge: 24,
+    xxlarge: 26,
     display: 32,
   },
   weights: {
@@ -71,84 +72,91 @@ const baseFonts = {
   },
 };
 
+/**
+ * Type scale. `lineHeight` values are aligned to the 4pt grid and `letterSpacing`
+ * is negative for display sizes and slightly positive for small labels.
+ */
 const typography = {
-  display: { size: 34, lineHeight: 40, weight: '700' },
-  headline: { size: 26, lineHeight: 32, weight: '600' },
-  title: { size: 20, lineHeight: 28, weight: '600' },
-  subtitle: { size: 18, lineHeight: 24, weight: '500' },
-  body: { size: 16, lineHeight: 24, weight: '400' },
-  label: { size: 14, lineHeight: 20, weight: '500' },
-  caption: { size: 12, lineHeight: 16, weight: '500' },
-  micro: { size: 11, lineHeight: 14, weight: '500' },
+  display: { size: 32, lineHeight: 40, weight: '700', letterSpacing: -0.6 },
+  headline: { size: 26, lineHeight: 32, weight: '600', letterSpacing: -0.4 },
+  title: { size: 20, lineHeight: 28, weight: '600', letterSpacing: -0.2 },
+  titleLarge: { size: 22, lineHeight: 28, weight: '600', letterSpacing: -0.3 },
+  subtitle: { size: 18, lineHeight: 24, weight: '600', letterSpacing: -0.1 },
+  body: { size: 16, lineHeight: 24, weight: '400', letterSpacing: 0 },
+  bodySmall: { size: 14, lineHeight: 20, weight: '400', letterSpacing: 0 },
+  label: { size: 14, lineHeight: 20, weight: '500', letterSpacing: 0.1 },
+  labelSmall: { size: 12, lineHeight: 16, weight: '500', letterSpacing: 0.2 },
+  caption: { size: 12, lineHeight: 16, weight: '400', letterSpacing: 0.2 },
+  micro: { size: 11, lineHeight: 14, weight: '500', letterSpacing: 0.3 },
+  button: { size: 15, lineHeight: 20, weight: '600', letterSpacing: 0.1 },
 };
 
+/** 4pt spacing grid. Legacy names are preserved for existing screens. */
 const spacing = {
+  none: 0,
+  xxs: 2,
   xs: 4,
   s: 8,
   m: 12,
-  l: 20,
-  xl: 28,
-  xxl: 40,
-  xxxl: 56,
+  l: 16,
+  xl: 24,
+  xxl: 32,
+  xxxl: 48,
+  huge: 64,
 };
 
 const borderRadius = {
-  small: 4,
-  medium: 8,
-  large: 14,
+  none: 0,
+  xs: 6,
+  small: 8,
+  medium: 12,
+  large: 16,
+  xl: 20,
+  xxl: 28,
   pill: 999,
 };
 
 const iconSizes = {
   xs: 16,
-  sm: 20,
-  md: 24,
-  lg: 32,
-  xl: 48,
+  sm: 18,
+  md: 22,
+  lg: 28,
+  xl: 36,
 };
 
 const layout = {
-  contentMaxWidth: 1180,
-  horizontalGutter: 24,
-  sectionGap: 32,
-  cardGap: 16,
   breakpoints: {
-    phone: 0,
-    tablet: 768,
-    tv: 1280,
+    ...BREAKPOINTS,
+    // Legacy aliases kept for callers that still speak in device categories.
+    phone: BREAKPOINTS.compact,
+    tablet: BREAKPOINTS.medium,
+    tv: BREAKPOINTS.large,
   },
-  maxWidths: {
-    phone: Infinity,
-    tablet: 1180,
-    tv: 1180,
-  },
-  gridColumns: {
-    phone: 1,
-    tablet: 2,
-    tv: 2,
-  },
-  horizontalPadding: {
-    phone: 16,
-    tablet: 32,
-    tv: 32,
-  },
-  itemGap: {
-    phone: 16,
-    tablet: 24,
-    tv: 24,
-  },
+  windowMetrics: WINDOW_METRICS,
+  contentMaxWidth: WINDOW_METRICS.large.contentMaxWidth,
+  horizontalGutter: WINDOW_METRICS.compact.gutter,
+  sectionGap: spacing.xxl,
+  cardGap: spacing.m,
+  maxReadableWidth: LAYOUT.maxReadableWidth,
+  maxFormWidth: LAYOUT.maxFormWidth,
+  maxAuthWidth: LAYOUT.maxAuthWidth,
+  listItemMinHeight: LAYOUT.listItemMinHeight,
+  touchTarget: TOUCH_TARGET,
 };
 
 const motion = {
   durations: {
-    shortest: 150,
-    short: 200,
-    medium: 300,
-    long: 400,
+    instant: 0,
+    fastest: 80,
+    fast: 120,
+    short: 160,
+    medium: 220,
+    long: 320,
   },
   easing: {
-    standard: 'cubic-bezier(0.4, 0.0, 0.2, 1)', // Material Standard
-    emphasized: 'cubic-bezier(0.05, 0.7, 0.1, 1.0)', // Snappy
+    standard: Easing.bezier(0.2, 0, 0, 1),
+    emphasized: Easing.bezier(0.05, 0.7, 0.1, 1),
+    decelerate: Easing.out(Easing.cubic),
   },
 };
 
@@ -160,10 +168,13 @@ const stateLayer = {
   disabled: 0.38,
 };
 
+/** Minimum interactive sizes; compact controls must still reach 44pt. */
 const componentHeights = {
-  button: { sm: 40, md: 48, lg: 56 }, // Standardized touch targets
-  input: { sm: 40, md: 48, lg: 56 },
-  chip: 32,
+  button: { sm: TOUCH_TARGET.minimum, md: TOUCH_TARGET.comfortable, lg: TOUCH_TARGET.large },
+  input: { md: TOUCH_TARGET.comfortable, lg: TOUCH_TARGET.large },
+  iconButton: TOUCH_TARGET.comfortable,
+  listItem: LAYOUT.listItemMinHeight,
+  chip: 36,
   topBar: 64,
 };
 
@@ -172,6 +183,15 @@ const zIndex = {
   floatingAction: 20,
   modal: 30,
   toast: 40,
+};
+
+const accessibility = {
+  minimumTouchTarget: TOUCH_TARGET.minimum,
+  comfortableTouchTarget: TOUCH_TARGET.comfortable,
+  normalTextContrast: 4.5,
+  largeTextContrast: 3,
+  /** Cap used for dense chrome where unbounded font scaling breaks layout. */
+  maxFontSizeMultiplier: 1.35,
 };
 
 // === Surfaces Definition (The Core of the Look) ===========================
@@ -202,17 +222,17 @@ const gradientsLight = {
   accent: ['#2563eb', '#60a5fa'],
 };
 
-// Modern Shadows (Softer, diffused)
+// Modern Shadows (softer and more diffused than the previous elevation set)
 const darkShadows =
   Platform.OS === 'web'
     ? {
-        small: { boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.3)', elevation: 2 },
+        small: { boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.28)', elevation: 2 },
         medium: {
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 6px 16px -4px rgba(0, 0, 0, 0.36), 0 2px 6px -2px rgba(0, 0, 0, 0.2)',
           elevation: 6,
         },
         large: {
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 16px 32px -8px rgba(0, 0, 0, 0.42), 0 6px 12px -4px rgba(0, 0, 0, 0.24)',
           elevation: 12,
         },
       }
@@ -220,22 +240,22 @@ const darkShadows =
         small: {
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.3,
+          shadowOpacity: 0.28,
           shadowRadius: 2,
           elevation: 2,
         },
         medium: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.34,
+          shadowRadius: 16,
           elevation: 6,
         },
         large: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 16 },
+          shadowOpacity: 0.42,
+          shadowRadius: 32,
           elevation: 12,
         },
       };
@@ -243,36 +263,38 @@ const darkShadows =
 const lightShadows =
   Platform.OS === 'web'
     ? {
-        small: { boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', elevation: 1 },
+        small: { boxShadow: '0 1px 2px 0 rgba(15, 23, 42, 0.06)', elevation: 1 },
         medium: {
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          boxShadow:
+            '0 6px 16px -4px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.06)',
           elevation: 3,
         },
         large: {
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          boxShadow:
+            '0 16px 32px -8px rgba(15, 23, 42, 0.16), 0 6px 12px -4px rgba(15, 23, 42, 0.08)',
           elevation: 10,
         },
       }
     : {
         small: {
-          shadowColor: palette.slate[500],
+          shadowColor: palette.slate[700],
           shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.05,
+          shadowOpacity: 0.06,
           shadowRadius: 2,
           elevation: 1,
         },
         medium: {
-          shadowColor: palette.slate[600],
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
+          shadowColor: palette.slate[700],
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
           elevation: 3,
         },
         large: {
           shadowColor: palette.slate[700],
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.1,
-          shadowRadius: 15,
+          shadowOffset: { width: 0, height: 16 },
+          shadowOpacity: 0.16,
+          shadowRadius: 32,
           elevation: 10,
         },
       };
@@ -282,40 +304,54 @@ const createTheme = (mode: 'dark' | 'light') => {
   const surfaces = isDark ? darkSurfaces : lightSurfaces;
   const gradients = isDark ? gradientsDark : gradientsLight;
   const shadows = isDark ? darkShadows : lightShadows;
+  const onPrimary = isDark ? '#0b1220' : '#ffffff';
 
   const colors = {
     // Brand
-    primary: isDark ? palette.primary[400] : palette.primary[600], // Lighter in dark mode for contrast
+    primary: isDark ? palette.primary[400] : palette.primary[600],
     primaryLight: isDark ? palette.primary[300] : palette.primary[400],
     primaryDark: isDark ? palette.primary[500] : palette.primary[700],
+    onPrimary,
+    primaryContainer: isDark ? 'rgba(96, 165, 250, 0.16)' : '#dfe9fd',
+    onPrimaryContainer: isDark ? '#dbeafe' : '#172554',
 
     accent: isDark ? palette.accent[400] : palette.accent[600],
     accentLight: isDark ? palette.accent[300] : palette.accent[500],
     accentDark: isDark ? palette.accent[500] : palette.accent[700],
 
     // Backgrounds
-    background: surfaces.level0, // Main App Background
+    background: surfaces.level0,
     backgroundMuted: isDark ? '#202230' : '#eceef4',
     backgroundLight: isDark ? '#232532' : '#ffffff',
-    backgroundElevated: surfaces.level1, // Cards
+    backgroundElevated: surfaces.level1,
+    backgroundSunken: isDark ? '#12141f' : '#eceef4',
+    surfaceMuted: isDark ? '#1c1f30' : '#f0f1f6',
 
     // Typography
     text: isDark ? '#e9e9ed' : '#171925',
     textSecondary: isDark ? '#a3a5b2' : '#5d6070',
-    textTertiary: isDark ? '#737684' : '#7a7e8e',
+    textTertiary: isDark ? '#8b8ea0' : '#6a6e7d',
+    textDisabled: isDark ? '#6b6e7d' : '#9a9eab',
     textLight: '#ffffff',
     textDark: palette.slate[900],
 
-    // Status
-    error: palette.error,
-    success: palette.success,
-    warning: palette.warning,
-    info: palette.info,
+    // Status (mode-specific so text stays readable on both themes)
+    error: isDark ? '#f87171' : '#d21f1f',
+    success: isDark ? '#34d399' : '#047857',
+    warning: isDark ? '#fbbf24' : '#b45309',
+    info: isDark ? '#60a5fa' : '#1d4ed8',
+    errorSoft: isDark ? 'rgba(248, 113, 113, 0.14)' : 'rgba(210, 31, 31, 0.1)',
+    successSoft: isDark ? 'rgba(52, 211, 153, 0.14)' : 'rgba(4, 120, 87, 0.1)',
+    warningSoft: isDark ? 'rgba(251, 191, 36, 0.16)' : 'rgba(180, 83, 9, 0.1)',
+    infoSoft: isDark ? 'rgba(96, 165, 250, 0.14)' : 'rgba(29, 78, 216, 0.08)',
+    focusRing: isDark ? '#93c5fd' : '#2563eb',
 
     // Components
     card: surfaces.level1,
     border: isDark ? '#3b3e4b' : '#d7d9e2',
+    borderStrong: isDark ? '#4b4f60' : '#b9bdca',
     divider: isDark ? '#30333f' : '#e1e2e8',
+    skeleton: isDark ? '#262938' : '#e6e8ef',
 
     // Inputs
     inputBackground: isDark ? '#232532' : '#ffffff',
@@ -345,7 +381,7 @@ const createTheme = (mode: 'dark' | 'light') => {
     chipBorder: isDark ? 'rgba(96, 165, 250, 0.45)' : '#bfdbfe',
     chipText: isDark ? '#dbeafe' : '#1e40af',
     chipSelectedBackground: palette.primary[500],
-    chipSelectedText: '#ffffff',
+    chipSelectedText: onPrimary,
 
     // Lists
     listItemBackground: isDark ? '#1c1f30' : '#ffffff',
@@ -356,6 +392,8 @@ const createTheme = (mode: 'dark' | 'light') => {
   };
 
   return {
+    mode,
+    isDark,
     colors,
     surfaces,
     gradients,
@@ -363,11 +401,14 @@ const createTheme = (mode: 'dark' | 'light') => {
     typography,
     spacing,
     borderRadius,
+    radii: borderRadius,
     shadows,
+    elevation: shadows,
     layout,
     motion,
     iconSizes,
     stateLayer,
+    accessibility,
     components: {
       heights: componentHeights,
       focusRing: `0 0 0 3px ${palette.primary[500]}40`,
@@ -381,3 +422,4 @@ export const LightTheme = createTheme('light');
 export const AppTheme = DarkTheme; // Default export
 
 export type Theme = typeof AppTheme;
+export { palette };

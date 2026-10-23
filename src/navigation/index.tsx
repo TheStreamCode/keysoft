@@ -22,6 +22,7 @@ import TabNavigator from './TabNavigator';
 // Auth Context
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { DesignSystem } from '../constants/designSystem';
 
 // Services
 import { Storage } from '../services';
@@ -30,6 +31,9 @@ import ScreenCaptureService from '../services/utils/screenCaptureService';
 
 // Screen Wrapper
 import ScreenWrapper from '../components/ScreenWrapper';
+
+// Text-heavy and form screens keep a readable line length on large windows.
+const READABLE_CONTENT = { maxWidth: DesignSystem.layout.maxReadableWidth };
 
 // Define navigation parameter types
 export type RootStackParamList = {
@@ -55,54 +59,54 @@ type StackScreenComponent<RouteName extends keyof RootStackParamList> = React.FC
 >;
 
 const WrappedOnboardingScreen: StackScreenComponent<'Onboarding'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <OnboardingScreen />
   </ScreenWrapper>
 );
 const WrappedAuthScreen: StackScreenComponent<'Auth'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <AuthScreen />
   </ScreenWrapper>
 );
 // Screen components use useNavigation/useRoute internally, so
 // Stack props do not need to be passed; the wrapper ignores them.
 const WrappedPasswordDetailScreen: StackScreenComponent<'PasswordDetail'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <PasswordDetailScreen />
   </ScreenWrapper>
 );
 const WrappedPasswordGeneratorScreen: StackScreenComponent<'PasswordGenerator'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <PasswordGeneratorScreen />
   </ScreenWrapper>
 );
 const WrappedSettingsScreen: StackScreenComponent<'Settings'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <SettingsScreen />
   </ScreenWrapper>
 );
 const WrappedPrivacyPolicyScreen: StackScreenComponent<'PrivacyPolicy'> = ({ navigation }) => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <PrivacyPolicyScreen navigation={navigation} />
   </ScreenWrapper>
 );
 const WrappedOpenSourceScreen: StackScreenComponent<'OpenSource'> = ({ navigation }) => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <OpenSourceScreen navigation={navigation} />
   </ScreenWrapper>
 );
 const WrappedNotesScreen: StackScreenComponent<'Notes'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <NotesScreen />
   </ScreenWrapper>
 );
 const WrappedNoteDetailScreen: StackScreenComponent<'NoteDetail'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <NoteDetailScreen />
   </ScreenWrapper>
 );
 const WrappedVaultHealthScreen: StackScreenComponent<'VaultHealth'> = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <VaultHealthScreen />
   </ScreenWrapper>
 );

@@ -1,10 +1,10 @@
 # Pre-Build Security And UI Review
 
 Original review date: 2026-06-17
-Latest update: 2026-08-09
+Latest update: 2026-10-23
 
-Current source release target: Keysoft 3.3.1, Android versionCode 130. Google Play remains on
-Keysoft 3.3.0, versionCode 129, until the new production bundle is submitted manually. iOS
+Current source release target: Keysoft 3.3.2, Android versionCode 131. Google Play remains on
+Keysoft 3.3.1, versionCode 130, until the new production bundle is submitted manually. iOS
 simulator readiness remains outside the App Store release scope.
 
 ## Executive Summary
@@ -12,6 +12,36 @@ simulator readiness remains outside the App Store release scope.
 The codebase passes local static and test verification, and the Android JS bundle exports successfully for Expo/Metro. I did not find evidence of plaintext vault writes in the current storage path, encryption-key logging, `Math.random` in app source, or obvious DOM/code-injection sinks. Biometric unlock intentionally stores the vault key only in SecureStore with device authentication.
 
 The release-blocking privacy/config mismatch and the main accessibility issues were accepted for remediation after this review. Keep this file as the audit trail for the pre-build review.
+
+### 2026-10-23 Design System And Responsive UI Review
+
+The mobile presentation layer was reviewed and migrated to the documented Nocturne v2
+design system. The review found and addressed: design tokens that existed but were not
+consumed by screens; per-screen width math and literal font sizes; fixed dialog/sheet
+widths; sub-44pt icon controls; dark-mode primary buttons using white text at ~2.5:1
+contrast; low-contrast tertiary/error text; an invalid raw-typography spread in
+`VaultHealthScreen`; and a non-existent `theme.colors.surface` reference in `ListItem`.
+
+The change is presentation-only. It introduces a single layout source
+(`constants/layout.ts`), compact/medium/expanded/large window classes, a 4pt spacing grid,
+an explicit type scale with `DesignSystem.text()`, refreshed semantic colors
+(`onPrimary`, mode-specific status colors, stronger tertiary text), one owner for the
+screen gutter/content width (`ScreenWrapper`), responsive dialog/sheet widths, adaptive
+PIN keypad sizing and 44/48pt touch targets. Documentation lives in
+[design-system.md](design-system.md). It does not change permissions, network behavior,
+storage keys, cryptographic formats, KDF parameters, icons/assets or the distribution
+boundary.
+
+Verification for this review: strict TypeScript, ESLint, Prettier, and 36 Jest suites /
+253 tests (including new token-scale, contrast and window-class tests). The Android bundle
+export remains on the release checklist. Visual spot checks were performed in the Expo web
+development target at compact phone, small-phone and tablet landscape widths, in dark and
+light appearance. Keysoft 3.3.2 packages this review together with the production KDF
+environment fix and the backup export/import progress feedback.
+
+The visual matrix below (compact phone, short landscape, medium split view, expanded
+tablet, light/dark, reduced motion, large text) must be completed on a device or EAS
+preview build before release.
 
 ### 2026-08-09 Release Review
 

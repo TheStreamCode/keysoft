@@ -41,6 +41,10 @@ export const useExportImport = ({
   const [importFileContent, setImportFileContent] = useState('');
   const [showImportPasswordDialog, setShowImportPasswordDialog] = useState(false);
 
+  // Blocking loader for the multi-second KDF + file work. The screens render a modal
+  // Dialog from this state so the user sees progress instead of a frozen screen.
+  const [busyOperation, setBusyOperation] = useState<'export' | 'import' | null>(null);
+
   const showImportPasswordError = useCallback(
     (message: string) => {
       setShowImportPasswordDialog(false);
@@ -152,6 +156,8 @@ export const useExportImport = ({
           return;
         }
 
+        setBusyOperation('export');
+
         const passwords = await Storage.getAllPasswords();
         const notes = await Storage.getNotes();
 
@@ -183,24 +189,17 @@ export const useExportImport = ({
         }
         temporaryFileUri = `${exportDirectory}${filePrefix}${new Date().toISOString().split('T')[0]}${fileExtension}`;
 
-        alert(t('export_in_progress'), t('export_preparing_file'), [
-          {
-            text: t('cancel'),
-            onPress: () => {
-              return;
-            },
-            style: 'cancel',
-          },
-        ]);
-
         await FileSystem.writeAsStringAsync(temporaryFileUri, jsonData);
 
         const isAvailable = await Sharing.isAvailableAsync();
 
         if (!isAvailable) {
+          setBusyOperation(null);
           alert(t('error'), t('sharing_not_available'));
           return;
         }
+
+        setBusyOperation(null);
 
         const result = await new Promise<boolean>((resolve) => {
           alert(
@@ -257,9 +256,11 @@ export const useExportImport = ({
           Logger.info("Esportazione non completata o annullata dall'utente");
         }
       } catch (error) {
+        setBusyOperation(null);
         Logger.error("Errore durante l'esportazione:", error);
         alert(t('error'), t('export_error'));
       } finally {
+        setBusyOperation(null);
         setExportPassword('');
         if (temporaryFileUri) {
           try {
@@ -358,19 +359,26 @@ export const useExportImport = ({
 
       const parsedData = JSON.parse(importFileContent);
 
+      // Close the password sheet before the blocking loader appears: a Dialog must not
+      // compete with the sheet's own native modal layer.
+      setShowImportPasswordDialog(false);
+      setBusyOperation('import');
+
       try {
         const decryptedData = await Crypto.decryptWithPassword(parsedData.data, importPassword);
         const importData = JSON.parse(decryptedData);
 
         setImportPassword('');
         setImportFileContent('');
-        setShowImportPasswordDialog(false);
+        setBusyOperation(null);
 
         await processImport(importData);
       } catch (_error) {
+        setBusyOperation(null);
         showImportPasswordError(t('invalid_decryption_password'));
       }
     } catch (_error) {
+      setBusyOperation(null);
       showImportPasswordError(t('import_error'));
     }
   }, [importPassword, importFileContent, t, processImport, showImportPasswordError]);
@@ -385,6 +393,7 @@ export const useExportImport = ({
     setShowExportDialog,
     handleExportPasswords,
     performExport,
+    busyOperation,
     // Import
     isEncryptedImport,
     setIsEncryptedImport,

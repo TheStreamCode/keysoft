@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useResponsiveLayout } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { DesignSystem } from '../constants/designSystem';
 import type { RootStackParamList } from './index';
 import { MotionPressable } from '../components/ui/motion';
 
@@ -28,6 +29,9 @@ export type TabParamList = {
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
+// Text-heavy and form tabs keep a readable line length on large windows.
+const READABLE_CONTENT = { maxWidth: DesignSystem.layout.maxReadableWidth };
+
 // Screens wrapped with ScreenWrapper; components use hooks for navigation and route data
 const WrappedHomeScreen: React.FC = () => (
   <ScreenWrapper>
@@ -36,19 +40,19 @@ const WrappedHomeScreen: React.FC = () => (
 );
 
 const WrappedPasswordGeneratorScreen: React.FC = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <PasswordGeneratorScreen />
   </ScreenWrapper>
 );
 
 const WrappedNotesScreen: React.FC = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <NotesScreen />
   </ScreenWrapper>
 );
 
 const WrappedSettingsScreen: React.FC = () => (
-  <ScreenWrapper>
+  <ScreenWrapper style={READABLE_CONTENT}>
     <SettingsScreen />
   </ScreenWrapper>
 );
@@ -138,7 +142,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
       style={[
         styles.tabBarContainer,
         {
-          paddingBottom: Math.max(insets.bottom, 8),
+          paddingBottom: Math.max(insets.bottom, DesignSystem.spacing.s),
           backgroundColor: theme.colors.background,
           borderTopColor: theme.colors.divider,
         },
@@ -167,7 +171,11 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                   style={[styles.tabItem, styles.addSlot]}
                 >
                   <View style={[styles.addButton, { borderColor: theme.colors.primary }]}>
-                    <Ionicons name="add" color={theme.colors.primary} size={22} />
+                    <Ionicons
+                      name="add"
+                      color={theme.colors.primary}
+                      size={DesignSystem.iconSizes.md}
+                    />
                   </View>
                 </MotionPressable>
               ) : null}
@@ -181,7 +189,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
               >
                 <Ionicons
                   name={iconName as any}
-                  size={23}
+                  size={DesignSystem.iconSizes.md}
                   color={isFocused ? theme.colors.primary : theme.colors.textSecondary}
                 />
                 {isFocused ? (
@@ -223,25 +231,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     minHeight: 56,
     width: '100%',
-    paddingHorizontal: 8,
+    paddingHorizontal: DesignSystem.spacing.s,
     alignItems: 'center',
   },
   tabItem: {
     flex: 1,
     minWidth: 52,
-    minHeight: 52,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: DesignSystem.spacing.xs,
     position: 'relative',
   },
   addSlot: {
-    paddingTop: 3,
+    paddingTop: DesignSystem.spacing.xxs,
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: DesignSystem.radii.pill,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -251,7 +259,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 24,
     height: 2,
-    borderRadius: 1,
+    borderRadius: DesignSystem.radii.pill,
   },
 });
 

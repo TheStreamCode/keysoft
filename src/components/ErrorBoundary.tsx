@@ -1,9 +1,9 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DesignSystem } from '../constants/designSystem';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AppTheme } from '../constants/theme';
 import Logger from '../utils/logger';
 
 interface ErrorBoundaryProps {
@@ -23,9 +23,17 @@ const ErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Ionicons name="warning-outline" size={64} color={theme.colors.error} />
-      <Text style={[styles.title, { color: theme.colors.text }]}>{t('error')}</Text>
-      <Text style={[styles.message, { color: theme.colors.textSecondary }]}>
+      <Ionicons name="warning-outline" size={56} color={theme.colors.error} />
+      <Text style={[DesignSystem.text('title'), styles.title, { color: theme.colors.text }]}>
+        {t('error')}
+      </Text>
+      <Text
+        style={[
+          DesignSystem.text('bodySmall'),
+          styles.message,
+          { color: theme.colors.textSecondary },
+        ]}
+      >
         {t('generic_error')}
       </Text>
       <TouchableOpacity
@@ -34,7 +42,9 @@ const ErrorFallback: React.FC<{ onReset: () => void }> = ({ onReset }) => {
         accessibilityRole="button"
         accessibilityLabel={t('retry')}
       >
-        <Text style={[styles.buttonText, { color: theme.colors.textLight }]}>{t('retry')}</Text>
+        <Text style={[DesignSystem.text('button'), { color: theme.colors.onPrimary }]}>
+          {t('retry')}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -73,28 +83,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: AppTheme.spacing.xl,
+    padding: DesignSystem.spacing.xl,
   },
   title: {
-    fontSize: AppTheme.fonts.sizes.xlarge,
-    fontWeight: 'bold',
-    marginTop: AppTheme.spacing.l,
-    marginBottom: AppTheme.spacing.s,
+    marginTop: DesignSystem.spacing.l,
+    marginBottom: DesignSystem.spacing.s,
     textAlign: 'center',
   },
   message: {
-    fontSize: AppTheme.fonts.sizes.medium,
     textAlign: 'center',
-    marginBottom: AppTheme.spacing.xl,
+    marginBottom: DesignSystem.spacing.xl,
   },
   button: {
-    paddingHorizontal: AppTheme.spacing.xl,
-    paddingVertical: AppTheme.spacing.m,
-    borderRadius: AppTheme.borderRadius.pill,
-  },
-  buttonText: {
-    fontSize: AppTheme.fonts.sizes.medium,
-    fontWeight: 'bold',
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    paddingHorizontal: DesignSystem.spacing.xl,
+    paddingVertical: DesignSystem.spacing.m,
+    borderRadius: DesignSystem.radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DesignSystem } from '../../constants/designSystem';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useResponsiveLayout } from '../../utils/responsive';
 import { MotionPressable } from './motion';
 
 interface PinKeypadProps {
@@ -32,6 +34,12 @@ export function PinKeypad({
   onComplete,
 }: PinKeypadProps) {
   const { theme } = useTheme();
+  const layout = useResponsiveLayout();
+  const keyHeight = layout.isShortLandscape
+    ? DesignSystem.layout.touchTarget.minimum
+    : layout.isTabletOrLarger
+      ? 60
+      : 52;
 
   function appendDigit(digit: string) {
     if (disabled || value.length >= maxLength) return;
@@ -62,12 +70,15 @@ export function PinKeypad({
               style={[
                 styles.key,
                 {
+                  minHeight: keyHeight,
                   backgroundColor: theme.colors.background,
                   borderColor: theme.colors.border,
                 },
               ]}
             >
-              <Text style={[styles.keyText, { color: theme.colors.text }]}>{digit}</Text>
+              <Text style={[DesignSystem.text('title'), { color: theme.colors.text }]}>
+                {digit}
+              </Text>
             </MotionPressable>
           ))}
         </View>
@@ -79,11 +90,11 @@ export function PinKeypad({
           accessibilityLabel={biometricLabel}
           disabled={disabled || !onBiometricPress}
           onPress={onBiometricPress}
-          style={styles.utilityKey}
+          style={[styles.utilityKey, { minHeight: keyHeight }]}
         >
           <Ionicons
             name="finger-print-outline"
-            size={23}
+            size={DesignSystem.iconSizes.lg}
             color={onBiometricPress ? theme.colors.primary : theme.colors.textTertiary}
           />
         </MotionPressable>
@@ -96,12 +107,13 @@ export function PinKeypad({
           style={[
             styles.key,
             {
+              minHeight: keyHeight,
               backgroundColor: theme.colors.background,
               borderColor: theme.colors.border,
             },
           ]}
         >
-          <Text style={[styles.keyText, { color: theme.colors.text }]}>0</Text>
+          <Text style={[DesignSystem.text('title'), { color: theme.colors.text }]}>0</Text>
         </MotionPressable>
 
         <MotionPressable
@@ -109,9 +121,13 @@ export function PinKeypad({
           accessibilityLabel={backspaceLabel}
           disabled={disabled || value.length === 0}
           onPress={removeDigit}
-          style={styles.utilityKey}
+          style={[styles.utilityKey, { minHeight: keyHeight }]}
         >
-          <Ionicons name="backspace-outline" size={22} color={theme.colors.textSecondary} />
+          <Ionicons
+            name="backspace-outline"
+            size={DesignSystem.iconSizes.md}
+            color={theme.colors.textSecondary}
+          />
         </MotionPressable>
       </View>
     </View>
@@ -121,31 +137,25 @@ export function PinKeypad({
 const styles = StyleSheet.create({
   keypad: {
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 340,
     alignSelf: 'center',
-    gap: 8,
+    gap: DesignSystem.spacing.s,
   },
   row: {
     flexDirection: 'row',
-    gap: 8,
+    gap: DesignSystem.spacing.s,
   },
   key: {
     flex: 1,
-    minHeight: 50,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   utilityKey: {
     flex: 1,
-    minHeight: 50,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  keyText: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: '600',
   },
 });

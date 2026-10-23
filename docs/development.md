@@ -208,13 +208,15 @@ EAS build commands upload the project to expo.dev. Run them only after the relea
 
 ## UI And Accessibility Standards
 
-- Use semantic tokens from `ThemeContext`; do not branch on literal background colors or introduce screen-local light/dark palettes.
-- Keep main content within responsive bounds from `useResponsiveLayout`, including narrow phones, landscape, tablets, and split-view widths.
+- Use the design system documented in [design-system.md](design-system.md). Colors come from `useTheme()` tokens; spacing, radii, icon sizes and text styles come from `DesignSystem`. Do not hard-code `fontSize`, hex colors or per-screen breakpoints.
+- Build text with `DesignSystem.text('variant')`, not by spreading raw typography tokens (`size`/`weight` are not React Native style keys).
+- `ScreenWrapper` owns the horizontal gutter, centered content width and lateral safe areas. Screens must not add root horizontal padding or `width - padding * 2` width constraints; use the resolved fields from `useResponsiveLayout` (`gutter`, `gridGap`, `columns`, `maxContentWidth`, `windowClass`, `isShortLandscape`, `isSplitView`, `isLargeText`).
+- Design for compact phones, short landscape, medium split view and expanded/tablet widths in the same change. The window classes are compact (0–599), medium (600–839), expanded (840–1199) and large (1200+).
 - Icon-only controls must have `accessibilityRole`, `accessibilityLabel`, and a stable hit area.
-- Interactive targets should be at least 44x44 points.
+- Interactive targets must be at least 44x44 points; primary controls and icon buttons use 48x48 (`DesignSystem.layout.touchTarget`).
 - Use the shared `Dialog` for alerts and confirmations, `BottomSheet` for selection workflows, and `Toast` for non-blocking feedback. Do not add a parallel modal implementation without a platform requirement.
 - Custom modals and bottom sheets must expose modal semantics and keep decorative backdrops inaccessible. Close a bottom sheet before opening a global confirmation dialog.
-- Animate only opacity and transforms, and keep `useReducedMotion` behavior intact.
+- Animate only opacity and transforms, keep `usePrefersReducedMotion` behavior intact, and keep motion durations within `DesignSystem.motion`.
 - Category filters and segmented choices should expose selected state.
 - User-visible notification content must use localization keys in both Italian and English.
 - Keep profile-photo selection temporary until Save. Native photos must be copied into application-owned storage before their URI is written to preferences.

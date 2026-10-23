@@ -9,47 +9,38 @@ interface ScreenWrapperProps {
 }
 
 /**
- * Componente wrapper generico per gli schermi dell'applicazione.
- * Applies safe-area and responsive content bounds. Global providers live in App.js.
+ * Shared screen frame for the Keysoft design system.
+ *
+ * Owns the horizontal gutter, centered content width and lateral safe areas so
+ * screens only deal with vertical composition. Compact windows use the 16pt
+ * gutter; medium/expanded/large windows center content at their content width.
  */
 const ScreenWrapper: React.FC<ScreenWrapperProps> = ({ children, style }) => {
   const insets = useSafeAreaInsets();
-  const responsive = useResponsiveLayout();
+  const layout = useResponsiveLayout();
 
   return (
     <View
-      style={[
-        {
-          flex: 1,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
+      style={{
+        flex: 1,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        alignItems: 'center',
+      }}
     >
-      {responsive.isLargeScreen ? (
-        <View
-          style={{
+      <View
+        style={[
+          {
             flex: 1,
-            alignItems: 'center',
-          }}
-        >
-          <View
-            style={[
-              {
-                width: '100%',
-                maxWidth: responsive.maxContentWidth,
-                flex: 1,
-                paddingHorizontal: responsive.horizontalPadding,
-              },
-              style,
-            ]}
-          >
-            {children}
-          </View>
-        </View>
-      ) : (
-        <View style={[{ flex: 1 }, style]}>{children}</View>
-      )}
+            width: '100%',
+            maxWidth: layout.maxContentWidth,
+            paddingHorizontal: layout.gutter,
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 };

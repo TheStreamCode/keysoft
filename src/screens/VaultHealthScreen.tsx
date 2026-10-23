@@ -20,6 +20,7 @@ import {
   VaultHealthSummary,
 } from '../services/vault-health/vaultHealthService';
 import Logger from '../utils/logger';
+import { useResponsiveLayout } from '../utils/responsive';
 
 type HealthFilter = 'all' | VaultHealthKind;
 
@@ -38,6 +39,7 @@ const VaultHealthScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'VaultHealth'>>();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const layout = useResponsiveLayout();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [passwords, setPasswords] = React.useState<Password[]>([]);
   const [summary, setSummary] = React.useState<VaultHealthSummary>(EMPTY_SUMMARY);
@@ -112,7 +114,7 @@ const VaultHealthScreen: React.FC = () => {
             .join(', ')}`}
         >
           <View style={styles.issueIcon}>
-            <Ionicons name="shield-outline" size={22} color={statusColor} />
+            <Ionicons name="shield-outline" size={DesignSystem.iconSizes.md} color={statusColor} />
           </View>
           <View style={styles.issueCopy}>
             <Text style={styles.issueTitle} numberOfLines={1}>
@@ -122,7 +124,11 @@ const VaultHealthScreen: React.FC = () => {
               {item.kinds.map((kind) => t(`vault_health_kind_${kind}`)).join(' · ')}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
+          <Ionicons
+            name="chevron-forward"
+            size={DesignSystem.iconSizes.md}
+            color={theme.colors.textTertiary}
+          />
         </Pressable>
       );
     },
@@ -131,23 +137,35 @@ const VaultHealthScreen: React.FC = () => {
 
   const header = (
     <View style={styles.headerContent}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { minHeight: layout.headerHeight }]}>
         <Pressable
           onPress={navigation.goBack}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.iconButton,
+            { width: layout.minTouchTarget, height: layout.minTouchTarget },
+            pressed && styles.pressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+          <Ionicons
+            name="chevron-back"
+            size={DesignSystem.iconSizes.md}
+            color={theme.colors.text}
+          />
         </Pressable>
         <Text style={styles.screenTitle}>{t('vault_health_title')}</Text>
         <Pressable
           onPress={loadHealth}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.iconButton,
+            { width: layout.minTouchTarget, height: layout.minTouchTarget },
+            pressed && styles.pressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t('refresh')}
         >
-          <Ionicons name="refresh" size={22} color={theme.colors.primary} />
+          <Ionicons name="refresh" size={DesignSystem.iconSizes.md} color={theme.colors.primary} />
         </Pressable>
       </View>
 
@@ -251,29 +269,23 @@ function createStyles(theme: Theme) {
     listContent: { paddingBottom: 112 },
     headerContent: { gap: DesignSystem.spacing.m },
     topBar: {
-      minHeight: 56,
-      paddingHorizontal: DesignSystem.spacing.m,
       flexDirection: 'row',
       alignItems: 'center',
     },
     iconButton: {
-      width: 44,
-      height: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: DesignSystem.borderRadius.small,
+      borderRadius: DesignSystem.radii.small,
     },
     screenTitle: {
       flex: 1,
       textAlign: 'center',
-      ...DesignSystem.typography.title,
-      color: theme.colors.text,
+      ...DesignSystem.text('titleLarge', theme.colors.text),
     },
     summaryPanel: {
-      marginHorizontal: DesignSystem.spacing.m,
       padding: DesignSystem.spacing.l,
       gap: DesignSystem.spacing.m,
-      borderRadius: DesignSystem.borderRadius.large,
+      borderRadius: DesignSystem.radii.large,
       backgroundColor: theme.colors.backgroundElevated,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -282,46 +294,48 @@ function createStyles(theme: Theme) {
       flexDirection: 'row',
       alignItems: 'flex-start',
       justifyContent: 'space-between',
-      gap: 12,
+      gap: DesignSystem.spacing.m,
     },
     summaryCopy: { flex: 1, minWidth: 0 },
     eyebrow: {
-      ...DesignSystem.typography.caption,
-      color: theme.colors.textSecondary,
+      ...DesignSystem.text('micro', theme.colors.textSecondary),
       textTransform: 'uppercase',
-      letterSpacing: 1.2,
     },
-    summaryTitle: { ...DesignSystem.typography.headline, color: theme.colors.text, marginTop: 4 },
+    summaryTitle: {
+      ...DesignSystem.text('headline', theme.colors.text),
+      marginTop: DesignSystem.spacing.xs,
+    },
     score: {
       flexShrink: 0,
-      fontSize: 30,
-      lineHeight: 36,
-      fontWeight: '700',
+      ...DesignSystem.text('display'),
       fontVariant: ['tabular-nums'],
     },
-    track: { height: 5, borderRadius: 3, overflow: 'hidden', backgroundColor: theme.colors.border },
-    progress: { height: '100%', borderRadius: 3 },
-    summaryBody: { ...DesignSystem.typography.body, color: theme.colors.textSecondary },
+    track: {
+      height: 5,
+      borderRadius: DesignSystem.radii.pill,
+      overflow: 'hidden',
+      backgroundColor: theme.colors.border,
+    },
+    progress: { height: '100%', borderRadius: DesignSystem.radii.pill },
+    summaryBody: { ...DesignSystem.text('body', theme.colors.textSecondary) },
     metrics: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: theme.colors.divider },
-    metric: { flex: 1, paddingTop: 14, gap: 2 },
+    metric: { flex: 1, paddingTop: DesignSystem.spacing.l, gap: DesignSystem.spacing.xxs },
     metricValue: {
-      ...DesignSystem.typography.title,
-      color: theme.colors.text,
+      ...DesignSystem.text('title', theme.colors.text),
       fontVariant: ['tabular-nums'],
     },
-    metricLabel: { ...DesignSystem.typography.caption, color: theme.colors.textSecondary },
+    metricLabel: { ...DesignSystem.text('caption', theme.colors.textSecondary) },
     filters: {
-      paddingHorizontal: DesignSystem.spacing.m,
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: DesignSystem.spacing.s,
     },
     filter: {
-      minHeight: 40,
-      paddingHorizontal: 14,
+      minHeight: DesignSystem.layout.touchTarget.minimum,
+      paddingHorizontal: DesignSystem.spacing.m,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: DesignSystem.borderRadius.small,
+      borderRadius: DesignSystem.radii.small,
       borderWidth: 1,
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.backgroundElevated,
@@ -330,19 +344,15 @@ function createStyles(theme: Theme) {
       borderColor: theme.colors.primary,
       backgroundColor: theme.colors.chipBackground,
     },
-    filterLabel: { ...DesignSystem.typography.label, color: theme.colors.textSecondary },
+    filterLabel: { ...DesignSystem.text('label', theme.colors.textSecondary) },
     filterLabelSelected: { color: theme.colors.primary },
     sectionLabel: {
-      ...DesignSystem.typography.caption,
-      color: theme.colors.textSecondary,
+      ...DesignSystem.text('micro', theme.colors.textSecondary),
       textTransform: 'uppercase',
-      letterSpacing: 1.2,
-      paddingHorizontal: DesignSystem.spacing.l,
       paddingTop: DesignSystem.spacing.s,
     },
     issueRow: {
       minHeight: 72,
-      marginHorizontal: DesignSystem.spacing.m,
       paddingHorizontal: DesignSystem.spacing.m,
       flexDirection: 'row',
       alignItems: 'center',
@@ -353,14 +363,14 @@ function createStyles(theme: Theme) {
     issueIcon: {
       width: 40,
       height: 40,
-      borderRadius: 10,
+      borderRadius: DesignSystem.radii.medium,
       backgroundColor: theme.colors.backgroundElevated,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    issueCopy: { flex: 1, gap: 3 },
-    issueTitle: { ...DesignSystem.typography.body, fontWeight: '600', color: theme.colors.text },
-    issueSubtitle: { ...DesignSystem.typography.caption, color: theme.colors.textSecondary },
+    issueCopy: { flex: 1, gap: DesignSystem.spacing.xs },
+    issueTitle: { ...DesignSystem.text('body', theme.colors.text), fontWeight: '600' },
+    issueSubtitle: { ...DesignSystem.text('caption', theme.colors.textSecondary) },
     centerState: {
       flex: 1,
       alignItems: 'center',
@@ -374,21 +384,20 @@ function createStyles(theme: Theme) {
       paddingVertical: DesignSystem.spacing.xxl,
       gap: DesignSystem.spacing.s,
     },
-    emptyTitle: { ...DesignSystem.typography.title, color: theme.colors.text, textAlign: 'center' },
+    emptyTitle: { ...DesignSystem.text('title', theme.colors.text), textAlign: 'center' },
     stateText: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.textSecondary,
+      ...DesignSystem.text('body', theme.colors.textSecondary),
       textAlign: 'center',
     },
     retryButton: {
-      minHeight: 44,
+      minHeight: DesignSystem.layout.touchTarget.minimum,
       paddingHorizontal: DesignSystem.spacing.l,
-      borderRadius: DesignSystem.borderRadius.small,
+      borderRadius: DesignSystem.radii.small,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.primary,
     },
-    retryLabel: { ...DesignSystem.typography.label, color: theme.colors.textLight },
+    retryLabel: { ...DesignSystem.text('button', theme.colors.onPrimary) },
     pressed: { opacity: 0.72 },
   });
 }

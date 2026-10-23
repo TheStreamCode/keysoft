@@ -19,7 +19,9 @@ Keysoft is an offline-first React Native application built with Expo. The archit
 
 ```text
 src/
-  components/        Shared UI and reusable controls
+  components/        Shared UI, screens primitives, and app chrome
+    ui/              Design-system primitives (dialog, sheet, toast, list, keypad)
+  constants/         Design tokens, layout metrics, theme, domain constants
   contexts/          Auth, language, theme, and alert state
   hooks/             Complex screen behavior and orchestration
     settings/        Settings workflows split out of the screen component
@@ -37,7 +39,16 @@ src/
 
 Screens own presentation state and user interactions. They should not implement cryptography, persistence rules, or business validation directly. Complex screen workflows should move into hooks or services.
 
-The presentation layer follows the Nocturne system: semantic light/dark theme tokens, compact outlined controls, bounded responsive content, a flat five-slot tab bar, and copy-first read views separated from edit forms. Shared dialog, bottom-sheet, toast, motion, and PIN-keypad primitives live under `src/components/ui`; motion honors the operating-system reduced-motion preference and is limited to opacity and transform effects.
+The presentation layer follows the Nocturne design system, documented in
+[design-system.md](design-system.md): semantic light/dark color tokens, a 4pt spacing
+grid, a shared type scale, compact outlined controls, bounded responsive content,
+a flat five-slot tab bar, and copy-first read views separated from edit forms.
+`src/constants/layout.ts` defines the compact/medium/expanded/large window classes
+and `useResponsiveLayout` resolves columns, gutters, content widths and landscape
+states from them. `ScreenWrapper` owns the horizontal gutter and centered content
+width. Shared dialog, bottom-sheet, toast, motion, and PIN-keypad primitives live
+under `src/components/ui`; motion honors the operating-system reduced-motion
+preference and is limited to opacity and transform effects.
 
 `ProfileAvatar` owns photo rendering and the initial-based fallback across unlock, vault, and settings surfaces. `KeysoftMark` renders the canonical shield-and-eye asset in onboarding, matching the launcher, adaptive, splash, and web artwork configured in `app.config.js`.
 
