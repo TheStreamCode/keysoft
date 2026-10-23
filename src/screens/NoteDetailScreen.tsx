@@ -7,6 +7,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable, Reveal } from '../components/ui/motion';
+import { DesignSystem } from '../constants/designSystem';
 import { useAlert } from '../contexts/AlertContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -123,15 +124,19 @@ const NoteDetailScreen: React.FC = () => {
     [effectiveLanguage],
   );
   const colors = isDarkMode ? NOTE_COLORS.dark : NOTE_COLORS.light;
-  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 680);
 
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.content, { width: contentWidth }]}>
-        <View style={styles.header}>
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.header,
+            { minHeight: layout.isShortLandscape ? layout.minTouchTarget : layout.headerHeight },
+          ]}
+        >
           <MotionPressable
             accessibilityLabel={t('back')}
             accessibilityRole="button"
@@ -140,7 +145,7 @@ const NoteDetailScreen: React.FC = () => {
           >
             <Ionicons
               name={mode === 'edit' ? 'close' : 'chevron-back'}
-              size={20}
+              size={DesignSystem.iconSizes.md}
               color={theme.colors.textSecondary}
             />
           </MotionPressable>
@@ -154,7 +159,11 @@ const NoteDetailScreen: React.FC = () => {
                 style={styles.headerButton}
                 testID="note-edit-button"
               >
-                <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
+                <Ionicons
+                  name="create-outline"
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.primary}
+                />
               </MotionPressable>
               <MotionPressable
                 accessibilityLabel={t('delete')}
@@ -163,7 +172,11 @@ const NoteDetailScreen: React.FC = () => {
                 style={styles.headerButton}
                 testID="note-delete-button"
               >
-                <Ionicons name="trash-outline" size={17} color={theme.colors.error} />
+                <Ionicons
+                  name="trash-outline"
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.error}
+                />
               </MotionPressable>
             </View>
           ) : (
@@ -238,6 +251,7 @@ const NoteDetailScreen: React.FC = () => {
                     {
                       backgroundColor: isPinned ? theme.colors.chipBackground : 'transparent',
                       borderColor: isPinned ? theme.colors.primary : theme.colors.border,
+                      minHeight: layout.minTouchTarget,
                     },
                   ]}
                 >
@@ -258,7 +272,10 @@ const NoteDetailScreen: React.FC = () => {
                 <MotionPressable
                   accessibilityRole="button"
                   onPress={() => setShowColorPicker((value) => !value)}
-                  style={[styles.editChip, { borderColor: theme.colors.border }]}
+                  style={[
+                    styles.editChip,
+                    { borderColor: theme.colors.border, minHeight: layout.minTouchTarget },
+                  ]}
                 >
                   <View
                     style={[styles.colorSwatch, { backgroundColor: colors[selectedColorName] }]}
@@ -291,7 +308,11 @@ const NoteDetailScreen: React.FC = () => {
                       ]}
                     >
                       {selectedColorName === colorName ? (
-                        <Ionicons name="checkmark" size={16} color={theme.colors.primary} />
+                        <Ionicons
+                          name="checkmark"
+                          size={DesignSystem.iconSizes.xs}
+                          color={theme.colors.primary}
+                        />
                       ) : null}
                     </MotionPressable>
                   ))}
@@ -341,88 +362,119 @@ const NoteDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, alignItems: 'center' },
+  safeArea: { flex: 1 },
   content: { flex: 1 },
   header: {
-    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  headerButton: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerActions: { flexDirection: 'row', marginLeft: 'auto' },
-  headerTitle: { flex: 1, fontSize: 17, lineHeight: 22, fontWeight: '600', marginLeft: 4 },
-  headerSave: { fontSize: 13, fontWeight: '600' },
-  scrollContent: { paddingHorizontal: 4, paddingBottom: 34 },
+  headerTitle: {
+    ...DesignSystem.text('subtitle'),
+    flex: 1,
+    marginLeft: DesignSystem.spacing.xs,
+  },
+  headerSave: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
+  scrollContent: {
+    paddingBottom: DesignSystem.spacing.xxl,
+  },
   pinnedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginTop: 14,
-    marginBottom: 11,
+    gap: DesignSystem.spacing.s,
+    marginTop: DesignSystem.spacing.l,
+    marginBottom: DesignSystem.spacing.m,
   },
-  noteDot: { width: 6, height: 6, borderRadius: 3 },
+  noteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: DesignSystem.radii.pill,
+  },
   pinnedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
+    gap: DesignSystem.spacing.xs,
+    paddingHorizontal: DesignSystem.spacing.s,
+    paddingVertical: DesignSystem.spacing.xxs,
+    borderRadius: DesignSystem.radii.xs,
   },
-  pinnedText: { fontSize: 9, lineHeight: 12, fontWeight: '600' },
-  noteTitle: {
-    fontSize: 25,
-    lineHeight: 31,
+  pinnedText: {
+    ...DesignSystem.text('micro'),
     fontWeight: '600',
-    letterSpacing: -0.4,
-    marginBottom: 18,
   },
-  noteBody: { fontSize: 14, lineHeight: 23 },
-  noteDates: { fontSize: 9, lineHeight: 13, marginTop: 24 },
-  editControls: { flexDirection: 'row', gap: 7, marginTop: 10, marginBottom: 14 },
+  noteTitle: {
+    ...DesignSystem.text('headline'),
+    marginBottom: DesignSystem.spacing.l,
+  },
+  noteBody: {
+    ...DesignSystem.text('bodySmall'),
+  },
+  noteDates: {
+    ...DesignSystem.text('micro'),
+    marginTop: DesignSystem.spacing.xl,
+  },
+  editControls: {
+    flexDirection: 'row',
+    gap: DesignSystem.spacing.s,
+    marginTop: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.l,
+  },
   editChip: {
-    minHeight: 36,
     borderWidth: 1,
-    borderRadius: 7,
+    borderRadius: DesignSystem.radii.small,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 11,
+    gap: DesignSystem.spacing.s,
+    paddingHorizontal: DesignSystem.spacing.m,
   },
-  editChipText: { fontSize: 11, fontWeight: '600' },
-  colorSwatch: { width: 10, height: 10, borderRadius: 5 },
+  editChipText: {
+    ...DesignSystem.text('micro'),
+    fontWeight: '600',
+  },
+  colorSwatch: {
+    width: 10,
+    height: 10,
+    borderRadius: DesignSystem.radii.pill,
+  },
   colorPicker: {
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: DesignSystem.radii.small,
+    padding: DesignSystem.spacing.m,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 14,
+    gap: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.l,
   },
   colorOption: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: DesignSystem.radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   titleInput: {
-    minHeight: 48,
+    ...DesignSystem.text('subtitle'),
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 17,
-    fontWeight: '600',
-    marginBottom: 10,
+    borderRadius: DesignSystem.radii.small,
+    paddingHorizontal: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.m,
   },
   bodyInput: {
+    ...DesignSystem.text('bodySmall'),
     minHeight: 320,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    lineHeight: 22,
+    borderRadius: DesignSystem.radii.small,
+    padding: DesignSystem.spacing.m,
   },
 });
 

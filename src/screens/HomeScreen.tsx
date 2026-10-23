@@ -17,6 +17,7 @@ import NotificationBell from '../components/NotificationBell';
 import PasswordCard from '../components/PasswordCard';
 import { MotionPressable, Reveal } from '../components/ui/motion';
 import { getAdaptiveCategories } from '../constants/categories';
+import { DesignSystem } from '../constants/designSystem';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useHomeLogic } from '../hooks/useHomeLogic';
@@ -77,19 +78,20 @@ const HomeScreen: React.FC = () => {
       : categoryTotalPasswords === null
         ? passwords.length
         : categoryTotalPasswords;
-  const contentWidth = Math.min(layout.width, 920);
   const username = userPreferences?.username || t('user');
 
   const renderPasswordItem = useCallback(
     ({ item }: { item: Password }) => (
-      <PasswordCard
-        password={item}
-        onDelete={() => handleDeletePassword(item.id)}
-        onEdit={() => navigate('PasswordDetail', { passwordId: item.id, mode: 'edit' })}
-        onPress={() => navigate('PasswordDetail', { passwordId: item.id, mode: 'view' })}
-      />
+      <View style={[styles.gridItem, { maxWidth: `${100 / layout.columns}%` }]}>
+        <PasswordCard
+          password={item}
+          onDelete={() => handleDeletePassword(item.id)}
+          onEdit={() => navigate('PasswordDetail', { passwordId: item.id, mode: 'edit' })}
+          onPress={() => navigate('PasswordDetail', { passwordId: item.id, mode: 'view' })}
+        />
+      </View>
     ),
-    [handleDeletePassword, navigate],
+    [handleDeletePassword, layout.columns, navigate],
   );
 
   return (
@@ -98,7 +100,7 @@ const HomeScreen: React.FC = () => {
       edges={['top']}
     >
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-      <View style={[styles.content, { width: contentWidth }]}>
+      <View style={styles.content}>
         <Reveal style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('tab_vault')}</Text>
           <View style={styles.headerActions}>
@@ -122,7 +124,11 @@ const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <Ionicons name="search-outline" size={17} color={theme.colors.textTertiary} />
+            <Ionicons
+              name="search-outline"
+              size={DesignSystem.iconSizes.xs}
+              color={theme.colors.textTertiary}
+            />
             <TextInput
               accessibilityLabel={t('search_passwords')}
               accessibilityRole="search"
@@ -140,7 +146,11 @@ const HomeScreen: React.FC = () => {
                 onPress={() => setSearchQuery('')}
                 style={styles.searchClear}
               >
-                <Ionicons name="close-circle" size={17} color={theme.colors.textTertiary} />
+                <Ionicons
+                  name="close-circle"
+                  size={DesignSystem.iconSizes.xs}
+                  color={theme.colors.textTertiary}
+                />
               </MotionPressable>
             ) : null}
           </View>
@@ -159,7 +169,11 @@ const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <Ionicons name="shield-checkmark-outline" size={19} color={theme.colors.primary} />
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={DesignSystem.iconSizes.sm}
+              color={theme.colors.primary}
+            />
             <View style={styles.healthCopy}>
               <Text style={[styles.healthTitle, { color: theme.colors.text }]}>
                 {t('vault_health_title')}
@@ -171,12 +185,11 @@ const HomeScreen: React.FC = () => {
                 {t('vault_health_local_only')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textTertiary} />
-            <View style={[styles.healthProgress, { backgroundColor: theme.colors.divider }]}>
-              <View
-                style={[styles.healthProgressFill, { backgroundColor: theme.colors.primary }]}
-              />
-            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={DesignSystem.iconSizes.xs}
+              color={theme.colors.textTertiary}
+            />
           </MotionPressable>
         </Reveal>
 
@@ -190,7 +203,11 @@ const HomeScreen: React.FC = () => {
               onPress={handleRefresh}
               style={styles.retryButton}
             >
-              <Ionicons name="refresh" size={18} color={theme.colors.error} />
+              <Ionicons
+                name="refresh"
+                size={DesignSystem.iconSizes.sm}
+                color={theme.colors.error}
+              />
             </MotionPressable>
           </View>
         ) : null}
@@ -208,6 +225,7 @@ const HomeScreen: React.FC = () => {
                 accessibilityLabel={category.name}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
+                hitSlop={4}
                 key={category.id}
                 onPress={() => handleFilterByCategory(category.id)}
                 style={[
@@ -227,7 +245,7 @@ const HomeScreen: React.FC = () => {
                   <Ionicons
                     color={category.color}
                     name={category.icon}
-                    size={13}
+                    size={DesignSystem.iconSizes.xs}
                     testID={`category-icon-${category.id}`}
                   />
                 </View>
@@ -259,7 +277,11 @@ const HomeScreen: React.FC = () => {
         ) : passwords.length === 0 ? (
           <View style={styles.centerState}>
             <View style={[styles.emptyIcon, { backgroundColor: theme.colors.chipBackground }]}>
-              <Ionicons name="key-outline" size={26} color={theme.colors.primary} />
+              <Ionicons
+                name="key-outline"
+                size={DesignSystem.iconSizes.lg}
+                color={theme.colors.primary}
+              />
             </View>
             <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
               {searchQuery ? t('no_results') : t('no_passwords_saved')}
@@ -270,10 +292,12 @@ const HomeScreen: React.FC = () => {
           </View>
         ) : (
           <FlatList
-            columnWrapperStyle={layout.columns > 1 ? styles.columnWrapper : undefined}
-            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={
+              layout.columns > 1 ? [styles.columnWrapper, { gap: layout.gridGap }] : undefined
+            }
+            contentContainerStyle={[styles.listContent, { gap: layout.gridGap }]}
             data={passwords}
-            initialNumToRender={10}
+            initialNumToRender={12}
             key={`vault-${layout.columns}`}
             keyExtractor={(item: Password) => item.id}
             ListFooterComponent={
@@ -303,100 +327,127 @@ const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, alignItems: 'center' },
-  content: { flex: 1, paddingHorizontal: 14 },
+  safeArea: { flex: 1 },
+  content: { flex: 1 },
   header: {
-    minHeight: 58,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: DesignSystem.spacing.s,
   },
-  headerTitle: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerTitle: { ...DesignSystem.text('titleLarge'), flexShrink: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: DesignSystem.spacing.s },
   search: {
-    minHeight: 42,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.medium,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 10,
-    marginBottom: 8,
+    paddingLeft: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.s,
   },
-  searchInput: { flex: 1, minHeight: 40, paddingHorizontal: 8, paddingVertical: 8, fontSize: 13 },
-  searchClear: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  searchInput: {
+    ...DesignSystem.text('bodySmall'),
+    flex: 1,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    paddingHorizontal: DesignSystem.spacing.s,
+    paddingVertical: DesignSystem.spacing.s,
+  },
+  searchClear: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   healthStrip: {
-    minHeight: 60,
+    minHeight: 68,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderRadius: DesignSystem.radii.medium,
+    paddingHorizontal: DesignSystem.spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'visible',
   },
-  healthCopy: { flex: 1, marginHorizontal: 9 },
-  healthTitle: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  healthBody: { fontSize: 10, lineHeight: 14, marginTop: 1 },
-  healthProgress: { position: 'absolute', height: 2, left: 10, right: 10, bottom: 5 },
-  healthProgressFill: { width: '78%', height: 2 },
+  healthCopy: { flex: 1, marginHorizontal: DesignSystem.spacing.s },
+  healthTitle: { ...DesignSystem.text('labelSmall'), fontWeight: '600' },
+  healthBody: { ...DesignSystem.text('caption'), marginTop: DesignSystem.spacing.xxs },
   errorBanner: {
-    minHeight: 42,
-    borderRadius: 8,
-    marginTop: 8,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
+    marginTop: DesignSystem.spacing.s,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
+    paddingLeft: DesignSystem.spacing.m,
   },
-  errorText: { flex: 1, fontSize: 12 },
-  retryButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  categories: { flexGrow: 0, marginTop: 9 },
-  categoriesContent: { gap: 6, paddingBottom: 4 },
+  errorText: { ...DesignSystem.text('caption'), flex: 1 },
+  retryButton: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categories: { flexGrow: 0, marginTop: DesignSystem.spacing.s },
+  categoriesContent: {
+    gap: DesignSystem.spacing.s,
+    paddingBottom: DesignSystem.spacing.xs,
+    paddingRight: DesignSystem.spacing.s,
+  },
   category: {
-    minHeight: 32,
+    minHeight: 40,
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 8,
+    borderRadius: DesignSystem.radii.small,
+    paddingHorizontal: DesignSystem.spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: DesignSystem.spacing.s,
   },
   categoryIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
+    width: 22,
+    height: 22,
+    borderRadius: DesignSystem.radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryText: { fontSize: 11, lineHeight: 15, fontWeight: '600' },
-  listHeading: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 2 },
+  categoryText: { ...DesignSystem.text('labelSmall') },
+  listHeading: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: DesignSystem.spacing.xxs,
+  },
   listLabel: {
-    fontSize: 9,
-    lineHeight: 13,
+    ...DesignSystem.text('micro'),
     fontWeight: '700',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
   },
   list: { flex: 1 },
-  listContent: { paddingBottom: 12 },
-  columnWrapper: { gap: 12 },
+  listContent: { paddingBottom: DesignSystem.spacing.m },
+  columnWrapper: {},
+  gridItem: { flex: 1 },
   centerState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 34,
-    paddingBottom: 50,
+    paddingHorizontal: DesignSystem.spacing.xxl,
+    paddingBottom: DesignSystem.spacing.huge,
   },
   emptyIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: DesignSystem.radii.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: DesignSystem.spacing.l,
   },
-  emptyTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
-  emptyBody: { fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6 },
-  loadingMore: { height: 52, alignItems: 'center', justifyContent: 'center' },
+  emptyTitle: { ...DesignSystem.text('subtitle'), textAlign: 'center' },
+  emptyBody: {
+    ...DesignSystem.text('bodySmall'),
+    textAlign: 'center',
+    marginTop: DesignSystem.spacing.s,
+  },
+  loadingMore: { height: 56, alignItems: 'center', justifyContent: 'center' },
 });
 
 export default HomeScreen;

@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { DesignSystem } from '../constants/designSystem';
 import { Password } from '../models/Password';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -69,14 +70,20 @@ const PasswordCard = React.memo(({ password, onPress }: PasswordCardProps) => {
         style={styles.cardMain}
       >
         <View style={[styles.icon, { backgroundColor: theme.colors.backgroundMuted }]}>
-          <Ionicons name={icon} size={17} color={theme.colors.primary} />
+          <Ionicons name={icon} size={DesignSystem.iconSizes.sm} color={theme.colors.primary} />
         </View>
 
         <View style={styles.copy}>
-          <Text numberOfLines={1} style={[styles.title, { color: theme.colors.text }]}>
+          <Text
+            numberOfLines={1}
+            style={[DesignSystem.text('label'), styles.title, { color: theme.colors.text }]}
+          >
             {password.title}
           </Text>
-          <Text numberOfLines={1} style={[styles.username, { color: theme.colors.textSecondary }]}>
+          <Text
+            numberOfLines={1}
+            style={[DesignSystem.text('caption'), { color: theme.colors.textSecondary }]}
+          >
             {password.username}
           </Text>
         </View>
@@ -90,9 +97,13 @@ const PasswordCard = React.memo(({ password, onPress }: PasswordCardProps) => {
         accessibilityLabel={t('copy_password_card')}
         accessibilityRole="button"
         onPress={() => void handleCopyToClipboard()}
-        style={styles.copyButton}
+        style={[styles.copyButton, { backgroundColor: theme.colors.backgroundMuted }]}
       >
-        <Ionicons name="copy-outline" size={17} color={theme.colors.textTertiary} />
+        <Ionicons
+          name="copy-outline"
+          size={DesignSystem.iconSizes.sm}
+          color={theme.colors.textTertiary}
+        />
       </MotionPressable>
     </View>
   );
@@ -102,33 +113,46 @@ PasswordCard.displayName = 'PasswordCard';
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 58,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderRadius: 0,
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: DesignSystem.radii.large,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingRight: DesignSystem.spacing.s,
+    overflow: 'hidden',
   },
   cardMain: {
     flex: 1,
     minWidth: 0,
-    minHeight: 58,
-    paddingLeft: 10,
+    minHeight: 72,
+    paddingLeft: DesignSystem.spacing.m,
+    paddingVertical: DesignSystem.spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
   },
   icon: {
-    width: 34,
-    height: 34,
-    borderRadius: 7,
+    width: 40,
+    height: 40,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: DesignSystem.spacing.m,
   },
   copy: { flex: 1, minWidth: 0 },
-  title: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
-  username: { fontSize: 11, lineHeight: 15, marginTop: 1 },
-  strengthDot: { width: 5, height: 5, borderRadius: 3, marginHorizontal: 8 },
-  copyButton: { width: 46, height: 44, alignItems: 'center', justifyContent: 'center' },
+  title: { fontWeight: '600' },
+  strengthDot: {
+    width: 6,
+    height: 6,
+    borderRadius: DesignSystem.radii.pill,
+    marginHorizontal: DesignSystem.spacing.s,
+  },
+  copyButton: {
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default PasswordCard;

@@ -18,6 +18,7 @@ import { DesignSystem } from '../constants/designSystem';
 import { Theme } from '../constants/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useResponsiveLayout } from '../utils/responsive';
 import { useWebScrollFix } from '../utils/webScrollFix';
 import { RootStackParamList } from '../navigation';
 
@@ -34,6 +35,7 @@ const TRADEMARKS_POLICY_URL = `${SOURCE_REPOSITORY_URL}/blob/main/TRADEMARKS.md`
 const OpenSourceScreen: React.FC<OpenSourceScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const layout = useResponsiveLayout();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [licenseText, setLicenseText] = React.useState<string | null>(null);
   const [hasLicenseLoadError, setHasLicenseLoadError] = React.useState(false);
@@ -75,7 +77,10 @@ const OpenSourceScreen: React.FC<OpenSourceScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { minWidth: layout.minTouchTarget, minHeight: layout.minTouchTarget },
+          ]}
           onPress={navigation.goBack}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
@@ -87,7 +92,7 @@ const OpenSourceScreen: React.FC<OpenSourceScreenProps> = ({ navigation }) => {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('open_source')}</Text>
-        <View style={styles.headerSpacer} />
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
       <ScrollView
@@ -154,37 +159,31 @@ function createStyles(theme: Theme) {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: DesignSystem.spacing.l,
-      paddingVertical: DesignSystem.spacing.m,
+      paddingVertical: DesignSystem.spacing.s,
       backgroundColor: theme.colors.backgroundElevated,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.divider,
     },
-    backButton: { padding: DesignSystem.spacing.xs },
+    backButton: { alignItems: 'center', justifyContent: 'center' },
     headerTitle: {
       flex: 1,
       textAlign: 'center',
-      ...DesignSystem.typography.title,
-      color: theme.colors.text,
+      ...DesignSystem.text('titleLarge', theme.colors.text),
     },
-    headerSpacer: { width: 32 },
     scrollView: { flex: 1, backgroundColor: theme.colors.background },
     scrollContent: { paddingBottom: DesignSystem.spacing.xl },
-    content: { padding: DesignSystem.spacing.l, gap: DesignSystem.spacing.xl },
+    content: { paddingVertical: DesignSystem.spacing.l, gap: DesignSystem.spacing.xl },
     section: { gap: DesignSystem.spacing.m },
-    title: { ...DesignSystem.typography.headline, color: theme.colors.text },
-    sectionTitle: { ...DesignSystem.typography.title, color: theme.colors.primary },
-    paragraph: { ...DesignSystem.typography.body, color: theme.colors.text, lineHeight: 24 },
+    title: { ...DesignSystem.text('headline', theme.colors.text) },
+    sectionTitle: { ...DesignSystem.text('title', theme.colors.primary) },
+    paragraph: { ...DesignSystem.text('body', theme.colors.text) },
     link: {
-      ...DesignSystem.typography.body,
-      color: theme.colors.primary,
+      ...DesignSystem.text('body', theme.colors.primary),
       textDecorationLine: 'underline',
     },
     licenseText: {
-      ...DesignSystem.typography.caption,
-      color: theme.colors.text,
-      fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
-      lineHeight: 18,
+      ...DesignSystem.text('caption', theme.colors.text),
+      fontFamily: DesignSystem.fonts.secure,
     },
   });
 }

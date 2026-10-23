@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -7,7 +7,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable, Reveal } from '../components/ui/motion';
-import { AppTheme } from '../constants/theme';
+import { Switch as UISwitch } from '../components/ui/switch';
+import { DesignSystem } from '../constants/designSystem';
 import { useAlert } from '../contexts/AlertContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -100,9 +101,9 @@ const PasswordGeneratorScreen: React.FC = () => {
       excellent: t('excellent'),
     };
     const colors: PasswordGeneratorStrengthMap = {
-      weak: AppTheme.colors.error,
-      medium: AppTheme.colors.warning,
-      excellent: AppTheme.colors.success,
+      weak: theme.colors.error,
+      medium: theme.colors.warning,
+      excellent: theme.colors.success,
     };
 
     return calculatePasswordGeneratorStrength({
@@ -114,7 +115,17 @@ const PasswordGeneratorScreen: React.FC = () => {
       labels,
       colors,
     });
-  }, [includeLowercase, includeNumbers, includeSymbols, includeUppercase, passwordLength, t]);
+  }, [
+    includeLowercase,
+    includeNumbers,
+    includeSymbols,
+    includeUppercase,
+    passwordLength,
+    t,
+    theme.colors.error,
+    theme.colors.success,
+    theme.colors.warning,
+  ]);
 
   const entropyBits = useMemo(() => {
     const poolSize =
@@ -151,34 +162,38 @@ const PasswordGeneratorScreen: React.FC = () => {
         ]}
       >
         <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{label}</Text>
-        <Switch
-          accessibilityLabel={label}
-          onValueChange={onValueChange}
-          thumbColor={value ? theme.colors.switchThumbOn : theme.colors.switchThumbOff}
-          trackColor={{ false: theme.colors.switchTrackOff, true: theme.colors.switchTrackOn }}
-          value={value}
-        />
+        <UISwitch accessibilityLabel={label} onValueChange={onValueChange} value={value} />
       </View>
     );
   }
-
-  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 680);
 
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.content, { width: contentWidth }]}>
-        <View style={styles.header}>
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.header,
+            { minHeight: layout.isShortLandscape ? layout.minTouchTarget : layout.headerHeight },
+          ]}
+        >
           {onSelect ? (
             <MotionPressable
               accessibilityLabel={t('back')}
               accessibilityRole="button"
               onPress={() => navigation.goBack()}
-              style={styles.headerButton}
+              style={[
+                styles.headerButton,
+                { width: layout.minTouchTarget, height: layout.minTouchTarget },
+              ]}
             >
-              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+              <Ionicons
+                name="chevron-back"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.textSecondary}
+              />
             </MotionPressable>
           ) : null}
           <Text style={[styles.title, { color: theme.colors.text }]}>{t('tab_generator')}</Text>
@@ -214,7 +229,11 @@ const PasswordGeneratorScreen: React.FC = () => {
                 onPress={generatePassword}
                 style={[styles.actionButton, { borderColor: theme.colors.primary }]}
               >
-                <Ionicons name="refresh" size={15} color={theme.colors.primary} />
+                <Ionicons
+                  name="refresh"
+                  size={DesignSystem.iconSizes.xs}
+                  color={theme.colors.primary}
+                />
                 <Text style={[styles.actionText, { color: theme.colors.primary }]}>
                   {t('regenerate')}
                 </Text>
@@ -224,7 +243,11 @@ const PasswordGeneratorScreen: React.FC = () => {
                 onPress={() => void handleCopyToClipboard()}
                 style={[styles.actionButton, { borderColor: theme.colors.border }]}
               >
-                <Ionicons name="copy-outline" size={15} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="copy-outline"
+                  size={DesignSystem.iconSizes.xs}
+                  color={theme.colors.textSecondary}
+                />
                 <Text style={[styles.actionText, { color: theme.colors.text }]}>{t('copy')}</Text>
               </MotionPressable>
             </View>
@@ -294,73 +317,105 @@ const PasswordGeneratorScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, alignItems: 'center' },
+  safeArea: { flex: 1 },
   content: { flex: 1 },
-  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DesignSystem.spacing.s,
+  },
   headerButton: {
-    width: 42,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -8,
+    marginLeft: -DesignSystem.spacing.s,
   },
-  title: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
-  scrollContent: { paddingBottom: 24 },
+  title: {
+    ...DesignSystem.text('headline'),
+  },
+  scrollContent: { paddingBottom: DesignSystem.spacing.xl },
   passwordPanel: {
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: DesignSystem.radii.small,
+    padding: DesignSystem.spacing.l,
     minHeight: 108,
     alignItems: 'center',
     justifyContent: 'center',
   },
   passwordText: {
-    fontFamily: AppTheme.fonts.secure,
-    fontSize: 16,
-    lineHeight: 23,
-    letterSpacing: 0.6,
+    ...DesignSystem.text('body'),
+    fontFamily: DesignSystem.fonts.secure,
     textAlign: 'center',
   },
-  strengthTrack: { width: '100%', height: 2, marginTop: 16 },
+  strengthTrack: { width: '100%', height: 2, marginTop: DesignSystem.spacing.l },
   strengthFill: { width: '100%', height: 2 },
-  strengthText: { fontSize: 10, lineHeight: 14, marginTop: 7 },
-  actions: { flexDirection: 'row', gap: 7, marginTop: 8 },
+  strengthText: {
+    ...DesignSystem.text('micro'),
+    marginTop: DesignSystem.spacing.s,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: DesignSystem.spacing.s,
+    marginTop: DesignSystem.spacing.s,
+  },
   actionButton: {
     flex: 1,
-    minHeight: 42,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.small,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: DesignSystem.spacing.s,
   },
-  actionText: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  options: { marginTop: 20 },
+  actionText: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
+  options: { marginTop: DesignSystem.spacing.xl },
   sectionLabel: {
-    fontSize: 9,
-    lineHeight: 13,
+    ...DesignSystem.text('micro'),
     fontWeight: '700',
-    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: DesignSystem.spacing.xs,
   },
-  lengthBlock: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  lengthBlock: {
+    paddingVertical: DesignSystem.spacing.m,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   lengthHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  optionLabel: { fontSize: 13, lineHeight: 18, fontWeight: '500', flex: 1 },
-  lengthValue: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  slider: { width: '100%', height: 34, marginTop: 6 },
-  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -5 },
-  sliderLabel: { fontSize: 9, lineHeight: 12 },
-  optionRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center' },
+  optionLabel: {
+    ...DesignSystem.text('labelSmall'),
+    flex: 1,
+  },
+  lengthValue: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
+  slider: { width: '100%', height: 34, marginTop: DesignSystem.spacing.xs },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -DesignSystem.spacing.xs,
+  },
+  sliderLabel: {
+    ...DesignSystem.text('micro'),
+  },
+  optionRow: {
+    minHeight: DesignSystem.layout.listItemMinHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   useButton: {
-    minHeight: 46,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.small,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 18,
+    marginTop: DesignSystem.spacing.l,
   },
-  useButtonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  useButtonText: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
 });
 
 export default PasswordGeneratorScreen;

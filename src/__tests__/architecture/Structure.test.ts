@@ -51,4 +51,15 @@ describe('source structure', () => {
     expect(settingsScreen).toContain("from '../hooks/settings/useExportImport'");
     expect(settingsScreen).not.toContain("from './Settings/hooks/");
   });
+
+  it('paints Settings row separators with the theme divider token', () => {
+    const settingsScreen = fs.readFileSync(
+      path.join(srcRoot, 'screens/SettingsScreen.tsx'),
+      'utf8',
+    );
+
+    // A bare compactRow style would fall back to React Native's black default border.
+    expect(settingsScreen).not.toMatch(/style=\{styles\.compactRow\}/);
+    expect(settingsScreen).toContain('borderBottomColor: theme.colors.divider');
+  });
 });

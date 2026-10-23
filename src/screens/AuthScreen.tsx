@@ -15,6 +15,7 @@ import { UserPreferences } from '../models/User';
 import Logger from '../utils/logger';
 import { MotionPressable, Reveal } from '../components/ui/motion';
 import { PinKeypad } from '../components/ui/pin-keypad';
+import { DesignSystem } from '../constants/designSystem';
 import { useResponsiveLayout } from '../utils/responsive';
 import { ProfileAvatar } from '../components/ProfileAvatar';
 
@@ -244,7 +245,10 @@ const AuthScreen: React.FC = () => {
   };
 
   const username = userPreferences?.username || t('user');
-  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 480);
+  const avatarSize = layout.isShortLandscape ? 52 : 64;
+  const contentPaddingTop = layout.isShortLandscape
+    ? DesignSystem.spacing.l
+    : DesignSystem.spacing.xl;
 
   return (
     <SafeAreaView
@@ -252,12 +256,21 @@ const AuthScreen: React.FC = () => {
       edges={['top', 'bottom']}
     >
       <ScrollView contentContainerStyle={styles.authScroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.content, { width: contentWidth }]}>
+        <View
+          style={[
+            styles.content,
+            {
+              maxWidth: DesignSystem.layout.maxAuthWidth,
+              paddingTop: contentPaddingTop,
+              justifyContent: layout.isShortLandscape ? 'space-between' : 'center',
+            },
+          ]}
+        >
           <Reveal style={styles.identity}>
             <View style={styles.avatarSpacing}>
               <ProfileAvatar
                 name={username}
-                size={64}
+                size={avatarSize}
                 testID="login-profile-avatar"
                 uri={userPreferences?.avatar}
               />
@@ -358,7 +371,7 @@ const AuthScreen: React.FC = () => {
       </ScrollView>
 
       {isLoading ? (
-        <View pointerEvents="none" style={styles.loadingIndicator}>
+        <View style={[styles.loadingIndicator, { pointerEvents: 'none' }]}>
           <ActivityIndicator color={theme.colors.primary} size="small" />
         </View>
       ) : null}
@@ -425,51 +438,60 @@ function waitForNextFrame(): Promise<void> {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, alignItems: 'center' },
+  safeArea: { flex: 1 },
   authScroll: { flexGrow: 1, alignItems: 'center' },
   content: {
     flex: 1,
-    minHeight: 620,
-    paddingHorizontal: 20,
-    paddingTop: 72,
-    paddingBottom: 18,
-    justifyContent: 'space-between',
+    width: '100%',
+    alignSelf: 'center',
+    paddingBottom: DesignSystem.spacing.l,
+    justifyContent: 'center',
+    gap: DesignSystem.spacing.xxl,
   },
   identity: { alignItems: 'center' },
-  avatarSpacing: { marginBottom: 22 },
+  avatarSpacing: { marginBottom: DesignSystem.spacing.xl },
   title: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    ...DesignSystem.text('headline'),
     textAlign: 'center',
   },
-  subtitle: { fontSize: 13, lineHeight: 18, textAlign: 'center', marginTop: 7 },
-  pinArea: { width: '100%', maxWidth: 320, alignSelf: 'center' },
+  subtitle: {
+    ...DesignSystem.text('bodySmall'),
+    textAlign: 'center',
+    marginTop: DesignSystem.spacing.s,
+  },
+  pinArea: { width: '100%', maxWidth: 340, alignSelf: 'center' },
   pinDots: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
-    marginBottom: 68,
+    gap: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.xl,
   },
-  pinDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1 },
+  pinDot: {
+    width: 10,
+    height: 10,
+    borderRadius: DesignSystem.radii.pill,
+    borderWidth: 1,
+  },
   errorText: {
+    ...DesignSystem.text('caption'),
     position: 'absolute',
-    top: 28,
+    top: DesignSystem.spacing.xxl,
     left: 0,
     right: 0,
-    fontSize: 12,
-    lineHeight: 16,
     textAlign: 'center',
   },
   testInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   testLoginButton: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   testBiometricButton: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  forgotButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  forgotText: { fontSize: 12, lineHeight: 16 },
+  forgotButton: {
+    minHeight: DesignSystem.layout.touchTarget.minimum,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forgotText: { ...DesignSystem.text('caption') },
   loadingIndicator: {
     position: 'absolute',
-    top: 26,
+    top: DesignSystem.spacing.xl,
     alignSelf: 'center',
   },
 });

@@ -1,18 +1,19 @@
-import { Dimensions, Platform, PixelRatio, useWindowDimensions } from 'react-native';
+import { Dimensions, PixelRatio, Platform, useWindowDimensions } from 'react-native';
+
+import { BREAKPOINTS, WINDOW_METRICS, type WindowSizeClass } from '../constants/layout';
 
 /**
- * Breakpoints for responsive design
- * Based on common device categories
+ * Responsive helpers for the Keysoft design system.
+ *
+ * `resolveLayout` is a pure function so window size classes can be unit tested
+ * without mounting a component. `useResponsiveLayout` is the hook screens use.
  */
-export const BREAKPOINTS = {
-  phone: 0,
-  tablet: 768,
-  tv: 1280,
-} as const;
+export { BREAKPOINTS };
+export type { WindowSizeClass };
 
-/**
- * Get current window dimensions
- */
+export type DeviceType = 'phone' | 'tablet' | 'tv';
+export type Orientation = 'portrait' | 'landscape';
+
 interface WindowDimensions {
   width: number;
   height: number;
@@ -23,117 +24,156 @@ export function getWindowDimensions(): WindowDimensions {
   return { width, height };
 }
 
-/**
- * Get current screen dimensions (including status bar, navigation bar, etc.)
- */
 export function getScreenDimensions(): WindowDimensions {
   const { width, height } = Dimensions.get('screen');
   return { width, height };
 }
 
+export function getWindowSizeClass(width: number): WindowSizeClass {
+  if (width >= BREAKPOINTS.large) return 'large';
+  if (width >= BREAKPOINTS.expanded) return 'expanded';
+  if (width >= BREAKPOINTS.medium) return 'medium';
+  return 'compact';
+}
+
 /**
- * Determine device type based on screen width
+ * Legacy device category. Kept for callers that only need a coarse bucket:
+ * compact -> phone, medium/expanded -> tablet, large -> tv.
  */
-export type DeviceType = 'phone' | 'tablet' | 'tv';
+export function getDeviceTypeForWidth(width: number): DeviceType {
+  if (width >= BREAKPOINTS.large) return 'tv';
+  if (width >= BREAKPOINTS.medium) return 'tablet';
+  return 'phone';
+}
+
+export function getDeviceType(): DeviceType {
+  return getDeviceTypeForWidth(getWindowDimensions().width);
+}
 
 export interface ResponsiveLayout {
   width: number;
   height: number;
+  fontScale: number;
+  windowClass: WindowSizeClass;
   deviceType: DeviceType;
+  orientation: Orientation;
+  isCompact: boolean;
+  isMedium: boolean;
+  isExpanded: boolean;
+  isLarge: boolean;
+  isPhone: boolean;
+  isTablet: boolean;
+  isTV: boolean;
+  isTabletOrLarger: boolean;
   isLargeScreen: boolean;
   isLandscape: boolean;
+  isPortrait: boolean;
+  /** Short landscape phone: reduces vertical chrome and uses wider layouts. */
+  isShortLandscape: boolean;
+  /** Narrow split-view / foldable window (medium width, landscape). */
+  isSplitView: boolean;
+  /** The user is running with a large accessibility font size. */
+  isLargeText: boolean;
   columns: number;
+  gridGap: number;
+  gutter: number;
   horizontalPadding: number;
+  contentWidth: number;
   maxContentWidth: number;
+  minTouchTarget: number;
+  headerHeight: number;
 }
 
-export function useResponsiveLayout(): ResponsiveLayout {
-  const { width, height } = useWindowDimensions();
-  const deviceType: DeviceType =
-    width >= BREAKPOINTS.tv ? 'tv' : width >= BREAKPOINTS.tablet ? 'tablet' : 'phone';
+/** Pure resolver used by the hook and by tests. */
+export function resolveLayout(width: number, height: number, fontScale = 1): ResponsiveLayout {
+  const windowClass = getWindowSizeClass(width);
+  const metrics = WINDOW_METRICS[windowClass];
+  const deviceType = getDeviceTypeForWidth(width);
+  const isLandscape = width > height;
+  const isLargeText = fontScale >= 1.3;
+  const minTouchTarget = windowClass === 'compact' ? 44 : 48;
 
   return {
     width,
     height,
+    fontScale,
+    windowClass,
     deviceType,
-    isLargeScreen: deviceType !== 'phone',
-    isLandscape: width > height,
-    columns: deviceType === 'phone' ? 1 : 2,
-    horizontalPadding: deviceType === 'phone' ? 16 : 32,
-    maxContentWidth: deviceType === 'phone' ? width : 1180,
+    orientation: isLandscape ? 'landscape' : 'portrait',
+    isCompact: windowClass === 'compact',
+    isMedium: windowClass === 'medium',
+    isExpanded: windowClass === 'expanded',
+    isLarge: windowClass === 'large',
+    isPhone: deviceType === 'phone',
+    isTablet: deviceType === 'tablet',
+    isTV: deviceType === 'tv',
+    isTabletOrLarger: deviceType !== 'phone',
+    isLargeScreen: windowClass !== 'compact',
+    isLandscape,
+    isPortrait: !isLandscape,
+    isShortLandscape: isLandscape && height < 480,
+    isSplitView: isLandscape && width >= BREAKPOINTS.medium && width < BREAKPOINTS.expanded,
+    isLargeText,
+    columns: metrics.columns,
+    gridGap: metrics.itemGap,
+    gutter: metrics.gutter,
+    horizontalPadding: metrics.gutter,
+    contentWidth: Math.min(width, metrics.contentMaxWidth),
+    maxContentWidth: metrics.contentMaxWidth,
+    minTouchTarget,
+    headerHeight: metrics.headerHeight,
   };
 }
 
-export function getDeviceType(): DeviceType {
-  const { width } = getWindowDimensions();
-
-  if (width >= BREAKPOINTS.tv) {
-    return 'tv';
-  }
-
-  if (width >= BREAKPOINTS.tablet) {
-    return 'tablet';
-  }
-
-  return 'phone';
+export function useResponsiveLayout(): ResponsiveLayout {
+  const { width, height, fontScale } = useWindowDimensions();
+  return resolveLayout(width, height, fontScale);
 }
 
 /**
- * Check if device is a phone
+ * Pick a value for the current window size class, falling back to `compact`.
+ * Example: `useResponsiveValue({ compact: 16, medium: 24, expanded: 32 })`.
  */
+export function useResponsiveValue<T>(
+  values: { compact: T } & Partial<Record<WindowSizeClass, T>>,
+) {
+  const { windowClass } = useResponsiveLayout();
+  return values[windowClass] ?? values.compact;
+}
+
 export function isPhone(): boolean {
   return getDeviceType() === 'phone';
 }
 
-/**
- * Check if device is a tablet
- */
 export function isTablet(): boolean {
   return getDeviceType() === 'tablet';
 }
 
-/**
- * Check if device is a TV
- */
 export function isTV(): boolean {
   return getDeviceType() === 'tv' || Platform.isTV;
 }
 
-/**
- * Check if device is tablet or larger
- */
 export function isTabletOrLarger(): boolean {
   const deviceType = getDeviceType();
   return deviceType === 'tablet' || deviceType === 'tv';
 }
-
-/**
- * Get orientation
- */
-export type Orientation = 'portrait' | 'landscape';
 
 export function getOrientation(): Orientation {
   const { width, height } = getWindowDimensions();
   return width > height ? 'landscape' : 'portrait';
 }
 
-/**
- * Check if orientation is landscape
- */
 export function isLandscape(): boolean {
   return getOrientation() === 'landscape';
 }
 
-/**
- * Check if orientation is portrait
- */
 export function isPortrait(): boolean {
   return getOrientation() === 'portrait';
 }
 
 /**
- * Responsive value based on device type
- * Returns different values for phone, tablet, and TV
+ * Legacy responsive value helper.
+ * Maps phone -> compact, tablet -> medium/expanded, tv -> large.
  */
 export function responsiveValue<T>(values: { phone: T; tablet?: T; tv?: T }): T {
   const deviceType = getDeviceType();
@@ -148,98 +188,60 @@ export function responsiveValue<T>(values: { phone: T; tablet?: T; tv?: T }): T 
 }
 
 /**
- * Scale size based on device type
- * Useful for fonts, spacing, etc.
- * TV usa lo stesso scaling del tablet per consistenza visiva
+ * Legacy size scaling. The new design system prefers tokens over percentage
+ * scaling; this helper stays for backward compatibility.
  */
 export function scaleSize(size: number): number {
   const deviceType = getDeviceType();
 
   switch (deviceType) {
     case 'tv':
-      return size * 1.3; // TV usa stesso scaling del tablet
     case 'tablet':
-      return size * 1.3; // 30% larger for tablet
+      return size * 1.3;
     default:
       return size;
   }
 }
 
-/**
- * Get pixel ratio
- */
 export function getPixelRatio(): number {
   return PixelRatio.get();
 }
 
-/**
- * Convert dp to px
- */
 export function dpToPx(dp: number): number {
   return PixelRatio.getPixelSizeForLayoutSize(dp);
 }
 
-/**
- * Convert px to dp
- */
 export function pxToDp(px: number): number {
   return px / PixelRatio.get();
 }
 
-/**
- * Get number of columns for grid layout
- * TV uses the same two-column layout as tablets for better usability
- */
+/** Legacy grid columns helper. The design-system value is `layout.columns`. */
 export function getGridColumns(): number {
-  return responsiveValue({
-    phone: 1,
-    tablet: 2,
-    tv: 2, // TV usa layout tablet
-  });
+  return responsiveValue({ phone: 1, tablet: 2, tv: 2 });
 }
 
-/**
- * Get max width for content container
- * Prevents content from being too wide on large screens
- * TV uses the same width as tablets for better readability
- */
+/** Legacy content width helper. The design-system value is `layout.maxContentWidth`. */
 export function getMaxContentWidth(): number {
   const deviceType = getDeviceType();
 
   switch (deviceType) {
     case 'tv':
-      return 1180;
     case 'tablet':
       return 1180;
     default:
-      return Infinity; // No limit for phone
+      return Infinity;
   }
 }
 
-/**
- * Get horizontal padding for screen content
- * TV usa lo stesso padding del tablet
- */
+/** Legacy screen padding helper. The design-system value is `layout.gutter`. */
 export function getScreenPadding(): number {
-  return responsiveValue({
-    phone: 16,
-    tablet: 32,
-    tv: 32, // TV usa stesso padding del tablet
-  });
+  return responsiveValue({ phone: 16, tablet: 32, tv: 32 });
 }
 
-/**
- * Check if screen is small (width < 375)
- */
 export function isSmallScreen(): boolean {
-  const { width } = getWindowDimensions();
-  return width < 375;
+  return getWindowDimensions().width < 375;
 }
 
-/**
- * Check if screen is large (width >= tablet breakpoint)
- */
 export function isLargeScreen(): boolean {
-  const { width } = getWindowDimensions();
-  return width >= BREAKPOINTS.tablet;
+  return getWindowDimensions().width >= BREAKPOINTS.medium;
 }

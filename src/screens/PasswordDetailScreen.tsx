@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation';
-import { AppTheme } from '../constants/theme';
+import { DesignSystem } from '../constants/designSystem';
 import { Ionicons } from '@expo/vector-icons';
 import { Password } from '../models/Password';
 import { Storage, Crypto } from '../services';
@@ -343,11 +343,14 @@ const PasswordDetailScreen: React.FC = () => {
               accessibilityLabel={isPasswordVisible ? t('hide_password') : t('show_password')}
               accessibilityRole="button"
               onPress={togglePasswordVisibility}
-              style={styles.detailAction}
+              style={[
+                styles.detailAction,
+                { width: layout.minTouchTarget, height: layout.minTouchTarget },
+              ]}
             >
               <Ionicons
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                size={17}
+                size={DesignSystem.iconSizes.sm}
                 color={theme.colors.textTertiary}
               />
             </MotionPressable>
@@ -356,9 +359,16 @@ const PasswordDetailScreen: React.FC = () => {
             accessibilityLabel={options?.copyLabel || t('copy')}
             accessibilityRole="button"
             onPress={() => void handleCopyToClipboard(value)}
-            style={styles.detailAction}
+            style={[
+              styles.detailAction,
+              { width: layout.minTouchTarget, height: layout.minTouchTarget },
+            ]}
           >
-            <Ionicons name="copy-outline" size={17} color={theme.colors.primary} />
+            <Ionicons
+              name="copy-outline"
+              size={DesignSystem.iconSizes.sm}
+              color={theme.colors.primary}
+            />
           </MotionPressable>
         </View>
       </View>
@@ -366,30 +376,42 @@ const PasswordDetailScreen: React.FC = () => {
   }
 
   if (screenMode === 'view' && passwordId) {
-    const detailWidth = Math.min(layout.width - layout.horizontalPadding * 2, 660);
-
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: theme.colors.background }]}
         edges={['top']}
       >
-        <View style={[styles.detailContent, { width: detailWidth }]}>
-          <View style={styles.detailHeader}>
+        <View style={styles.detailContent}>
+          <View style={[styles.detailHeader, { minHeight: layout.headerHeight }]}>
             <MotionPressable
               accessibilityLabel={t('back')}
               accessibilityRole="button"
               onPress={() => navigation.goBack()}
-              style={styles.headerIconButton}
+              style={[
+                styles.headerIconButton,
+                { width: layout.minTouchTarget, height: layout.minTouchTarget },
+              ]}
             >
-              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+              <Ionicons
+                name="chevron-back"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.textSecondary}
+              />
             </MotionPressable>
             <MotionPressable
               accessibilityLabel={t('delete')}
               accessibilityRole="button"
               onPress={handleDelete}
-              style={styles.headerIconButton}
+              style={[
+                styles.headerIconButton,
+                { width: layout.minTouchTarget, height: layout.minTouchTarget },
+              ]}
             >
-              <Ionicons name="ellipsis-vertical" size={18} color={theme.colors.textTertiary} />
+              <Ionicons
+                name="ellipsis-vertical"
+                size={DesignSystem.iconSizes.sm}
+                color={theme.colors.textTertiary}
+              />
             </MotionPressable>
           </View>
 
@@ -403,7 +425,7 @@ const PasswordDetailScreen: React.FC = () => {
               >
                 <Ionicons
                   name={getCategoryIcon(password.category)}
-                  size={23}
+                  size={DesignSystem.iconSizes.md}
                   color={theme.colors.primary}
                 />
               </View>
@@ -457,7 +479,11 @@ const PasswordDetailScreen: React.FC = () => {
                 onPress={() => setScreenMode('edit')}
                 style={[styles.outlineButton, { borderColor: theme.colors.primary }]}
               >
-                <Ionicons name="create-outline" size={17} color={theme.colors.primary} />
+                <Ionicons
+                  name="create-outline"
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.primary}
+                />
                 <Text style={[styles.outlineButtonText, { color: theme.colors.primary }]}>
                   {t('edit_item')}
                 </Text>
@@ -468,7 +494,11 @@ const PasswordDetailScreen: React.FC = () => {
                 style={styles.destructiveButton}
                 testID="password-delete-button"
               >
-                <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+                <Ionicons
+                  name="trash-outline"
+                  size={DesignSystem.iconSizes.xs}
+                  color={theme.colors.error}
+                />
                 <Text style={[styles.destructiveText, { color: theme.colors.error }]}>
                   {t('delete')}
                 </Text>
@@ -494,9 +524,7 @@ const PasswordDetailScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          {
-            backgroundColor: theme.colors.background,
-          },
+          { backgroundColor: theme.colors.background, minHeight: layout.headerHeight },
         ]}
       >
         <MotionPressable
@@ -506,26 +534,15 @@ const PasswordDetailScreen: React.FC = () => {
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={DesignSystem.spacing.s}
         >
           <Ionicons
             name={screenMode === 'edit' ? 'close' : 'chevron-back'}
-            size={21}
+            size={DesignSystem.iconSizes.md}
             color={theme.colors.textSecondary}
           />
         </MotionPressable>
-        <Text
-          style={[
-            styles.title,
-            {
-              color: theme.colors.text,
-              fontWeight: 'bold',
-              fontSize: AppTheme.fonts.sizes.large,
-              flex: 1,
-              textAlign: 'center',
-            },
-          ]}
-        >
+        <Text style={[styles.title, { color: theme.colors.text }]}>
           {screenMode === 'edit' ? t('edit_item') : t('new_password')}
         </Text>
         {screenMode === 'edit' ? (
@@ -534,7 +551,7 @@ const PasswordDetailScreen: React.FC = () => {
             style={styles.headerSaveButton}
             accessibilityRole="button"
             accessibilityLabel={t('save')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={DesignSystem.spacing.s}
           >
             <Text style={[styles.headerSaveText, { color: theme.colors.primary }]}>
               {t('save')}
@@ -547,7 +564,10 @@ const PasswordDetailScreen: React.FC = () => {
 
       <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 40 }]}
+        contentContainerStyle={[
+          styles.scrollViewContent,
+          layout.isShortLandscape && styles.scrollViewContentCompact,
+        ]}
         showsVerticalScrollIndicator={false}
         enableOnAndroid={true}
         enableAutomaticScroll={true}
@@ -567,7 +587,7 @@ const PasswordDetailScreen: React.FC = () => {
               },
             ]}
             placeholder={t('title')}
-            placeholderTextColor={theme.colors.text + '80'}
+            placeholderTextColor={theme.colors.textTertiary}
             value={password.title}
             onChangeText={(text: string) => setPassword({ ...password, title: text })}
           />
@@ -585,7 +605,7 @@ const PasswordDetailScreen: React.FC = () => {
               testID="password-username-input"
               style={[styles.inputFlex, { color: theme.colors.text }]}
               placeholder={t('username_placeholder')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={password.username}
               onChangeText={(text: string) => setPassword({ ...password, username: text })}
               autoCapitalize="none"
@@ -595,9 +615,13 @@ const PasswordDetailScreen: React.FC = () => {
               style={styles.inputIcon}
               accessibilityRole="button"
               accessibilityLabel={t('copy_username')}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              hitSlop={DesignSystem.spacing.s}
             >
-              <Ionicons name="copy-outline" size={20} color={theme.colors.primary} />
+              <Ionicons
+                name="copy-outline"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -614,7 +638,7 @@ const PasswordDetailScreen: React.FC = () => {
               testID="password-password-input"
               style={[styles.inputFlex, { color: theme.colors.text }]}
               placeholder={t('password')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={password.password}
               onChangeText={(text: string) => setPassword({ ...password, password: text })}
               secureTextEntry={!isPasswordVisible}
@@ -625,11 +649,11 @@ const PasswordDetailScreen: React.FC = () => {
               style={styles.inputIcon}
               accessibilityRole="button"
               accessibilityLabel={isPasswordVisible ? t('hide_password') : t('show_password')}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              hitSlop={DesignSystem.spacing.s}
             >
               <Ionicons
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                size={20}
+                size={DesignSystem.iconSizes.md}
                 color={theme.colors.primary}
               />
             </TouchableOpacity>
@@ -638,9 +662,13 @@ const PasswordDetailScreen: React.FC = () => {
               style={styles.inputIcon}
               accessibilityRole="button"
               accessibilityLabel={t('copy_password_card')}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              hitSlop={DesignSystem.spacing.s}
             >
-              <Ionicons name="copy-outline" size={20} color={theme.colors.primary} />
+              <Ionicons
+                name="copy-outline"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
           </View>
 
@@ -681,13 +709,18 @@ const PasswordDetailScreen: React.FC = () => {
                 backgroundColor: theme.colors.background,
                 borderColor: theme.colors.primary,
                 borderWidth: 1,
-                borderRadius: AppTheme.borderRadius.medium,
+                borderRadius: DesignSystem.radii.medium,
+                minHeight: layout.minTouchTarget,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel={t('generate_secure_password')}
           >
-            <Ionicons name="key-outline" size={16} color={theme.colors.primary} />
+            <Ionicons
+              name="key-outline"
+              size={DesignSystem.iconSizes.xs}
+              color={theme.colors.primary}
+            />
             <Text style={[styles.generateButtonText, { color: theme.colors.primary }]}>
               {t('generate_secure_password')}
             </Text>
@@ -705,7 +738,7 @@ const PasswordDetailScreen: React.FC = () => {
             <TextInput
               style={[styles.inputFlex, { color: theme.colors.text }]}
               placeholder={t('website_placeholder')}
-              placeholderTextColor={theme.colors.text + '80'}
+              placeholderTextColor={theme.colors.textTertiary}
               value={password.website || ''}
               onChangeText={(text: string) => setPassword({ ...password, website: text })}
               autoCapitalize="none"
@@ -717,9 +750,13 @@ const PasswordDetailScreen: React.FC = () => {
                 style={styles.inputIcon}
                 accessibilityRole="button"
                 accessibilityLabel={t('copy_website')}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                hitSlop={DesignSystem.spacing.s}
               >
-                <Ionicons name="copy-outline" size={20} color={theme.colors.primary} />
+                <Ionicons
+                  name="copy-outline"
+                  size={DesignSystem.iconSizes.md}
+                  color={theme.colors.primary}
+                />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -740,7 +777,7 @@ const PasswordDetailScreen: React.FC = () => {
             value={password.notes || ''}
             onChangeText={(text: string) => setPassword({ ...password, notes: text })}
             placeholder={t('notes')}
-            placeholderTextColor={theme.colors.text + '80'}
+            placeholderTextColor={theme.colors.textTertiary}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -768,7 +805,7 @@ const PasswordDetailScreen: React.FC = () => {
                 >
                   <Ionicons
                     name={getCategoryIcon(password.category)}
-                    size={20}
+                    size={DesignSystem.iconSizes.md}
                     color={theme.colors.textLight}
                   />
                 </View>
@@ -777,11 +814,15 @@ const PasswordDetailScreen: React.FC = () => {
                 {password.category ? getCategoryName(password.category) : t('select_category')}
               </Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={theme.colors.text} />
+            <Ionicons
+              name="chevron-down"
+              size={DesignSystem.iconSizes.md}
+              color={theme.colors.text}
+            />
           </TouchableOpacity>
         </View>
 
-        <View style={{ marginTop: 20, marginBottom: 20 }}>
+        <View style={{ marginTop: DesignSystem.spacing.xl, marginBottom: DesignSystem.spacing.xl }}>
           <MotionPressable
             testID="password-save-button"
             style={[styles.saveButton, { borderColor: theme.colors.primary }]}
@@ -804,7 +845,11 @@ const PasswordDetailScreen: React.FC = () => {
               style={styles.destructiveButton}
               testID="password-delete-button"
             >
-              <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+              <Ionicons
+                name="trash-outline"
+                size={DesignSystem.iconSizes.xs}
+                color={theme.colors.error}
+              />
               <Text style={[styles.destructiveText, { color: theme.colors.error }]}>
                 {t('delete')}
               </Text>
@@ -819,7 +864,7 @@ const PasswordDetailScreen: React.FC = () => {
         onClose={() => setShowCategoryModal(false)}
         title={t('select_category')}
       >
-        <View style={{ paddingBottom: 60 }}>
+        <View style={{ paddingBottom: DesignSystem.spacing.huge }}>
           {categoryOptions.map((item) => (
             <View key={item.value}>
               <ListItem
@@ -848,90 +893,79 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: DesignSystem.spacing.xs,
   },
   backButton: {
-    padding: 8,
-    minWidth: 44,
-    minHeight: 44,
+    padding: DesignSystem.spacing.s,
+    minWidth: DesignSystem.layout.touchTarget.minimum,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
+    ...DesignSystem.text('subtitle'),
+    flex: 1,
+    textAlign: 'center',
   },
   headerSaveButton: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: DesignSystem.layout.touchTarget.minimum,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerSaveText: { fontSize: 13, fontWeight: '600' },
+  headerSaveText: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
   placeholder: {
-    width: 40,
+    width: DesignSystem.layout.touchTarget.minimum,
   },
   scrollView: {
     flex: 1,
   },
   scrollViewContent: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: 14,
+    paddingTop: DesignSystem.spacing.l,
+    paddingBottom: DesignSystem.spacing.xxxl,
+  },
+  scrollViewContentCompact: {
+    paddingTop: DesignSystem.spacing.s,
   },
   formGroup: {
-    marginBottom: 14,
+    marginBottom: DesignSystem.spacing.l,
   },
   label: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '500',
-    marginBottom: 5,
+    ...DesignSystem.text('micro'),
+    marginBottom: DesignSystem.spacing.xs,
   },
   input: {
-    backgroundColor: AppTheme.colors.card,
-    borderRadius: AppTheme.borderRadius.medium,
-    minHeight: 44,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-    fontSize: 13,
-    color: AppTheme.colors.text,
+    borderRadius: DesignSystem.radii.medium,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
+    paddingHorizontal: DesignSystem.spacing.m,
+    paddingVertical: DesignSystem.spacing.s,
+    ...DesignSystem.text('bodySmall'),
     borderWidth: 1,
-    borderColor: AppTheme.colors.border,
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppTheme.colors.card,
-    borderRadius: AppTheme.borderRadius.medium,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
-    borderColor: AppTheme.colors.border,
   },
   inputFlex: {
     flex: 1,
-    minHeight: 44,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-    fontSize: 13,
-    color: AppTheme.colors.text,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
+    paddingHorizontal: DesignSystem.spacing.m,
+    paddingVertical: DesignSystem.spacing.s,
+    ...DesignSystem.text('bodySmall'),
   },
   inputIcon: {
-    padding: AppTheme.spacing.m,
-    minWidth: 44,
-    minHeight: 44,
+    padding: DesignSystem.spacing.m,
+    minWidth: DesignSystem.layout.touchTarget.minimum,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -942,43 +976,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: AppTheme.spacing.s,
-    paddingVertical: AppTheme.spacing.s,
-    paddingHorizontal: AppTheme.spacing.m,
+    marginTop: DesignSystem.spacing.s,
+    paddingVertical: DesignSystem.spacing.s,
+    paddingHorizontal: DesignSystem.spacing.m,
     alignSelf: 'center',
   },
   generateButtonText: {
-    fontSize: AppTheme.fonts.sizes.small,
-    color: AppTheme.colors.primary,
-    marginLeft: AppTheme.spacing.s,
-    fontWeight: 'medium',
-  },
-  footer: {
-    padding: AppTheme.spacing.l,
-    borderTopWidth: 1,
+    ...DesignSystem.text('labelSmall'),
+    marginLeft: DesignSystem.spacing.s,
   },
   saveButton: {
     backgroundColor: 'transparent',
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.small,
     borderWidth: 1,
-    minHeight: 46,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonText: {
-    fontSize: 13,
+    ...DesignSystem.text('labelSmall'),
     fontWeight: '600',
   },
   categorySelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: AppTheme.colors.card,
-    borderRadius: AppTheme.borderRadius.medium,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 8,
+    paddingHorizontal: DesignSystem.spacing.l,
+    paddingVertical: DesignSystem.spacing.m,
+    marginTop: DesignSystem.spacing.s,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
   },
   categoryDisplay: {
     flexDirection: 'row',
@@ -987,110 +1015,143 @@ const styles = StyleSheet.create({
   categoryIcon: {
     width: 30,
     height: 30,
-    borderRadius: 15,
+    borderRadius: DesignSystem.radii.pill,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: DesignSystem.spacing.m,
   },
   categoryText: {
-    fontSize: 16,
-    color: AppTheme.colors.text,
+    ...DesignSystem.text('body'),
   },
   passwordStrengthContainer: {
-    marginTop: 8,
+    marginTop: DesignSystem.spacing.s,
     flexDirection: 'row',
     alignItems: 'center',
   },
   passwordStrengthBar: {
     flex: 1,
     height: 4,
-    borderRadius: 2,
+    borderRadius: DesignSystem.radii.pill,
     overflow: 'hidden',
   },
   passwordStrengthFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: DesignSystem.radii.pill,
   },
   passwordStrengthLabel: {
-    marginLeft: 8,
-    fontSize: 12,
-    fontWeight: 'bold',
+    marginLeft: DesignSystem.spacing.s,
+    ...DesignSystem.text('caption'),
+    fontWeight: '700',
   },
-  detailContent: { flex: 1, alignSelf: 'center' },
+  detailContent: { flex: 1 },
   detailHeader: {
-    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerIconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  detailScrollContent: { paddingHorizontal: 14, paddingBottom: 36 },
-  detailHero: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 22 },
+  headerIconButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailScrollContent: { paddingBottom: DesignSystem.spacing.xxl },
+  detailHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: DesignSystem.spacing.s,
+    marginBottom: DesignSystem.spacing.xl,
+  },
   detailIcon: {
     width: 48,
     height: 48,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.small,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: DesignSystem.spacing.m,
   },
   detailHeroCopy: { flex: 1, minWidth: 0 },
-  detailTitle: { fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: -0.4 },
-  detailMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
-  detailTag: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  detailTagText: { fontSize: 9, lineHeight: 12, fontWeight: '600' },
-  detailStrength: { fontSize: 10, lineHeight: 14, fontWeight: '500' },
-  detailFields: { marginBottom: 20 },
+  detailTitle: {
+    ...DesignSystem.text('headline'),
+  },
+  detailMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DesignSystem.spacing.s,
+    marginTop: DesignSystem.spacing.xs,
+  },
+  detailTag: {
+    borderRadius: DesignSystem.radii.xs,
+    paddingHorizontal: DesignSystem.spacing.s,
+    paddingVertical: DesignSystem.spacing.xxs,
+  },
+  detailTagText: {
+    ...DesignSystem.text('micro'),
+    fontWeight: '600',
+  },
+  detailStrength: {
+    ...DesignSystem.text('micro'),
+  },
+  detailFields: { marginBottom: DesignSystem.spacing.xl },
   detailRow: {
     minHeight: 68,
     borderBottomWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
   },
   detailLabel: {
-    fontSize: 9,
-    lineHeight: 12,
+    ...DesignSystem.text('micro'),
     fontWeight: '700',
-    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: DesignSystem.spacing.xs,
   },
   detailValueRow: { flexDirection: 'row', alignItems: 'center' },
-  detailValue: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 19, fontWeight: '500' },
-  secretValue: { fontFamily: AppTheme.fonts.secure, letterSpacing: 1.2 },
+  detailValue: {
+    ...DesignSystem.text('labelSmall'),
+    flex: 1,
+    minWidth: 0,
+  },
+  secretValue: { fontFamily: DesignSystem.fonts.secure },
   detailAction: {
-    width: 40,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: -8,
+    marginRight: -DesignSystem.spacing.s,
   },
   detailNotes: {
     minHeight: 86,
     borderBottomWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: DesignSystem.spacing.m,
   },
-  detailNotesText: { fontSize: 13, lineHeight: 19 },
+  detailNotesText: {
+    ...DesignSystem.text('bodySmall'),
+  },
   outlineButton: {
-    minHeight: 46,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.small,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: DesignSystem.spacing.s,
   },
-  outlineButtonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  outlineButtonText: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
   destructiveButton: {
-    minHeight: 44,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    marginTop: 6,
+    gap: DesignSystem.spacing.s,
+    marginTop: DesignSystem.spacing.xs,
   },
-  destructiveText: { fontSize: 12, fontWeight: '500' },
-  detailDates: { fontSize: 9, lineHeight: 13, textAlign: 'center', marginTop: 18 },
+  destructiveText: {
+    ...DesignSystem.text('labelSmall'),
+  },
+  detailDates: {
+    ...DesignSystem.text('micro'),
+    textAlign: 'center',
+    marginTop: DesignSystem.spacing.l,
+  },
 });
 
 export default PasswordDetailScreen;

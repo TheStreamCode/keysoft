@@ -341,6 +341,7 @@ export const it = {
     'Stai tentando di importare troppe password. Riduci il numero di password da importare o elimina alcune password esistenti.',
   no_data: 'Nessun dato',
   no_data_to_export: 'Non ci sono password o note da esportare.',
+  import_in_progress: 'Importazione in corso',
   import_success: 'Importazione completata',
   import_success_message_all:
     'Sono state importate con successo {passwords} password e {notes} note.',

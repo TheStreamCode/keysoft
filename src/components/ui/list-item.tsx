@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DesignSystem } from '../../constants/designSystem';
 import { useTheme } from '../../contexts/ThemeContext';
+import type { Theme } from '../../constants/theme';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -34,7 +36,6 @@ export function ListItem({
   onPress,
   disabled,
   children,
-  // className,
   style,
   accessibilityLabel,
   selected,
@@ -45,7 +46,6 @@ export function ListItem({
 
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
-  // Helper per renderizzare l'icona sinistra
   const renderLeftIcon = () => {
     if (!leftIcon) return null;
 
@@ -60,7 +60,7 @@ export function ListItem({
         >
           <Ionicons
             name={leftIcon as IoniconName}
-            size={20}
+            size={DesignSystem.iconSizes.md}
             color={iconColor || theme.colors.primary}
           />
         </View>
@@ -70,7 +70,6 @@ export function ListItem({
     return <View style={styles.iconContainer}>{leftIcon}</View>;
   };
 
-  // Helper per renderizzare l'icona destra
   const renderRightIcon = () => {
     if (!rightIcon) return null;
 
@@ -78,7 +77,7 @@ export function ListItem({
       return (
         <Ionicons
           name={rightIcon as IoniconName}
-          size={20}
+          size={DesignSystem.iconSizes.md}
           color={rightIconColor || theme.colors.primary}
         />
       );
@@ -105,8 +104,14 @@ export function ListItem({
       <View style={styles.leftSection}>
         {renderLeftIcon()}
         <View style={styles.textContainer}>
-          <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
-          {description && <Text style={styles.description}>{description}</Text>}
+          <Text numberOfLines={1} style={[styles.title, selected && styles.titleSelected]}>
+            {title}
+          </Text>
+          {description ? (
+            <Text numberOfLines={2} style={styles.description}>
+              {description}
+            </Text>
+          ) : null}
         </View>
       </View>
       <View style={styles.rightSection}>
@@ -117,74 +122,70 @@ export function ListItem({
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 8,
-      paddingVertical: 7,
-      minHeight: 48,
+      paddingHorizontal: DesignSystem.spacing.m,
+      paddingVertical: DesignSystem.spacing.m,
+      minHeight: DesignSystem.layout.listItemMinHeight,
     },
     cardContainer: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      marginBottom: 8,
-      paddingVertical: 14,
+      backgroundColor: theme.colors.backgroundElevated,
+      borderRadius: DesignSystem.radii.large,
+      marginBottom: DesignSystem.spacing.m,
+      paddingVertical: DesignSystem.spacing.l,
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
     containerSelected: {
-      backgroundColor: theme.colors.primary + '15',
+      backgroundColor: theme.colors.listItemSelected,
       borderWidth: 1,
       borderColor: theme.colors.primary,
     },
     disabled: {
-      opacity: 0.5,
+      opacity: DesignSystem.state.disabled,
     },
     leftSection: {
       flexDirection: 'row',
       alignItems: 'center',
       flex: 1,
-      minWidth: 0, // Important for text truncation
+      minWidth: 0,
     },
     iconContainer: {
-      marginRight: 10,
+      marginRight: DesignSystem.spacing.m,
     },
     cardIconContainer: {
       width: 40,
       height: 40,
-      borderRadius: 10,
+      borderRadius: DesignSystem.radii.medium,
       justifyContent: 'center',
       alignItems: 'center',
     },
     textContainer: {
       flex: 1,
-      minWidth: 0, // Important for text truncation
+      minWidth: 0,
     },
     title: {
-      fontSize: 13,
-      lineHeight: 18,
+      ...DesignSystem.text('bodySmall', theme.colors.text),
       fontWeight: '500',
-      color: theme.colors.text,
     },
     titleSelected: {
       fontWeight: '600',
       color: theme.colors.text,
     },
     description: {
-      fontSize: 10,
-      lineHeight: 14,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
+      ...DesignSystem.text('caption', theme.colors.textSecondary),
+      marginTop: DesignSystem.spacing.xxs,
     },
     rightSection: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      marginLeft: 8,
-      flexShrink: 0, // Prevent shrinking
+      gap: DesignSystem.spacing.s,
+      marginLeft: DesignSystem.spacing.s,
+      flexShrink: 0,
     },
   });
 

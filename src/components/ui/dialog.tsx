@@ -1,19 +1,15 @@
 import React from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DesignSystem } from '../../constants/designSystem';
+import { DIALOG_MAX_WIDTH } from '../../constants/layout';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MotionPressable, usePrefersReducedMotion } from './motion';
+import { useResponsiveLayout } from '../../utils/responsive';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -51,7 +47,8 @@ export function Dialog({
 }: DialogProps) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { width, height } = useWindowDimensions();
+  const layout = useResponsiveLayout();
+  const insets = useSafeAreaInsets();
   const isReducedMotion = usePrefersReducedMotion();
   const accentColor =
     tone === 'destructive'
@@ -59,7 +56,11 @@ export function Dialog({
       : tone === 'success'
         ? theme.colors.success
         : theme.colors.primary;
-  const hasHorizontalActions = actions.length === 2 && width >= 340;
+  const hasHorizontalActions = actions.length === 2 && layout.width >= 340;
+  const maxHeight = Math.min(
+    layout.height - Math.max(insets.top, 12) - Math.max(insets.bottom, 12),
+    720,
+  );
 
   return (
     <Modal
@@ -89,49 +90,62 @@ export function Dialog({
         <Reanimated.View
           accessibilityLabel={title}
           accessibilityRole="alert"
-          entering={isReducedMotion ? undefined : FadeIn.duration(180)}
+          entering={
+            isReducedMotion ? undefined : FadeIn.duration(DesignSystem.motion.durations.short)
+          }
           style={[
             styles.dialog,
             {
               backgroundColor: theme.colors.backgroundElevated,
               borderColor: theme.colors.divider,
-              maxHeight: Math.min(height - 48, 680),
+              maxHeight,
+              maxWidth: DIALOG_MAX_WIDTH[layout.windowClass],
             },
             theme.shadows.large,
           ]}
         >
           <View style={styles.header}>
+            {dismissible ? (
+              <MotionPressable
+                accessibilityLabel={t('close')}
+                accessibilityRole="button"
+                onPress={onClose}
+                style={[
+                  styles.closeButton,
+                  styles.closeButtonPositioned,
+                  { backgroundColor: theme.colors.backgroundMuted },
+                ]}
+              >
+                <Ionicons color={theme.colors.textSecondary} name="close" size={20} />
+              </MotionPressable>
+            ) : null}
             <View
               style={[
                 styles.icon,
                 { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}55` },
               ]}
             >
-              {iconElement ?? <Ionicons color={accentColor} name={icon} size={21} />}
+              {iconElement ?? (
+                <Ionicons color={accentColor} name={icon} size={DesignSystem.iconSizes.lg} />
+              )}
             </View>
-            <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-            {dismissible ? (
-              <MotionPressable
-                accessibilityLabel={t('close')}
-                accessibilityRole="button"
-                onPress={onClose}
-                style={[styles.closeButton, { backgroundColor: theme.colors.backgroundMuted }]}
-              >
-                <Ionicons color={theme.colors.textSecondary} name="close" size={19} />
-              </MotionPressable>
-            ) : (
-              <View style={styles.closeButton} />
-            )}
-          </View>
-
-          <View style={styles.body}>
+            <Text style={[DesignSystem.text('title'), styles.title, { color: theme.colors.text }]}>
+              {title}
+            </Text>
             {description ? (
-              <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
+              <Text
+                style={[
+                  DesignSystem.text('bodySmall'),
+                  styles.description,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
                 {description}
               </Text>
             ) : null}
-            {children}
           </View>
+
+          {children ? <View style={styles.body}>{children}</View> : null}
 
           {actions.length > 0 ? (
             <View
@@ -164,11 +178,11 @@ export function Dialog({
                   >
                     <Text
                       style={[
-                        styles.actionText,
+                        DesignSystem.text('button'),
                         {
                           color:
                             variant === 'primary'
-                              ? theme.colors.textLight
+                              ? theme.colors.onPrimary
                               : variant === 'secondary'
                                 ? theme.colors.text
                                 : theme.colors.error,
@@ -193,68 +207,68 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: DesignSystem.spacing.l,
   },
   dialog: {
     width: '100%',
-    maxWidth: 420,
-    borderRadius: 14,
+    borderRadius: DesignSystem.radii.large,
     borderWidth: 1,
     overflow: 'hidden',
   },
   header: {
-    minHeight: 66,
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    gap: 11,
+    paddingHorizontal: DesignSystem.spacing.l,
+    paddingTop: DesignSystem.spacing.xxl,
+    paddingBottom: DesignSystem.spacing.l,
   },
   icon: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
+    width: 48,
+    height: 48,
+    borderRadius: DesignSystem.radii.large,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: DesignSystem.spacing.m,
   },
   title: {
-    flex: 1,
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 9,
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  closeButtonPositioned: {
+    position: 'absolute',
+    top: DesignSystem.spacing.s,
+    right: DesignSystem.spacing.s,
+  },
   body: {
-    paddingHorizontal: 16,
-    paddingTop: 2,
-    paddingBottom: 18,
+    paddingHorizontal: DesignSystem.spacing.l,
+    paddingBottom: DesignSystem.spacing.l,
   },
   description: {
-    fontSize: 14,
-    lineHeight: 21,
+    alignSelf: 'stretch',
+    marginTop: DesignSystem.spacing.s,
+    textAlign: 'center',
   },
   actions: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    padding: 12,
-    gap: 8,
+    padding: DesignSystem.spacing.m,
+    gap: DesignSystem.spacing.s,
   },
   actionsHorizontal: { flexDirection: 'row' },
   actionsVertical: { flexDirection: 'column' },
   action: {
-    minHeight: 46,
-    borderRadius: 8,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: DesignSystem.spacing.l,
   },
   actionHorizontal: { flex: 1 },
-  actionText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
 });

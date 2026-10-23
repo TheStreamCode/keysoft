@@ -2,7 +2,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as CryptoService from '../crypto/cryptoService';
 import * as StorageService from '../storage/storageService';
 import { UserMasterKey } from '../../models/User';
-import Constants from 'expo-constants';
+import { isExpoGo as isExpoGoEnvironment } from '../../utils/env';
 import Logger from '../../utils/logger';
 
 // State
@@ -13,7 +13,7 @@ let lastAuthFailure: AuthFailure | null = null;
 // own recovery record and could commit the wrong metadata for the other's ciphertext.
 let isVaultRekeyInProgress = false;
 
-const isExpoGo = Constants.executionEnvironment === 'storeClient';
+const isExpoGo = isExpoGoEnvironment();
 
 export type TBiometryTypes = 'TouchID' | 'FaceID' | 'Biometrics';
 export type AuthFailureReason =

@@ -1,4 +1,5 @@
 import * as CryptoJS from 'crypto-js';
+import { Platform } from 'react-native';
 import { UserMasterKey } from '../../models/User';
 import { isExpoGo } from '../../utils/env';
 import Logger from '../../utils/logger';
@@ -18,9 +19,13 @@ let argon2id:
   ((password: string, salt: string, options: Record<string, number>) => Promise<any>) | null = null;
 
 function loadArgon2(): void {
-  if (isExpoGo()) {
+  // The web target is a development-only mock surface: never load a native KDF there,
+  // and do not report its absence as a misconfigured bundled build.
+  if (isExpoGo() || Platform.OS === 'web') {
     argon2id = null;
-    Logger.info('CryptoService: Expo Go detected. Using PBKDF2 fallback.');
+    if (isExpoGo()) {
+      Logger.info('CryptoService: Expo Go detected. Using PBKDF2 fallback.');
+    }
     return;
   }
 
@@ -34,8 +39,11 @@ function loadArgon2(): void {
     argon2id = null;
     throw new Error('Argon2 module not found or null');
   } catch (error) {
-    Logger.warn(
-      'CryptoService: react-native-argon2 not available. PBKDF2 is allowed only for PBKDF2 metadata.',
+    // A bundled build without the native module silently degrades to the pure-JS PBKDF2
+    // fallback, which makes PIN unlock take seconds and prevents legacy vaults from being
+    // upgraded. Log it loudly so the misconfiguration is visible in release diagnostics.
+    Logger.error(
+      'CryptoService: native Argon2 module unavailable in a non-Expo-Go build; PBKDF2 vaults will stay on the slow JS fallback',
       error,
     );
   }

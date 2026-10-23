@@ -5,19 +5,20 @@ import {
   Image,
   ImageSourcePropType,
   Modal,
-  Platform,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DesignSystem } from '../../constants/designSystem';
+import { MODAL_MAX_WIDTH } from '../../constants/layout';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MotionPressable, usePrefersReducedMotion } from './motion';
+import { useResponsiveLayout } from '../../utils/responsive';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -41,14 +42,14 @@ export function BottomSheet({
   const { theme } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const window = useWindowDimensions();
+  const layout = useResponsiveLayout();
   const isReducedMotion = usePrefersReducedMotion();
-  const translateY = React.useRef(new Animated.Value(window.height)).current;
+  const translateY = React.useRef(new Animated.Value(layout.height)).current;
   const opacity = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     if (!visible) {
-      translateY.setValue(window.height);
+      translateY.setValue(layout.height);
       opacity.setValue(0);
       return;
     }
@@ -68,16 +69,16 @@ export function BottomSheet({
       }),
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 180,
+        duration: DesignSystem.motion.durations.short,
         useNativeDriver: true,
       }),
     ]).start();
-  }, [isReducedMotion, opacity, translateY, visible, window.height]);
+  }, [isReducedMotion, layout.height, opacity, translateY, visible]);
 
   const maxHeight =
     height === 'full'
-      ? window.height - Math.max(insets.top, 12)
-      : window.height * (height === 'half' ? 0.58 : 0.78);
+      ? layout.height - Math.max(insets.top, 12)
+      : layout.height * (height === 'half' ? 0.6 : 0.8);
 
   return (
     <Modal
@@ -105,16 +106,18 @@ export function BottomSheet({
                 backgroundColor: theme.colors.backgroundElevated,
                 borderColor: theme.colors.divider,
                 maxHeight,
-                paddingBottom: Math.max(insets.bottom, 10),
+                maxWidth: MODAL_MAX_WIDTH[layout.windowClass],
+                paddingBottom: Math.max(insets.bottom, DesignSystem.spacing.s),
                 transform: [{ translateY }],
               },
-              window.width >= 768 && styles.tabletContainer,
               theme.shadows.large,
             ]}
           >
             <View style={[styles.handleBar, { backgroundColor: theme.colors.border }]} />
             <View style={[styles.header, { borderBottomColor: theme.colors.divider }]}>
-              <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+              <Text style={[DesignSystem.text('title'), { color: theme.colors.text }]}>
+                {title}
+              </Text>
               {showCloseButton ? (
                 <MotionPressable
                   accessibilityLabel={t('close')}
@@ -122,7 +125,7 @@ export function BottomSheet({
                   onPress={onClose}
                   style={[styles.closeButton, { backgroundColor: theme.colors.backgroundMuted }]}
                 >
-                  <Ionicons color={theme.colors.textSecondary} name="close" size={19} />
+                  <Ionicons color={theme.colors.textSecondary} name="close" size={20} />
                 </MotionPressable>
               ) : null}
             </View>
@@ -196,20 +199,34 @@ export function BottomSheetOption({
             ) : iconEmoji ? (
               <Text style={styles.emojiIcon}>{iconEmoji}</Text>
             ) : (
-              <Ionicons color={color} name={icon as IoniconName} size={18} />
+              <Ionicons color={color} name={icon as IoniconName} size={DesignSystem.iconSizes.sm} />
             )}
           </View>
         ) : null}
-        <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{label}</Text>
+        <Text
+          style={[DesignSystem.text('bodySmall'), styles.optionLabel, { color: theme.colors.text }]}
+        >
+          {label}
+        </Text>
       </View>
       <View style={styles.optionRight}>
         {value ? (
-          <Text style={[styles.optionValue, { color: theme.colors.textSecondary }]}>{value}</Text>
+          <Text style={[DesignSystem.text('caption'), { color: theme.colors.textSecondary }]}>
+            {value}
+          </Text>
         ) : null}
         {selected ? (
-          <Ionicons color={theme.colors.primary} name="checkmark" size={19} />
+          <Ionicons
+            color={theme.colors.primary}
+            name="checkmark"
+            size={DesignSystem.iconSizes.md}
+          />
         ) : (
-          <Ionicons color={theme.colors.textTertiary} name="chevron-forward" size={17} />
+          <Ionicons
+            color={theme.colors.textTertiary}
+            name="chevron-forward"
+            size={DesignSystem.iconSizes.sm}
+          />
         )}
       </View>
     </MotionPressable>
@@ -251,15 +268,15 @@ export function BottomSheetButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? theme.colors.textLight : color} />
+        <ActivityIndicator color={variant === 'primary' ? theme.colors.onPrimary : color} />
       ) : (
         <Text
           style={[
-            styles.buttonText,
+            DesignSystem.text('button'),
             {
               color:
                 variant === 'primary'
-                  ? theme.colors.textLight
+                  ? theme.colors.onPrimary
                   : variant === 'destructive'
                     ? theme.colors.error
                     : theme.colors.text,
@@ -278,71 +295,76 @@ const styles = StyleSheet.create({
   contentWrapper: { width: '100%', alignItems: 'center', justifyContent: 'flex-end' },
   container: {
     width: '100%',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: DesignSystem.radii.xxl,
+    borderTopRightRadius: DesignSystem.radii.xxl,
     borderWidth: 1,
     overflow: 'hidden',
   },
-  tabletContainer: { maxWidth: 600, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   handleBar: {
-    width: 34,
-    height: 3,
-    borderRadius: 2,
+    width: 36,
+    height: 4,
+    borderRadius: DesignSystem.radii.pill,
     alignSelf: 'center',
-    marginTop: 9,
-    marginBottom: 4,
+    marginTop: DesignSystem.spacing.s,
+    marginBottom: DesignSystem.spacing.xs,
   },
   header: {
     minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
+    gap: DesignSystem.spacing.s,
+    paddingHorizontal: DesignSystem.spacing.l,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: { flex: 1, fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.2 },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 9,
+    width: DesignSystem.layout.touchTarget.comfortable,
+    height: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: { paddingHorizontal: 14 },
-  contentContainer: { paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 8 : 14 },
+  content: { paddingHorizontal: DesignSystem.spacing.l },
+  contentContainer: {
+    paddingTop: DesignSystem.spacing.l,
+    paddingBottom: DesignSystem.spacing.l,
+  },
   option: {
-    minHeight: 54,
-    borderRadius: 8,
+    minHeight: DesignSystem.layout.touchTarget.large,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: 7,
+    paddingHorizontal: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.s,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   optionLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
   optionIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: DesignSystem.radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: DesignSystem.spacing.m,
   },
-  emojiIcon: { fontSize: 21, lineHeight: 24 },
-  flagImage: { width: 25, height: 25, borderRadius: 5 },
-  optionLabel: { flex: 1, fontSize: 14, lineHeight: 19, fontWeight: '500' },
-  optionRight: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  optionValue: { fontSize: 12, lineHeight: 17 },
+  emojiIcon: { fontSize: 20, lineHeight: 24 },
+  flagImage: { width: 28, height: 28, borderRadius: DesignSystem.radii.xs },
+  optionLabel: { flex: 1, fontWeight: '500' },
+  optionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DesignSystem.spacing.s,
+    marginLeft: DesignSystem.spacing.s,
+  },
   button: {
-    minHeight: 46,
-    borderRadius: 8,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    marginTop: 8,
+    paddingHorizontal: DesignSystem.spacing.l,
+    marginTop: DesignSystem.spacing.s,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
 });
 
 export default BottomSheet;

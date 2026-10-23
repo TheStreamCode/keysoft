@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable, Reveal } from '../components/ui/motion';
 import { PinKeypad } from '../components/ui/pin-keypad';
+import { DesignSystem } from '../constants/designSystem';
 import { Theme } from '../constants/theme';
 import { useAlert } from '../contexts/AlertContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,8 +39,6 @@ const OnboardingScreen: React.FC = () => {
   const [pin, setPin] = React.useState('');
   const [confirmPin, setConfirmPin] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
-
-  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 560);
 
   async function handleNext() {
     Keyboard.dismiss();
@@ -113,7 +112,10 @@ const OnboardingScreen: React.FC = () => {
     ] as const;
 
     return (
-      <Reveal key="welcome" style={styles.step}>
+      <Reveal
+        key="welcome"
+        style={[styles.step, layout.isShortLandscape && styles.stepShortLandscape]}
+      >
         <View style={styles.welcomeBody}>
           <Reveal delay={60} style={styles.lockMark}>
             <KeysoftMark size={82} />
@@ -131,7 +133,11 @@ const OnboardingScreen: React.FC = () => {
           <View style={styles.features}>
             {features.map((feature, index) => (
               <Reveal key={feature.label} delay={170 + index * 45} style={styles.featureRow}>
-                <Ionicons name={feature.icon} size={17} color={theme.colors.primary} />
+                <Ionicons
+                  name={feature.icon}
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.primary}
+                />
                 <Text style={[styles.featureText, { color: theme.colors.text }]}>
                   {feature.label}
                 </Text>
@@ -149,7 +155,11 @@ const OnboardingScreen: React.FC = () => {
             <Text style={[styles.primaryButtonText, { color: theme.colors.primary }]}>
               {t('onboarding_setup')}
             </Text>
-            <Ionicons name="arrow-forward" size={17} color={theme.colors.primary} />
+            <Ionicons
+              name="arrow-forward"
+              size={DesignSystem.iconSizes.sm}
+              color={theme.colors.primary}
+            />
           </MotionPressable>
           <Text style={[styles.footerHint, { color: theme.colors.textTertiary }]}>
             {t('onboarding_setup_time')}
@@ -161,14 +171,21 @@ const OnboardingScreen: React.FC = () => {
 
   function renderProgressHeader(step: Exclude<OnboardingStep, 'welcome'>) {
     return (
-      <View style={styles.progressHeader}>
+      <View style={[styles.progressHeader, { minHeight: layout.minTouchTarget }]}>
         <MotionPressable
           accessibilityRole="button"
           accessibilityLabel={t('back')}
           onPress={handleBack}
-          style={styles.iconButton}
+          style={[
+            styles.iconButton,
+            { width: layout.minTouchTarget, height: layout.minTouchTarget },
+          ]}
         >
-          <Ionicons name="arrow-back" size={20} color={theme.colors.textSecondary} />
+          <Ionicons
+            name="arrow-back"
+            size={DesignSystem.iconSizes.md}
+            color={theme.colors.textSecondary}
+          />
         </MotionPressable>
         <Text style={[styles.progressText, { color: theme.colors.textTertiary }]}>
           {t('onboarding_step_progress', { current: stepNumber[step], total: 3 })}
@@ -179,12 +196,19 @@ const OnboardingScreen: React.FC = () => {
 
   function renderName() {
     return (
-      <Reveal key="name" style={styles.step}>
+      <Reveal
+        key="name"
+        style={[styles.step, layout.isShortLandscape && styles.stepShortLandscape]}
+      >
         <View>
           {renderProgressHeader('name')}
           <View style={styles.questionBlock}>
             <View style={[styles.smallMark, { backgroundColor: theme.colors.chipBackground }]}>
-              <Ionicons name="person-outline" size={22} color={theme.colors.primary} />
+              <Ionicons
+                name="person-outline"
+                size={DesignSystem.iconSizes.md}
+                color={theme.colors.primary}
+              />
             </View>
             <Text style={[styles.questionTitle, { color: theme.colors.text }]}>
               {t('onboarding_name_question')}
@@ -227,14 +251,17 @@ const OnboardingScreen: React.FC = () => {
     const hasMismatch = isConfirmation && confirmPin.length === 6 && confirmPin !== pin;
 
     return (
-      <Reveal key={isConfirmation ? 'confirm' : 'pin'} style={styles.step}>
+      <Reveal
+        key={isConfirmation ? 'confirm' : 'pin'}
+        style={[styles.step, layout.isShortLandscape && styles.stepShortLandscape]}
+      >
         <View>
           {renderProgressHeader(isConfirmation ? 'confirm_pin' : 'pin')}
           <View style={styles.questionBlock}>
             <View style={[styles.smallMark, { backgroundColor: theme.colors.chipBackground }]}>
               <Ionicons
                 name={isConfirmation ? 'shield-checkmark-outline' : 'key-outline'}
-                size={22}
+                size={DesignSystem.iconSizes.md}
                 color={theme.colors.primary}
               />
             </View>
@@ -324,7 +351,7 @@ const OnboardingScreen: React.FC = () => {
             </Text>
             <Ionicons
               name={isConfirmation ? 'checkmark' : 'arrow-forward'}
-              size={17}
+              size={DesignSystem.iconSizes.sm}
               color={canProceed ? theme.colors.primary : theme.colors.textTertiary}
             />
           </>
@@ -342,7 +369,7 @@ const OnboardingScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.content, { width: contentWidth }]}>
+        <View style={styles.content}>
           {currentStep === 'welcome' && renderWelcome()}
           {currentStep === 'name' && renderName()}
           {currentStep === 'pin' && renderPinStep(false)}
@@ -372,108 +399,134 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     safeArea: { flex: 1 },
     scrollContent: { flexGrow: 1, alignItems: 'center' },
-    content: { flex: 1, paddingHorizontal: 20, paddingVertical: 20 },
+    content: {
+      flex: 1,
+      width: '100%',
+      maxWidth: DesignSystem.layout.maxFormWidth,
+      alignSelf: 'center',
+      paddingVertical: DesignSystem.spacing.xl,
+    },
     step: { flex: 1, minHeight: 620, justifyContent: 'space-between' },
-    welcomeBody: { flex: 1, justifyContent: 'center', paddingBottom: 28 },
-    lockMark: { alignItems: 'center', marginBottom: 30 },
+    stepShortLandscape: { minHeight: 0 },
+    welcomeBody: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingBottom: DesignSystem.spacing.xxl,
+    },
+    lockMark: { alignItems: 'center', marginBottom: DesignSystem.spacing.xxl },
     eyebrow: {
-      fontSize: 10,
+      ...DesignSystem.text('micro'),
       fontWeight: '700',
-      letterSpacing: 1.8,
       textAlign: 'center',
-      marginBottom: 12,
+      marginBottom: DesignSystem.spacing.m,
     },
     heroTitle: {
-      fontSize: 31,
-      lineHeight: 35,
-      fontWeight: '600',
-      letterSpacing: -0.7,
+      ...DesignSystem.text('display'),
       textAlign: 'center',
       maxWidth: 300,
       alignSelf: 'center',
     },
     heroDescription: {
-      fontSize: 15,
-      lineHeight: 22,
+      ...DesignSystem.text('body'),
       textAlign: 'center',
       maxWidth: 310,
       alignSelf: 'center',
-      marginTop: 14,
+      marginTop: DesignSystem.spacing.l,
     },
-    features: { marginTop: 34 },
+    features: { marginTop: DesignSystem.spacing.xxl },
     featureRow: {
-      minHeight: 46,
+      minHeight: DesignSystem.layout.touchTarget.minimum,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: DesignSystem.spacing.m,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.colors.divider,
     },
-    featureText: { fontSize: 13, lineHeight: 18, fontWeight: '500' },
+    featureText: { ...DesignSystem.text('labelSmall') },
     primaryButton: {
-      minHeight: 50,
+      minHeight: DesignSystem.layout.touchTarget.comfortable,
       borderWidth: 1,
-      borderRadius: 8,
+      borderRadius: DesignSystem.radii.small,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      paddingHorizontal: 18,
+      gap: DesignSystem.spacing.s,
+      paddingHorizontal: DesignSystem.spacing.l,
     },
-    primaryButtonText: { fontSize: 14, fontWeight: '600' },
-    footerHint: { fontSize: 11, lineHeight: 15, textAlign: 'center', marginTop: 12 },
+    primaryButtonText: { ...DesignSystem.text('button') },
+    footerHint: {
+      ...DesignSystem.text('micro'),
+      textAlign: 'center',
+      marginTop: DesignSystem.spacing.m,
+    },
     progressHeader: {
-      minHeight: 44,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    progressText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
-    questionBlock: { alignItems: 'center', marginTop: 54, marginBottom: 32 },
+    iconButton: { alignItems: 'center', justifyContent: 'center' },
+    progressText: { ...DesignSystem.text('micro') },
+    questionBlock: {
+      alignItems: 'center',
+      marginTop: DesignSystem.spacing.xxxl,
+      marginBottom: DesignSystem.spacing.xxl,
+    },
     smallMark: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: DesignSystem.layout.touchTarget.comfortable,
+      height: DesignSystem.layout.touchTarget.comfortable,
+      borderRadius: DesignSystem.radii.pill,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 18,
+      marginBottom: DesignSystem.spacing.l,
     },
     questionTitle: {
-      fontSize: 25,
-      lineHeight: 31,
-      fontWeight: '600',
-      letterSpacing: -0.35,
+      ...DesignSystem.text('headline'),
       textAlign: 'center',
     },
-    questionHint: { fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8 },
+    questionHint: {
+      ...DesignSystem.text('bodySmall'),
+      textAlign: 'center',
+      marginTop: DesignSystem.spacing.s,
+    },
     textInput: {
       width: '100%',
       minHeight: 52,
       borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      fontSize: 16,
+      borderRadius: DesignSystem.radii.small,
+      paddingHorizontal: DesignSystem.spacing.m,
+      ...DesignSystem.text('body'),
       textAlign: 'center',
     },
-    inputHint: { fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 10 },
+    inputHint: {
+      ...DesignSystem.text('micro'),
+      textAlign: 'center',
+      marginTop: DesignSystem.spacing.m,
+    },
     pinDots: {
       flexDirection: 'row',
       justifyContent: 'center',
-      gap: 12,
-      marginBottom: 38,
+      gap: DesignSystem.spacing.m,
+      marginBottom: DesignSystem.spacing.xxl,
     },
-    pinDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1 },
+    pinDot: {
+      width: 10,
+      height: 10,
+      borderRadius: DesignSystem.radii.pill,
+      borderWidth: 1,
+    },
     pinGuidance: {
-      minHeight: 44,
-      fontSize: 11,
-      lineHeight: 16,
+      minHeight: DesignSystem.layout.touchTarget.minimum,
+      ...DesignSystem.text('micro'),
       textAlign: 'center',
-      marginTop: 16,
-      paddingHorizontal: 16,
+      marginTop: DesignSystem.spacing.l,
+      paddingHorizontal: DesignSystem.spacing.l,
     },
-    processingBody: { alignItems: 'center', paddingVertical: 12 },
-    processingText: { fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: 'center' },
+    processingBody: { alignItems: 'center', paddingVertical: DesignSystem.spacing.m },
+    processingText: {
+      ...DesignSystem.text('caption'),
+      marginTop: DesignSystem.spacing.m,
+      textAlign: 'center',
+    },
   });
 }
 

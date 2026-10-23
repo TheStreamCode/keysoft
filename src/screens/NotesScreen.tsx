@@ -14,6 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable, Reveal } from '../components/ui/motion';
+import { DesignSystem } from '../constants/designSystem';
 import { useAlert } from '../contexts/AlertContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -121,23 +122,33 @@ const NotesScreen: React.FC = () => {
     [dateFormatter, isDarkMode, navigation, theme],
   );
 
-  const contentWidth = Math.min(layout.width - layout.horizontalPadding * 2, 680);
-
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.content, { width: contentWidth }]}>
-        <Reveal style={styles.header}>
+      <View style={styles.content}>
+        <Reveal
+          style={[
+            styles.header,
+            { minHeight: layout.isShortLandscape ? layout.minTouchTarget : layout.headerHeight },
+          ]}
+        >
           <Text style={[styles.title, { color: theme.colors.text }]}>{t('tab_notes')}</Text>
           <MotionPressable
             accessibilityLabel={t('new_note')}
             accessibilityRole="button"
             onPress={() => navigation.navigate('NoteDetail', { mode: 'create' })}
-            style={[styles.addButton, { borderColor: theme.colors.primary }]}
+            style={[
+              styles.addButton,
+              {
+                borderColor: theme.colors.primary,
+                width: layout.minTouchTarget,
+                height: layout.minTouchTarget,
+              },
+            ]}
           >
-            <Ionicons name="add" size={21} color={theme.colors.primary} />
+            <Ionicons name="add" size={DesignSystem.iconSizes.md} color={theme.colors.primary} />
           </MotionPressable>
         </Reveal>
 
@@ -151,7 +162,11 @@ const NotesScreen: React.FC = () => {
               },
             ]}
           >
-            <Ionicons name="search-outline" size={17} color={theme.colors.textTertiary} />
+            <Ionicons
+              name="search-outline"
+              size={DesignSystem.iconSizes.sm}
+              color={theme.colors.textTertiary}
+            />
             <TextInput
               accessibilityLabel={t('search_notes')}
               onChangeText={setSearchQuery}
@@ -164,9 +179,16 @@ const NotesScreen: React.FC = () => {
               <MotionPressable
                 accessibilityLabel={t('clear_search')}
                 onPress={() => setSearchQuery('')}
-                style={styles.clearButton}
+                style={[
+                  styles.clearButton,
+                  { width: layout.minTouchTarget, height: layout.minTouchTarget },
+                ]}
               >
-                <Ionicons name="close-circle" size={17} color={theme.colors.textTertiary} />
+                <Ionicons
+                  name="close-circle"
+                  size={DesignSystem.iconSizes.sm}
+                  color={theme.colors.textTertiary}
+                />
               </MotionPressable>
             ) : null}
           </View>
@@ -183,7 +205,11 @@ const NotesScreen: React.FC = () => {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <View style={[styles.emptyIcon, { backgroundColor: theme.colors.chipBackground }]}>
-                  <Ionicons name="document-text-outline" size={25} color={theme.colors.primary} />
+                  <Ionicons
+                    name="document-text-outline"
+                    size={DesignSystem.iconSizes.lg}
+                    color={theme.colors.primary}
+                  />
                 </View>
                 <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
                   {searchQuery ? t('no_notes_found') : t('no_notes_yet')}
@@ -218,78 +244,116 @@ const NotesScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, alignItems: 'center' },
+  safeArea: { flex: 1 },
   content: { flex: 1 },
   header: {
-    minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { fontSize: 23, lineHeight: 29, fontWeight: '600', letterSpacing: -0.35 },
+  title: {
+    ...DesignSystem.text('headline'),
+  },
   addButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.medium,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   search: {
-    minHeight: 42,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: DesignSystem.radii.medium,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 10,
-    marginBottom: 8,
+    paddingLeft: DesignSystem.spacing.m,
+    marginBottom: DesignSystem.spacing.s,
   },
-  searchInput: { flex: 1, minHeight: 40, paddingHorizontal: 8, paddingVertical: 8, fontSize: 13 },
-  clearButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingBottom: 20 },
+  searchInput: {
+    ...DesignSystem.text('bodySmall'),
+    flex: 1,
+    minHeight: DesignSystem.layout.touchTarget.comfortable,
+    paddingHorizontal: DesignSystem.spacing.s,
+    paddingVertical: DesignSystem.spacing.s,
+  },
+  clearButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: { paddingBottom: DesignSystem.spacing.xl },
   emptyListContent: { flexGrow: 1 },
   sectionLabel: {
-    fontSize: 9,
-    lineHeight: 13,
+    ...DesignSystem.text('micro'),
     fontWeight: '700',
-    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginTop: 9,
-    marginBottom: 2,
+    marginTop: DesignSystem.spacing.s,
+    marginBottom: DesignSystem.spacing.xxs,
   },
   noteRow: {
     minHeight: 82,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: DesignSystem.spacing.m,
   },
-  noteDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, marginRight: 10 },
+  noteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: DesignSystem.radii.pill,
+    marginTop: DesignSystem.spacing.s,
+    marginRight: DesignSystem.spacing.m,
+  },
   noteCopy: { flex: 1, minWidth: 0 },
-  noteTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  noteTitle: { maxWidth: '88%', fontSize: 14, lineHeight: 18, fontWeight: '600' },
-  notePreview: { fontSize: 11, lineHeight: 15, marginTop: 3 },
-  noteDate: { fontSize: 9, lineHeight: 13, marginTop: 3 },
+  noteTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DesignSystem.spacing.xs,
+  },
+  noteTitle: {
+    ...DesignSystem.text('label'),
+    fontWeight: '600',
+    maxWidth: '88%',
+  },
+  notePreview: {
+    ...DesignSystem.text('micro'),
+    fontWeight: '400',
+    marginTop: DesignSystem.spacing.xs,
+  },
+  noteDate: {
+    ...DesignSystem.text('micro'),
+    marginTop: DesignSystem.spacing.xs,
+  },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: DesignSystem.spacing.huge,
+  },
   emptyIcon: {
     width: 54,
     height: 54,
-    borderRadius: 27,
+    borderRadius: DesignSystem.radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: DesignSystem.spacing.l,
   },
-  emptyTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
+  emptyTitle: {
+    ...DesignSystem.text('subtitle'),
+    textAlign: 'center',
+  },
   emptyButton: {
-    minHeight: 42,
+    minHeight: DesignSystem.layout.touchTarget.minimum,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 18,
+    borderRadius: DesignSystem.radii.small,
+    paddingHorizontal: DesignSystem.spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: DesignSystem.spacing.l,
   },
-  emptyButtonText: { fontSize: 12, fontWeight: '600' },
+  emptyButtonText: {
+    ...DesignSystem.text('labelSmall'),
+    fontWeight: '600',
+  },
 });
 
 export default NotesScreen;

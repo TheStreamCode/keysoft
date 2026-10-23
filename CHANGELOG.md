@@ -4,6 +4,18 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.3.2] - 2026-10-23
+
+### Release
+
+- Prepared Keysoft 3.3.2 with native runtime 3.3.2 and Android production build target 131.
+  EAS remote versioning remains authoritative: the production profile auto-increments the
+  remote Android version from 130 to 131. Google Play submission remains a separate manual
+  step.
+- Aligns `expo-notifications` with the Expo SDK 57 patch set (`57.0.24`) so Expo Doctor
+  passes, and uses the portable `bun x` invoker in release scripts instead of a `bunx`
+  shim. Jest keeps its cache and Expo CLI temp files inside the project `tmp/` directory.
+
 ### Security
 
 - Made transparent KDF upgrades and master-password changes crash-safe. The vault is
@@ -20,6 +32,57 @@ All notable project changes are documented here.
   or autosave plus a manual save) can no longer overwrite each other; a queued mutation
   always rebuilds from the committed cache and re-encryptions run before any concurrent
   write on the same collection.
+
+### Fixed
+
+- Production builds no longer misdetect themselves as Expo Go. `Constants.expoGoConfig`
+  is truthy in standalone builds because expo-constants resolves it to the embedded update
+  manifest, so the app forced the pure-JS PBKDF2 fallback (about 6–7 seconds per PIN
+  unlock on a current phone), skipped the native Argon2id KDF, and kept local notifications
+  in history-only mode. Environment detection now relies on `executionEnvironment` and
+  `appOwnership`. New vaults use Argon2id again, and existing PBKDF2 vaults are
+  transparently upgraded on the next PIN login (the first unlock after the update still
+  derives the old PBKDF2 key).
+- Backup export and import now show a blocking progress dialog while the password-derived
+  key is calculated, the file is written or read, and the decrypted payload is imported.
+  The screen no longer appears frozen for several seconds with no feedback.
+
+### UI/UX
+
+- Reworked the mobile design system ("Nocturne v2") around a single source of truth:
+  responsive window classes (compact/medium/expanded/large) in `constants/layout.ts`, a
+  4pt spacing grid, an expanded type scale with `DesignSystem.text()`, modern radii and
+  elevation tokens, semantic contrast-checked status colors, an `onPrimary` token and
+  refreshed light/dark surfaces. Documented in `docs/design-system.md`.
+- `ScreenWrapper` now owns the horizontal gutter and centered content width for every
+  screen, so layouts stay consistent from compact phones to tablets and split view.
+  Home, vault, notes, settings, generator, health, legal and onboarding screens were
+  migrated off ad-hoc `Math.min(width - padding, N)` widths and literal sizes.
+- Responsive behavior improved for all window classes: two- and three-column vault grids,
+  short-landscape spacing, split-view/foldable widths, tablet dialog/bottom-sheet widths
+  (420–680), adaptive PIN keypad sizing, and a 44/48pt touch-target baseline. Home/search/
+  notification/dialog/sheet controls, list rows and password cards now use the shared
+  tokens; the notification header action and sheet close controls reach 48pt.
+- Typography and contrast fixes: readable minimum sizes for labels and metadata, WCAG AA
+  contrast for secondary/tertiary text and status colors in both themes, and
+  `onPrimary` text on primary-filled buttons (the previous white-on-light-blue pair
+  failed contrast in dark mode).
+- Added design-system regression tests for token scales, contrast ratios, window-class
+  resolution and legacy helper compatibility.
+- UI review follow-up from browser testing at compact, split-view and tablet widths:
+  dialog headers now stack the icon above a wrapped, centered title/description with a
+  48pt close pinned to the corner (all alerts, confirmations and export/import loaders);
+  Settings row separators use the `divider` token instead of React Native's default black
+  border (same audit applied to the other screens); the decorative vault-health progress
+  bar was removed because it showed a fixed percentage with no underlying analysis; vault
+  cards now fill their 2/3-column grid slot; text/form screens cap at the 720pt readable
+  width on tablets; the unlock screen groups identity and keypad with even spacing; and
+  the generator uses the shared switch wrapper so the on-state thumb matches the theme on
+  web too.
+- Development-session fixes: the web target no longer attempts to load the native KDF
+  (no misleading Argon2 console error), the toast uses `style.pointerEvents` instead of the
+  deprecated prop, and Jest keeps its cache under `tmp/jest-cache` so tests still run
+  while Metro is open and in shells without user-temp write access.
 
 ## [3.3.1] - 2026-08-09
 
