@@ -1,12 +1,6 @@
-# Security-sensitive application and release surfaces require maintainer review.
-* @TheStreamCode
-
-/src/services/auth/ @TheStreamCode
-/src/services/crypto/ @TheStreamCode
-/src/services/storage/ @TheStreamCode
-/src/services/import-export/ @TheStreamCode
+# Ownership of first-party sources and documentation.
+# Dependency manifests, lockfiles and GitHub workflows are intentionally unowned so
+# Dependabot pull requests do not request a maintainer review on every update.
+/docs/ @TheStreamCode
 /plugins/ @TheStreamCode
-/app.config.js @TheStreamCode
-/eas.json @TheStreamCode
-/.eas/workflows/ @TheStreamCode
-/.github/workflows/ @TheStreamCode
+/src/ @TheStreamCode
