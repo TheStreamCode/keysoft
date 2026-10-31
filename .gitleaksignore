@@ -1,0 +1,21 @@
+# Synthetic KDF test fixtures, not secrets. Both lines hold the same hard-coded
+# mock derived key: the hex nibbles `aabbccddeeff00112233445566778899`
+# repeated twice (64 chars). The value is a visible pattern, is never sent
+# anywhere, and cannot authenticate anything. It appears in two `describe`
+# blocks of the AuthService suite ("KDF migration on login" and "Crash-safe
+# KDF transaction").
+#
+# A fingerprint is `<commit>:<path>:<rule>:<line>`. The commit-pinned entries
+# below silence `gitleaks detect` over history: 751425d introduced the first
+# copy (then at line 124, now at 164), while 1b09306 and its squash-merge
+# eae86c9 added the second copy at line 603. History is never rewritten, so
+# these entries do not go stale.
+#
+# The bare `path:rule:line` entries silence working-tree scans
+# (`gitleaks detect --no-git`, `protect`), whose findings carry no commit.
+# They spell the current line numbers and must follow the fixture if it moves.
+1b09306da2238b33a5a764e959bd06c9d718d041:src/__tests__/services/AuthService.test.ts:generic-api-key:603
+751425d5fde72e72dbce9043377b3f7fc765a08e:src/__tests__/services/AuthService.test.ts:generic-api-key:124
+eae86c919084807fda802a0b482d5d2829db1d46:src/__tests__/services/AuthService.test.ts:generic-api-key:603
+src/__tests__/services/AuthService.test.ts:generic-api-key:164
+src/__tests__/services/AuthService.test.ts:generic-api-key:603
