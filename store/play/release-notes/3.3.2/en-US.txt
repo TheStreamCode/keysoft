@@ -1,0 +1,2 @@
+This release unlocks the app faster with native protection and makes backup and restore
+clearer. We also refreshed the app's look and improved accessibility.

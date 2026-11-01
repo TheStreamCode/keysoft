@@ -180,13 +180,14 @@ bun run build:android:preview
 bun run build:android:production
 ```
 
-The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` can build the Android production app-bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. iOS remains available only through the explicitly approved cloud-simulator workflow; App Store publication is outside the project workflow.
+The repository is also linked to EAS Build, and the EAS Workflow `.eas/workflows/build-android-production.yml` builds the Android production app bundle from GitHub. It is triggered only by a version tag push (`v*`) or manual dispatch to limit build-credit usage; it does not run on every push. The same workflow submits the build to Google Play as a draft and then runs `scripts/play-release-notes.mjs` to add the Play Store release notes and promote it. iOS remains available only through the explicitly approved cloud-simulator workflow; App Store publication is outside the project workflow.
 
 When publishing an approved release, push and verify `main` first, wait for the GitHub
-`Validate` and CodeQL checks, then create the version tag on that exact commit. The tag push
-already starts the EAS production workflow; do not also run `bun run
-build:android:production` unless the tag-triggered workflow failed to start and a deliberate
-replacement build is approved.
+`Validate` and CodeQL checks, add the short Play Store notes under
+`store/play/release-notes/<version>/`, then create the version tag on that exact commit. The tag
+push starts the EAS production workflow, build, draft submission and notes promotion; do not
+also run `bun run build:android:production` unless the tag-triggered workflow failed to start
+and a deliberate replacement build is approved.
 
 Expo Go cannot load custom native modules. Keysoft therefore uses the PBKDF2 KDF fallback in Expo Go and keeps Argon2 for EAS/native builds where `react-native-argon2` is available.
 

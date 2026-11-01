@@ -11,6 +11,13 @@ All notable project changes are documented here.
   React test renderer versions. `bun run verify` passes with 254 tests and Expo Doctor 20/20.
 - Removes the non-existent `missing_rules.txt` from `buildArtifactPaths` so EAS uploads
   `mapping.txt` for release crash deobfuscation.
+- Rebuilt Keysoft 3.3.2 from `main` HEAD `8c893ea` as versionCode 132 with `targetSdkVersion`
+  36 and submitted it to the Google Play production track.
+- Automates Google Play release submission from the version-tag EAS workflow: the build is
+  uploaded as a draft, then `scripts/play-release-notes.mjs` adds the Play Store release notes
+  and promotes it to a completed production release. Play Store notes live under
+  `store/play/release-notes/<version>/` and are short, user-facing and separate from this
+  technical changelog.
 
 ## [3.3.2] - 2026-10-23
 

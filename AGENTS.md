@@ -16,8 +16,9 @@
 - Web: `bun run web`
 - Preview cloud build: `bun run build:android:preview`
 - Production cloud build: `bun run build:android:production`
-- Production submit: `bun run submit:android:production` (Google Play submission is currently performed manually)
-- Build from GitHub: EAS Workflow `.eas/workflows/build-android-production.yml` (Android production), triggered on a version tag push (`v*`) or manual dispatch only
+- Production submit: `bun run submit:android:production` (manual fallback; the tag workflow submits a draft automatically)
+- Build from GitHub: EAS Workflow `.eas/workflows/build-android-production.yml` (Android production build, Google Play draft submission and release-notes promotion), triggered on a version tag push (`v*`) or manual dispatch only
+- Play Store release notes: `store/play/release-notes/<version>/it-IT.txt` and `en-US.txt`, short and user-facing, at most 500 characters each. These are separate from the technical `CHANGELOG.md`; a release without valid notes stays a Play Console draft.
 - Android bundle export check: `bunx expo export --platform android --output-dir C:\tmp\keysoft-android-export`
 - Lint: `bun run lint`
 - Typecheck: `bun run typecheck`
