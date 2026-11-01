@@ -8,7 +8,7 @@ All notable project changes are documented here.
 
 - Upgrades to Expo SDK 58 and React Native 0.88.1, including AGP 9, the strict TypeScript
   API, Expo FileSystem's `File` API for the bundled license asset, and the matching Jest and
-  React test renderer versions. `bun run verify` passes with 253 tests and Expo Doctor 20/20.
+  React test renderer versions. `bun run verify` passes with 254 tests and Expo Doctor 20/20.
 - Removes the non-existent `missing_rules.txt` from `buildArtifactPaths` so EAS uploads
   `mapping.txt` for release crash deobfuscation.
 
