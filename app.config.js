@@ -55,7 +55,7 @@ module.exports = {
       backgroundColor: '#FFFFFF',
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 134,
+    versionCode: 135,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',

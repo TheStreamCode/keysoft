@@ -183,12 +183,12 @@ export const en = {
   sponsor_github: 'Sponsor on GitHub',
   sponsor_github_description: 'Support my work on this project',
   account: 'Account',
-  logout: 'Logout',
-  logout_description: 'Disconnect your account from the app',
-  logout_confirmation: 'Confirm logout',
+  logout: 'Log out',
+  logout_description: 'Sign out of your account in the app',
+  logout_confirmation: 'Confirm sign-out',
   logout_confirmation_message:
-    'Are you sure you want to logout? You will need to enter your PIN again to access.',
-  reset_app: 'Reset App',
+    'Are you sure you want to log out? You will need to enter your PIN again to access the app.',
+  reset_app: 'Reset app',
   reset_app_description: 'Delete all data and reset the app',
   reset_app_warning:
     'This operation will delete ALL app data (passwords, notes, settings). This action is irreversible.',
@@ -265,7 +265,7 @@ export const en = {
   notification_login_success: 'Successful login notifications',
   notification_login_failure: 'Failed login attempt alerts',
   notification_backup_reminder: 'Password export reminder',
-  notification_backup_success: 'Import completion confirmations',
+  notification_backup_success: 'Import completion notifications',
   notification_auto_lock_warning_title: 'Auto-lock',
   notification_auto_lock_warning_body: 'The app will be locked soon due to inactivity.',
   notification_clipboard_clear_warning_title: 'Clipboard cleared',
@@ -290,7 +290,7 @@ export const en = {
   notification_backup_reminder_body:
     'You have not exported your passwords for {daysAgo} days. Consider exporting them for safety.',
   notification_backup_success_title: 'Import completed',
-  notification_backup_success_body: 'Your password import completed successfully.',
+  notification_backup_success_body: 'Your passwords were imported successfully.',
   notification_login_failure_title: 'Failed login attempt',
   notification_login_failure_body: 'There was a failed attempt to access your app.',
   notification_login_success_title: 'Login successful',
@@ -598,7 +598,7 @@ export const en = {
   privacy_section6_title: 'Data Sharing and Transfer',
   privacy_section6_caps: 'VAULT SECRETS ARE NOT TRANSMITTED BY KEYSOFT',
   privacy_section6_text:
-    '. Passwords, credentials, and notes are stored and processed locally. Network connectivity is used exclusively by Expo Updates to check for and download compatible updates.',
+    'Passwords, credentials, and notes are stored and processed locally. Network connectivity is used exclusively by Expo Updates to check for and download compatible updates.',
   privacy_section6_text2:
     'For this purpose, Expo Updates may receive the device operating system/platform, randomized tokens used to determine update downloads, app/build and runtime versions, and ordinary technical request or service data such as IP address, request headers, errors, performance metrics, and update interactions. It does not receive vault secrets.',
   privacy_section7_title: 'Data Retention',
@@ -623,9 +623,9 @@ export const en = {
   privacy_contact_text: 'For privacy matters, contact: ',
   privacy_section9_title: 'Data Deletion',
   privacy_section9_text: 'You can delete your data in one of the following ways:',
-  privacy_section9_method1_title: 'Method 1: App Reset (Recommended)',
+  privacy_section9_method1_title: 'Method 1: Reset app (Recommended)',
   privacy_section9_method1_text:
-    'Open Settings → Account → Reset App: this deletes passwords, notes, categories, preferences, and the keys held in the device secure storage.',
+    'Open Settings → Account → Reset app: this deletes passwords, notes, categories, preferences, and the keys held in the device secure storage.',
   privacy_section9_method1_warning:
     '⚠️ Note: this operation is irreversible. Make sure you have exported any important passwords before proceeding.',
   privacy_section9_method2_title: 'Method 2: Uninstalling the App',
@@ -716,7 +716,7 @@ export const en = {
   privacy_section17_text2: 'In Italy, the supervisory authority is:',
   privacy_authority_name: 'Garante per la Protezione dei Dati Personali',
   privacy_authority_address: 'Piazza Venezia, 11 - 00187 Roma',
-  privacy_section18_title: 'Changes to Privacy Policy',
+  privacy_section18_title: 'Changes to the Privacy Policy',
   privacy_section18_text:
     'We reserve the right to modify this Privacy Policy. Substantial changes will be communicated via application update with a specific notification. Continued use of the application after changes constitutes acceptance of the updated Privacy Policy.',
   privacy_section18_text2:
@@ -730,13 +730,13 @@ export const en = {
   website_label: 'Website: ',
 
   // Notes
-  personal_notes: 'Personal Notes',
+  personal_notes: 'Personal notes',
   search_notes: 'Search notes...',
   no_notes_found: 'No notes found',
   no_notes_yet: 'No notes yet',
   create_first_note: 'Create your first note',
-  new_note: 'New Note',
-  edit_note: 'Edit Note',
+  new_note: 'New note',
+  edit_note: 'Edit note',
   note: 'Note',
   note_title: 'Note title',
   note_content: 'Note content',
