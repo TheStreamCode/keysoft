@@ -16,11 +16,20 @@ jobs:
     params:
       platform: android
       profile: production
-  # To auto-upload to Google Play after the build, add a submit job once the
-  # Play service-account JSON is configured in eas.json (submit.production):
-  # submit_android:
-  #   needs: [build_android]
-  #   type: submit
-  #   params:
-  #     platform: android
-  #     profile: production
+
+  submit_android:
+    name: Submit to Google Play
+    needs: [build_android]
+    type: submit
+    environment: production
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+    hooks:
+      after_submit:
+        - name: Publish Play Store release notes
+          run: |
+            set -euo pipefail
+            printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_SERVICE_ACCOUNT_KEY_PATH"
+            chmod 600 "$GOOGLE_SERVICE_ACCOUNT_KEY_PATH"
+            node scripts/play-release-notes.mjs
