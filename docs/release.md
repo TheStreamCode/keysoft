@@ -2,11 +2,12 @@
 
 ## Release Readiness Checklist
 
-Current source release and Android build target: Keysoft 3.3.2, versionCode 131. Google Play
-currently distributes Keysoft 3.3.1, versionCode 130, until the new app bundle completes
-review and is submitted manually. EAS remote versioning remains authoritative for Android
-builds. iOS remains a cloud-simulator compatibility target and is not an App Store release
-target.
+Current source release: Keysoft 3.3.2. The local manifest mirrors versionCode 131; the Android
+16 compliance rebuild produced EAS remote versionCode 132 from `main` HEAD and is in Play
+review. Google Play serves 3.3.2/131 until 3.3.2/132 is approved. EAS remote versioning remains
+authoritative for Android builds, and the same workflow now submits the next release to Google
+Play automatically. iOS remains a cloud-simulator compatibility target and is not an App Store
+release target.
 
 Before preparing a release:
 
@@ -42,11 +43,12 @@ Application version data is maintained in:
 - Android native configuration where applicable
 
 For the 3.3.2 source release, `app.config.js` uses `version: "3.3.2"`,
-`android.versionCode: 131`, and an iOS simulator baseline of `ios.buildNumber: "1"`. Before
-the build, the EAS remote Android value is 130; the production profile auto-increments it to
-131. The local value mirrors the target for manifest visibility but does not control the EAS
-counter. Because EAS Update uses the `appVersion` runtime policy, this release uses native
-runtime 3.3.2. Google Play remains on 3.3.1/130 until manual submission and publication.
+`android.versionCode: 131`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
+value mirrors the target for manifest visibility but does not control the EAS counter. Because
+EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.2. The
+Android 16 compliance rebuild produced remote versionCode 132 from `main` HEAD; Google Play
+serves 3.3.2/131 until 3.3.2/132 is approved. The production workflow increments the remote
+Android value on every build and submits the matching app bundle to Google Play.
 
 Read the current remote value with
 `bunx eas-cli build:version:get --platform android --profile production --non-interactive`
@@ -102,11 +104,35 @@ The artifact can then be tested in Appetize. App Store signing, submission metad
 
 ### Google Play Submission
 
-Google Play submission is currently performed manually (upload the app-bundle in the Play Console). To automate it later, configure a Google service-account key in `eas.json` (`submit.production`) and run:
+The production EAS workflow is the normal release path. A matching version tag builds the
+Android app bundle and submits it to Google Play as a **draft** with EAS Submit. The
+`after_submit` hook then runs `scripts/play-release-notes.mjs`, which adds the Play Store
+release notes and promotes the draft to a completed production release. A release without
+valid notes stays in draft and the workflow fails.
+
+The workflow needs these EAS project environment variables in `production`:
+
+- `GOOGLE_SERVICE_ACCOUNT_JSON`: the Google service account key, stored as a secret.
+- `GOOGLE_SERVICE_ACCOUNT_KEY_PATH`: a temporary path where the workflow writes the key.
+
+EAS Submit also needs the same service account assigned under the Android application
+identifier in the project credentials.
+
+Play Store release notes are written for a non-technical audience and live in
+`store/play/release-notes/<version>/` as `it-IT.txt` and `en-US.txt`, one short paragraph per
+language, at most 500 characters each. Keep `CHANGELOG.md` technical for GitHub readers; the
+Play Store text is separate. See
+[`store/play/release-notes/README.md`](../store/play/release-notes/README.md) for the format
+and examples.
+
+The manual fallback is:
 
 ```bash
 bun run submit:android:production
 ```
+
+It uses the same draft submit profile and still requires the matching release notes before the
+release can be promoted. Do not run it while the tag-triggered workflow is in progress.
 
 The production EAS workflow normally runs for every matching version tag. When
 backfilling a GitHub tag for an artifact that is already built and published,

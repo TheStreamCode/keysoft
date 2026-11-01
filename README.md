@@ -130,7 +130,8 @@ bun run deps:audit
 ```
 
 `bun run verify` runs formatting, type checking, linting, tests with coverage and
-`expo-doctor`. Release artifacts are produced through EAS; build, submission, tag and release
+`expo-doctor`. Release artifacts are produced through EAS; a version tag builds, submits to
+Google Play and publishes the release notes automatically. Build, submission, tag and release
 operations are documented in the [development guide](docs/development.md) and the
 [release guide](docs/release.md). Architecture notes live in [docs/architecture.md](docs/architecture.md).
 

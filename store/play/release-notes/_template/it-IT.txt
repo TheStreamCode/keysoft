@@ -1,0 +1,2 @@
+Questa versione rende più semplice trovare e organizzare le password. Abbiamo anche
+migliorato la stabilità e corretto alcuni problemi segnalati.
