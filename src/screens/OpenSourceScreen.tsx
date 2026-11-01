@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { DesignSystem } from '../constants/designSystem';
@@ -51,7 +51,7 @@ const OpenSourceScreen: React.FC<OpenSourceScreenProps> = ({ navigation }) => {
           throw new Error('Bundled license asset has no local URI');
         }
 
-        const text = await FileSystem.readAsStringAsync(LICENSE_ASSET.localUri);
+        const text = await new File(LICENSE_ASSET.localUri).text();
         if (isMounted) {
           setLicenseText(text);
         }

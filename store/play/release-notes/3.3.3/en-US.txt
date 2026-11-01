@@ -1,0 +1,2 @@
+This release improves compatibility with the latest Android versions and makes the app more
+stable and secure.

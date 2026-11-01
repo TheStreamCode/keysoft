@@ -1,5 +1,5 @@
 /**
- * Preload setup for Jest bootstrap compatibility with Expo SDK 57.
+ * Preload setup for Jest bootstrap compatibility with Expo SDK 58.
  *
  * This file runs BEFORE jest-expo's setup.js to install the Expo global polyfill
  * and provide a no-op ExpoModulesCoreJSLogger module. This prevents async warnings

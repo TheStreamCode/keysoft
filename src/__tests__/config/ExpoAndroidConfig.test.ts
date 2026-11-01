@@ -23,7 +23,7 @@ describe('Expo Android native configuration', () => {
       | undefined;
 
     expect(buildProperties?.[1].android).toEqual({
-      compileSdkVersion: 36,
+      compileSdkVersion: 37,
       targetSdkVersion: 36,
       enableMinifyInReleaseBuilds: true,
       enableShrinkResourcesInReleaseBuilds: true,

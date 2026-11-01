@@ -97,8 +97,8 @@ export const it = {
   delete_success_message: 'Password eliminata con successo',
 
   // PasswordDetailScreen
-  edit_password: 'Modifica Password',
-  new_password: 'Nuova Password',
+  edit_password: 'Modifica password',
+  new_password: 'Nuova password',
   edit_item: 'Modifica elemento',
   save_changes: 'Salva modifiche',
   item_dates: 'Creato {created} · Modificato {updated}',
@@ -140,7 +140,7 @@ export const it = {
   no_category: 'Nessuna categoria',
 
   // PasswordGeneratorScreen
-  password_generator: 'Generatore Password',
+  password_generator: 'Generatore di password',
   regenerate: 'Rigenera',
   password_strength_entropy: '{strength} · ~{bits} bit di entropia',
   password_length: 'Lunghezza',
@@ -171,18 +171,18 @@ export const it = {
   screenshot_protection_description: "Impedisci la cattura di screenshot dell'app",
   auto_lock: 'Blocco automatico',
   auto_lock_description: "Blocca l'app dopo inattività",
-  clipboard_timeout: 'Timeout clipboard',
-  clipboard_timeout_description: 'Cancella la clipboard automaticamente',
+  clipboard_timeout: 'Timeout appunti',
+  clipboard_timeout_description: 'Svuota gli appunti automaticamente',
   language: 'Lingua',
   privacy_policy_data_collection:
     "Gli indirizzi email inseriti come parte di una credenziale restano nel vault locale e non sono accessibili allo sviluppatore. I backup sono creati solo su iniziativa dell'utente.",
-  privacy_section3_3_title: 'Sicurezza Dati e Email',
+  privacy_section3_3_title: 'Sicurezza dei dati e delle email',
   privacy_policy_data_security:
     "I segreti del vault sono crittografati in archivio. Un backup esportato è crittografato quando l'utente sceglie di proteggerlo con una password; Keysoft non invia i backup a server esterni.",
   notification_types: 'Tipi di notifiche',
   notification_types_description: 'Gestisci quali notifiche vuoi ricevere',
   data: 'Dati',
-  encrypted: 'Criptato',
+  encrypted: 'Crittografato',
   export_data: 'Esporta dati',
   export_data_description: 'Esporta password e note in un file',
   import_data: 'Importa dati',
@@ -191,12 +191,12 @@ export const it = {
   sponsor_github: 'Sponsorizza su GitHub',
   sponsor_github_description: 'Supporta il mio lavoro su questo progetto',
   account: 'Account',
-  logout: 'Logout',
-  logout_description: "Disconnetti il tuo account dall'app",
-  logout_confirmation: 'Conferma logout',
+  logout: 'Esci',
+  logout_description: "Esci dall'account nell'app",
+  logout_confirmation: 'Conferma uscita',
   logout_confirmation_message:
-    'Sei sicuro di voler effettuare il logout? Dovrai inserire nuovamente il PIN per accedere.',
-  reset_app: 'Reset App',
+    'Sei sicuro di voler uscire? Dovrai inserire nuovamente il PIN per accedere.',
+  reset_app: 'Reimposta app',
   reset_app_description: "Cancella tutti i dati e ripristina l'app",
   reset_app_warning:
     "Questa operazione cancellerà TUTTI i dati dell'app (password, note, impostazioni). Questa azione è irreversibile.",
@@ -204,9 +204,9 @@ export const it = {
   reset_placeholder: 'reset',
   reset_error: 'Errore',
   reset_error_message: 'Devi scrivere esattamente "reset" per confermare.',
-  reset_success: 'Reset completato',
+  reset_success: 'Ripristino completato',
   reset_success_message: "Tutti i dati dell'app sono stati cancellati. Verrai disconnesso.",
-  reset_failed_message: "Si è verificato un errore durante il reset dell'app.",
+  reset_failed_message: "Si è verificato un errore durante il ripristino dell'app.",
   information: 'Informazioni',
   version: 'Versione',
   preferences_load_error: 'Impossibile caricare le preferenze',
@@ -236,10 +236,10 @@ export const it = {
   photo_capture_error: "Si è verificato un errore durante l'acquisizione della foto.",
   tap_to_change_image: 'Tocca per cambiare immagine',
   select_auto_lock_time: 'Seleziona tempo di blocco',
-  select_clipboard_timeout: 'Seleziona timeout clipboard',
+  select_clipboard_timeout: 'Seleziona timeout appunti',
   select_theme: 'Seleziona tema',
   select_language: 'Seleziona lingua',
-  decrypt: 'Decripta',
+  decrypt: 'Decifra',
   user: 'Utente',
   change_pin_title: 'Modifica PIN',
   pin_requirement: 'Il PIN deve essere di 6 cifre',
@@ -275,11 +275,11 @@ export const it = {
   notification_login_success: 'Notifiche accesso riuscito',
   notification_login_failure: 'Avvisi tentativi di accesso falliti',
   notification_backup_reminder: 'Promemoria esportazione password',
-  notification_backup_success: 'Conferme importazione completata',
+  notification_backup_success: 'Conferme di importazione completata',
   notification_auto_lock_warning_title: 'Blocco automatico',
   notification_auto_lock_warning_body: "L'applicazione verrà bloccata a breve per inattività.",
-  notification_clipboard_clear_warning_title: 'Clipboard pulita',
-  notification_clipboard_clear_warning_body: 'La clipboard è stata pulita per sicurezza.',
+  notification_clipboard_clear_warning_title: 'Appunti svuotati',
+  notification_clipboard_clear_warning_body: 'Gli appunti sono stati svuotati per sicurezza.',
   notification_weak_password_warning_title: 'Password debole rilevata',
   notification_weak_password_warning_body:
     'Una delle tue password è considerata debole. Considera di aggiornarla.',
@@ -307,11 +307,11 @@ export const it = {
   notification_login_success_title: 'Accesso riuscito',
   notification_login_success_body: "Hai effettuato l'accesso all'app con successo.",
   enter_encryption_password: 'Inserisci la password di cifratura',
-  import_encrypted: 'File criptato',
+  import_encrypted: 'File crittografato',
   enter_decryption_password:
-    'Il file selezionato è criptato. Inserisci la password per decifrarlo:',
-  decryption_password_placeholder: 'Password di decrittazione',
-  invalid_decryption_password: 'Password di decrittazione non valida o file danneggiato.',
+    'Il file selezionato è crittografato. Inserisci la password per decifrarlo:',
+  decryption_password_placeholder: 'Password di decifratura',
+  invalid_decryption_password: 'Password di decifratura non valida o file danneggiato.',
   theme_light: 'Tema chiaro',
   theme_dark: 'Tema scuro',
   theme_auto: 'Sistema',
@@ -322,7 +322,7 @@ export const it = {
   theme_update_error: 'Impossibile aggiornare il tema',
   export_passwords_title: 'Esporta password',
   export_passwords_message_encrypted_only:
-    'Le password verranno esportate in un file criptato (AES-256) per garantire la massima sicurezza e privacy. Sarà necessaria una password per decriptarle.',
+    'Le password verranno esportate in un file crittografato (AES-256) per garantire la massima sicurezza e privacy. Sarà necessaria una password per decriptarle.',
   export_data_title: 'Esporta dati',
   export: 'Esporta',
   import_data_title: 'Importa dati',
@@ -353,7 +353,7 @@ export const it = {
   file_ready: 'File pronto',
   file_ready_message: 'Il file è stato creato con successo. Vuoi condividerlo ora?',
   file_ready_encrypted_message:
-    'Il file è stato creato con successo in formato criptato (.ksx). Vuoi condividerlo ora?',
+    'Il file è stato creato con successo in formato crittografato (.ksx). Vuoi condividerlo ora?',
   share: 'Condividi',
   cancel: 'Annulla',
   close: 'Chiudi',
@@ -367,10 +367,10 @@ export const it = {
   info: 'Informazioni',
   never: 'Mai',
   support: 'Supporto',
-  privacy_policy: 'Privacy Policy',
+  privacy_policy: 'Informativa sulla privacy',
   privacy_policy_description: 'Informazioni sulla gestione dei tuoi dati',
   open_source: 'Open source e note legali',
-  open_source_description: 'Licenza Apache 2.0, codice sorgente e policy sui marchi',
+  open_source_description: 'Licenza Apache 2.0, codice sorgente e informativa sui marchi',
   open_source_title: 'Open source e note legali',
   open_source_license_notice: 'Keysoft è concesso in licenza Apache-2.0.',
   open_source_no_warranty:
@@ -379,10 +379,10 @@ export const it = {
   open_source_source_description:
     'Il repository sorgente ufficiale di Keysoft è disponibile al seguente indirizzo.',
   open_source_source_link: 'Apri il repository sorgente ufficiale di Keysoft',
-  open_source_trademarks_title: 'Policy sui marchi',
+  open_source_trademarks_title: 'Informativa sui marchi',
   open_source_trademarks_description:
     'La policy sui marchi riguarda esclusivamente l’identità del brand e non condiziona, limita o aggiunge requisiti ai diritti di copia, modifica o ridistribuzione Apache-2.0.',
-  open_source_trademarks_link: 'Visualizza la policy sui marchi di Keysoft',
+  open_source_trademarks_link: "Visualizza l'informativa sui marchi di Keysoft",
   open_source_license_title: 'Licenza Apache, versione 2.0',
   open_source_license_loading: 'Caricamento del testo Apache 2.0 incluso…',
   open_source_license_load_error: 'Non è stato possibile caricare il testo Apache 2.0 incluso.',
@@ -567,7 +567,7 @@ export const it = {
 
   // Privacy Policy
   back: 'Indietro',
-  privacy_title: 'Privacy Policy - Keysoft',
+  privacy_title: 'Informativa sulla privacy - Keysoft',
   privacy_last_updated: 'Ultimo aggiornamento: 25 luglio 2026',
   privacy_section1_title: 'Titolare del Trattamento',
   privacy_section1_text: 'Il Titolare del trattamento dei dati personali è:',
@@ -609,7 +609,7 @@ export const it = {
   privacy_section6_title: 'Condivisione e Trasferimento dei Dati',
   privacy_section6_caps: 'I SEGRETI DEL VAULT NON VENGONO TRASMESSI DA KEYSOFT',
   privacy_section6_text:
-    '. Password, credenziali e note sono memorizzate ed elaborate localmente. La connettività di rete è usata esclusivamente da Expo Updates per verificare e scaricare aggiornamenti compatibili.',
+    'Password, credenziali e note sono memorizzate ed elaborate localmente. La connettività di rete è usata esclusivamente da Expo Updates per verificare e scaricare aggiornamenti compatibili.',
   privacy_section6_text2:
     "Per questo scopo Expo Updates può ricevere sistema operativo/piattaforma, token casuali per determinare il download degli aggiornamenti, versione dell'app/build e del runtime e normali dati tecnici della richiesta o del servizio, come indirizzo IP, intestazioni, errori, metriche di prestazione e interazioni con gli aggiornamenti. Non riceve i segreti del vault.",
   privacy_section7_title: 'Conservazione dei Dati',
@@ -617,7 +617,7 @@ export const it = {
     "I dati personali sono conservati sul dispositivo dell'utente fino a quando:",
   privacy_section7_bullet1: "• L'utente disinstalla l'applicazione",
   privacy_section7_bullet2: "• L'utente elimina manualmente i dati dall'applicazione",
-  privacy_section7_bullet3: "• L'utente resetta i dati del dispositivo",
+  privacy_section7_bullet3: "• L'utente cancella i dati del dispositivo",
   privacy_section7_text2:
     "Non esistono backup automatici su server esterni. La responsabilità del backup dei dati spetta esclusivamente all'utente.",
   privacy_section8_title: "Diritti dell'Interessato",
@@ -628,7 +628,7 @@ export const it = {
   privacy_rights_rectification_desc: "modificare i dati direttamente nell'applicazione",
   privacy_rights_erasure: 'Cancellazione',
   privacy_rights_erasure_desc:
-    "eliminare i dati disinstallando l'app o usando la funzione di reset",
+    "eliminare i dati disinstallando l'app o usando la funzione di ripristino",
   privacy_rights_portability: 'Portabilità',
   privacy_rights_portability_desc: "esportare i dati tramite le funzioni di esportazione dell'app",
   privacy_rights_objection: 'Opposizione',
@@ -636,12 +636,12 @@ export const it = {
   privacy_contact_text: 'Per questioni relative alla privacy, contattare: ',
   privacy_section9_title: 'Cancellazione dei Dati',
   privacy_section9_text: 'Puoi eliminare i tuoi dati in uno dei seguenti modi:',
-  privacy_section9_method1_title: 'Metodo 1: Reset App (Consigliato)',
+  privacy_section9_method1_title: 'Metodo 1: Reimposta app (Consigliato)',
   privacy_section9_method1_text:
-    "Apri Impostazioni → Account → Reset App: l'operazione elimina password, note, categorie, preferenze e le chiavi salvate nell'archivio sicuro del dispositivo.",
+    "Apri Impostazioni → Account → Reimposta app: l'operazione elimina password, note, categorie, preferenze e le chiavi salvate nell'archivio sicuro del dispositivo.",
   privacy_section9_method1_warning:
     '⚠️ Nota: questa operazione è irreversibile. Assicurati di aver esportato eventuali password importanti prima di procedere.',
-  privacy_section9_method2_title: "Metodo 2: Disinstallazione dell'App",
+  privacy_section9_method2_title: "Metodo 2: Disinstallazione dell'app",
   privacy_section9_method2_text:
     "La disinstallazione dell'app rimuove il database locale dal dispositivo.",
   privacy_section9_method3_title:
@@ -682,7 +682,7 @@ export const it = {
     'Necessario per: Accedere tramite impronta digitale o altra autenticazione biometrica supportata da una build installata. Utilizzo dei dati: Keysoft non salva dati biometrici, PIN o Master Password. Se abiliti la biometria, la chiave del vault viene salvata in SecureStore con autenticazione richiesta e resta vincolata al dispositivo. Il sistema operativo gestisce i dati biometrici.',
   privacy_section13_2_title: 'Notifiche (Opzionale)',
   privacy_section13_2_text:
-    'Necessario per: Visualizzare avvisi di sicurezza locali (password deboli, avvisi di blocco automatico, promemoria backup). Utilizzo dei dati: Tutte le notifiche sono generate e visualizzate localmente. Nessun dato viene inviato a server esterni.',
+    'Necessario per: Visualizzare avvisi di sicurezza locali (password deboli, avvisi di blocco automatico, promemoria di backup). Utilizzo dei dati: Tutte le notifiche sono generate e visualizzate localmente. Nessun dato viene inviato a server esterni.',
   privacy_section13_3_title: 'Accesso al File System (Opzionale)',
   privacy_section13_3_text:
     "Necessario per: Importare/esportare file di backup delle password. Utilizzo dei dati: L'app accede solo ai file che l'utente seleziona esplicitamente. I file esportati sono crittografati se l'utente sceglie di proteggerli con password.",
@@ -703,7 +703,7 @@ export const it = {
     "Data la natura offline e locale dell'applicazione, l'utente è l'unico responsabile per:",
   privacy_section14_bullet1:
     '• Effettuare backup dei dati memorizzati (tramite funzione di esportazione)',
-  privacy_section14_bullet2: '• Conservare in modo sicuro il PIN/Password principale',
+  privacy_section14_bullet2: '• Conservare in modo sicuro il PIN/password principale',
   privacy_section14_bullet3: '• Sicurezza fisica del dispositivo',
   privacy_section14_bullet4:
     '• Perdita dei dati in caso di smarrimento, danneggiamento o reset del dispositivo',
@@ -717,9 +717,9 @@ export const it = {
   privacy_section16_title: 'Conformità GDPR',
   privacy_section16_text:
     'Questa applicazione è progettata secondo i principi del Regolamento Generale sulla Protezione dei Dati (UE) 2016/679:',
-  privacy_gdpr_design: 'Privacy by Design',
+  privacy_gdpr_design: 'Privacy fin dalla progettazione',
   privacy_gdpr_design_desc: 'Architettura senza raccolta dati esterni',
-  privacy_gdpr_default: 'Privacy by Default',
+  privacy_gdpr_default: 'Privacy come impostazione predefinita',
   privacy_gdpr_default_desc: 'Impostazioni di massima sicurezza abilitate di default',
   privacy_gdpr_minimization: 'Minimizzazione dei Dati',
   privacy_gdpr_minimization_desc: 'Vengono memorizzati solo i dati strettamente necessari',
@@ -733,24 +733,24 @@ export const it = {
   privacy_section17_text2: "In Italia, l'autorità di controllo è:",
   privacy_authority_name: 'Garante per la Protezione dei Dati Personali',
   privacy_authority_address: 'Piazza Venezia, 11 - 00187 Roma',
-  privacy_section18_title: 'Modifiche alla Privacy Policy',
+  privacy_section18_title: "Modifiche all'Informativa sulla privacy",
   privacy_section18_text:
-    "Ci riserviamo il diritto di modificare questa Privacy Policy. Le modifiche sostanziali saranno comunicate tramite aggiornamento dell'applicazione con apposita notifica. L'uso continuato dell'applicazione dopo le modifiche costituisce accettazione della Privacy Policy aggiornata.",
+    "Ci riserviamo il diritto di modificare questa Informativa sulla privacy. Le modifiche sostanziali saranno comunicate tramite aggiornamento dell'applicazione con apposita notifica. L'uso continuato dell'applicazione dopo le modifiche costituisce accettazione dell'Informativa sulla privacy aggiornata.",
   privacy_section18_text2:
-    "Gli utenti possono sempre consultare la versione della Privacy Policy all'interno dell'applicazione nella sezione Impostazioni.",
+    "Gli utenti possono sempre consultare la versione dell'Informativa sulla privacy all'interno dell'applicazione nella sezione Impostazioni.",
   privacy_section19_title: 'Contatti',
   privacy_section19_text:
-    'Per qualsiasi domanda relativa a questa Privacy Policy o al trattamento dei dati personali:',
+    'Per qualsiasi domanda relativa a questa Informativa sulla privacy o al trattamento dei dati personali:',
   privacy_version_text: 'Versione documento: 3.1',
 
   // Notes
-  personal_notes: 'Note Personali',
+  personal_notes: 'Note personali',
   search_notes: 'Cerca note...',
   no_notes_found: 'Nessuna nota trovata',
   no_notes_yet: 'Nessuna nota ancora',
   create_first_note: 'Crea la tua prima nota',
-  new_note: 'Nuova Nota',
-  edit_note: 'Modifica Nota',
+  new_note: 'Nuova nota',
+  edit_note: 'Modifica nota',
   note: 'Nota',
   note_title: 'Titolo della nota',
   note_content: 'Contenuto della nota',

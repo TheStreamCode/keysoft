@@ -1,0 +1,2 @@
+Questa versione migliora la compatibilità con le versioni più recenti di Android e rende l'app
+più stabile e sicura.

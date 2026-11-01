@@ -2,11 +2,11 @@
 
 ## Release Readiness Checklist
 
-Current source release: Keysoft 3.3.2. The local manifest mirrors versionCode 131; the Android
-16 compliance rebuild produced EAS remote versionCode 132 from `main` HEAD and is in Play
-review. Google Play serves 3.3.2/131 until 3.3.2/132 is approved. EAS remote versioning remains
-authoritative for Android builds, and the same workflow now submits the next release to Google
-Play automatically. iOS remains a cloud-simulator compatibility target and is not an App Store
+Current source release: Keysoft 3.3.3, Android build target versionCode 135. Google Play serves
+Keysoft 3.3.2 while Keysoft 3.3.3/135 is in review. EAS remote versioning remains authoritative
+for Android builds. This source release upgrades the toolchain to Expo SDK 58, React Native
+0.88.1 and AGP 9, and the version-tag workflow now submits the next release to Google Play
+automatically. iOS remains a cloud-simulator compatibility target and is not an App Store
 release target.
 
 Before preparing a release:
@@ -42,13 +42,13 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.3.2 source release, `app.config.js` uses `version: "3.3.2"`,
-`android.versionCode: 131`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
+For the 3.3.3 source release, `app.config.js` uses `version: "3.3.3"`,
+`android.versionCode: 135`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
 value mirrors the target for manifest visibility but does not control the EAS counter. Because
-EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.2. The
-Android 16 compliance rebuild produced remote versionCode 132 from `main` HEAD; Google Play
-serves 3.3.2/131 until 3.3.2/132 is approved. The production workflow increments the remote
-Android value on every build and submits the matching app bundle to Google Play.
+EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.3. The
+3.3.3 build used remote versionCode 135. Google Play serves 3.3.2 while 3.3.3/135 is in review.
+The production workflow increments the remote Android value on every build and submits the
+matching app bundle to Google Play.
 
 Read the current remote value with
 `bunx eas-cli build:version:get --platform android --profile production --non-interactive`
