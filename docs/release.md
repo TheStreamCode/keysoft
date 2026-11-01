@@ -2,7 +2,7 @@
 
 ## Release Readiness Checklist
 
-Current source release: Keysoft 3.3.3, Android build target versionCode 133. Google Play serves
+Current source release: Keysoft 3.3.3, Android build target versionCode 134. Google Play serves
 Keysoft 3.3.2/131 while the 3.3.2/132 target-API rebuild is in review. EAS remote versioning
 remains authoritative for Android builds. This source release upgrades the toolchain to Expo
 SDK 58, React Native 0.88.1 and AGP 9. iOS remains a cloud-simulator compatibility target and
@@ -42,10 +42,10 @@ Application version data is maintained in:
 - Android native configuration where applicable
 
 For the 3.3.3 source release, `app.config.js` uses `version: "3.3.3"`,
-`android.versionCode: 133`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
+`android.versionCode: 134`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
 value mirrors the target for manifest visibility but does not control the EAS counter. Because
 EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.3. The
-production profile auto-increments the remote Android value from 132 to 133. Google Play serves
+production profile auto-increments the remote Android value from 133 to 134. Google Play serves
 3.3.2/131 until the 3.3.2/132 review completes; 3.3.3 is the SDK 58 release candidate.
 
 Read the current remote value with

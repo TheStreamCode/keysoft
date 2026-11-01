@@ -55,7 +55,7 @@ module.exports = {
       backgroundColor: '#FFFFFF',
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 133,
+    versionCode: 134,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',
@@ -110,8 +110,9 @@ module.exports = {
       'expo-build-properties',
       {
         android: {
-          // Target Android 16 (API 36) stable.
-          compileSdkVersion: 36,
+          // Compile against Android 17 (API 37) for the SDK 58/RN 0.88 toolchain;
+          // target Android 16 (API 36), the current Play requirement.
+          compileSdkVersion: 37,
           targetSdkVersion: 36,
           enableMinifyInReleaseBuilds: true,
           enableShrinkResourcesInReleaseBuilds: true,
