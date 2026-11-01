@@ -84,7 +84,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       // Quando l'app torna in foreground dopo essere stata in background
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      if (appState.current?.match(/inactive|background/) && nextAppState === 'active') {
         Logger.debug('🌍 App tornata attiva, verifico lingua di sistema...');
 
         const newSysLang = resolveSystemLanguage();

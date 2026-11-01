@@ -2,11 +2,11 @@
 
 ## Release Readiness Checklist
 
-Current source release and Android build target: Keysoft 3.3.2, versionCode 131. Google Play
-currently distributes Keysoft 3.3.1, versionCode 130, until the new app bundle completes
-review and is submitted manually. EAS remote versioning remains authoritative for Android
-builds. iOS remains a cloud-simulator compatibility target and is not an App Store release
-target.
+Current source release: Keysoft 3.3.3, Android build target versionCode 133. Google Play serves
+Keysoft 3.3.2/131 while the 3.3.2/132 target-API rebuild is in review. EAS remote versioning
+remains authoritative for Android builds. This source release upgrades the toolchain to Expo
+SDK 58, React Native 0.88.1 and AGP 9. iOS remains a cloud-simulator compatibility target and
+is not an App Store release target.
 
 Before preparing a release:
 
@@ -41,12 +41,12 @@ Application version data is maintained in:
 - `app.config.js`
 - Android native configuration where applicable
 
-For the 3.3.2 source release, `app.config.js` uses `version: "3.3.2"`,
-`android.versionCode: 131`, and an iOS simulator baseline of `ios.buildNumber: "1"`. Before
-the build, the EAS remote Android value is 130; the production profile auto-increments it to
-131. The local value mirrors the target for manifest visibility but does not control the EAS
-counter. Because EAS Update uses the `appVersion` runtime policy, this release uses native
-runtime 3.3.2. Google Play remains on 3.3.1/130 until manual submission and publication.
+For the 3.3.3 source release, `app.config.js` uses `version: "3.3.3"`,
+`android.versionCode: 133`, and an iOS simulator baseline of `ios.buildNumber: "1"`. The local
+value mirrors the target for manifest visibility but does not control the EAS counter. Because
+EAS Update uses the `appVersion` runtime policy, this release uses native runtime 3.3.3. The
+production profile auto-increments the remote Android value from 132 to 133. Google Play serves
+3.3.2/131 until the 3.3.2/132 review completes; 3.3.3 is the SDK 58 release candidate.
 
 Read the current remote value with
 `bunx eas-cli build:version:get --platform android --profile production --non-interactive`

@@ -1,7 +1,7 @@
 module.exports = {
   name: 'Keysoft',
   slug: 'keysoft',
-  version: '3.3.2',
+  version: '3.3.3',
   scheme: 'keysoft',
   orientation: 'default', // Supports both portrait and landscape
   userInterfaceStyle: 'automatic',
@@ -55,7 +55,7 @@ module.exports = {
       backgroundColor: '#FFFFFF',
     },
     package: 'it.mikesoft.keysoft',
-    versionCode: 131,
+    versionCode: 133,
     permissions: [
       'INTERNET',
       'USE_BIOMETRIC',
