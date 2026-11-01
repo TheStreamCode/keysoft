@@ -182,6 +182,20 @@ describe('translations', () => {
     expect(italianKeys).toEqual(englishKeys);
   });
 
+  it('does not leave English-only UI labels in Italian', () => {
+    const localizedKeys = [
+      'logout',
+      'reset_app',
+      'privacy_policy',
+      'privacy_title',
+      'privacy_section9_method1_title',
+    ];
+
+    for (const key of localizedKeys) {
+      expect(italianEntries.get(key)).not.toBe(englishEntries.get(key));
+    }
+  });
+
   it('defines every statically referenced translation key in both languages', () => {
     const usedKeys = extractUsedTranslationKeys();
 
