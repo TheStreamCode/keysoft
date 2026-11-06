@@ -4,6 +4,8 @@ All notable project changes are documented here.
 
 ## [Unreleased]
 
+## [3.3.3] - 2026-11-01
+
 ### Release
 
 - Upgrades to Expo SDK 58 and React Native 0.88.1, including AGP 9, the strict TypeScript
